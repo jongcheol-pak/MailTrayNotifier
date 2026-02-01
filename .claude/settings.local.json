@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(attrib -R \"Services\\\\SettingsService.cs\")",
+      "Bash(attrib:*)",
+      "Bash(attrib -R \"Services\\\\MailStateStore.cs\")",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet format:*)",
+      "Bash(dir:*)",
+      "Bash(Select-Object -First 30)"
+    ]
+  }
+}
