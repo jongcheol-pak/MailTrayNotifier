@@ -1,6 +1,5 @@
 using System.IO;
 using System.Text.Json;
-using LogLibrary;
 using MailTrayNotifier.Models;
 
 namespace MailTrayNotifier.Services
@@ -125,7 +124,6 @@ namespace MailTrayNotifier.Services
             }
             catch (Exception ex)
             {
-                JsonLogWriter.Log(LogLevel.Error, "메일 상태 파일 로드 실패", exception: ex);
                 _cache = new MailStateFile();
             }
         }

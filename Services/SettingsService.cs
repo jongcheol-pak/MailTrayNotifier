@@ -2,7 +2,6 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using LogLibrary;
 using MailTrayNotifier.Models;
 
 namespace MailTrayNotifier.Services
@@ -44,9 +43,8 @@ namespace MailTrayNotifier.Services
 
                 return Task.FromResult(settings);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                JsonLogWriter.Log(LogLevel.Error, "설정 파일 로드 실패", exception: ex);
                 return Task.FromResult(new MailSettings());
             }
         }
@@ -87,9 +85,8 @@ namespace MailTrayNotifier.Services
                         var encryptedBytes = ProtectedData.Protect(passwordBytes, Entropy, DataProtectionScope.CurrentUser);
                         return Convert.ToBase64String(encryptedBytes);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        JsonLogWriter.Log(LogLevel.Error, "비밀번호 암호화 실패", exception: ex);
                         return password;
                     }
                 }
@@ -105,9 +102,8 @@ namespace MailTrayNotifier.Services
                         var passwordBytes = ProtectedData.Unprotect(encryptedBytes, Entropy, DataProtectionScope.CurrentUser);
                         return Encoding.UTF8.GetString(passwordBytes);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                JsonLogWriter.Log(LogLevel.Warning, "비밀번호 복호화 실패 (평문 저장된 기존 설정일 수 있음)", exception: ex);
                         return encryptedPassword;
                     }
                 }

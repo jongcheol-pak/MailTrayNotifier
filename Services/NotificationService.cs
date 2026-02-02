@@ -1,5 +1,4 @@
 using Microsoft.Toolkit.Uwp.Notifications;
-using LogLibrary;
 using MailTrayNotifier.Models;
 using System.Diagnostics;
 
@@ -82,7 +81,7 @@ namespace MailTrayNotifier.Services
             }
             catch (Exception ex)
             {
-                JsonLogWriter.Log(LogLevel.Error, "브라우저 실행 실패", exception: ex);
+              
             }
         }
 
@@ -134,7 +133,7 @@ namespace MailTrayNotifier.Services
                             }
                             catch (Exception ex)
                             {
-                                JsonLogWriter.Log(LogLevel.Error, "알림 표시 실패", exception: ex);
+                              
                             }
                         }
 
@@ -149,7 +148,7 @@ namespace MailTrayNotifier.Services
                             }
                             catch (Exception ex)
                             {
-                                JsonLogWriter.Log(LogLevel.Error, "오류 알림 표시 실패", exception: ex);
+                             
                             }
                         }
 

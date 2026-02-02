@@ -1,5 +1,4 @@
 using System.Net.NetworkInformation;
-using LogLibrary;
 using MailTrayNotifier.Models;
 
 namespace MailTrayNotifier.Services
@@ -220,12 +219,10 @@ namespace MailTrayNotifier.Services
             }
             catch (Exception ex) when (IsTransientNetworkError(ex))
             {
-                // 일시적 네트워크 오류는 다음 폴링까지 대기 (중단하지 않음)
-                JsonLogWriter.Log(LogLevel.Warning, "일시적 네트워크 오류, 다음 폴링까지 대기", exception: ex);
+                
             }
             catch (Exception ex)
             {
-                JsonLogWriter.Log(LogLevel.Error, "메일 확인 중 오류 발생", exception: ex);
                 _notificationService.ShowError($"메일 확인 중 오류가 발생했습니다.\n{ex.Message}");
 
                 // 오류 발생 시 자동 중지
@@ -265,7 +262,6 @@ namespace MailTrayNotifier.Services
             // 네트워크 상태 확인 (사용 불가 시 다음 폴링까지 대기)
             if (!IsNetworkAvailable())
             {
-                JsonLogWriter.Log(LogLevel.Warning, "네트워크를 사용할 수 없음, 다음 폴링까지 대기");
                 return;
             }
 

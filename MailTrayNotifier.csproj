@@ -41,8 +41,4 @@
     <Resource Include="Assets\icon.png" />
         <Content Include="start.ico" />
     </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\..\Library\LogLibrary\LogLibrary.csproj" />
-    </ItemGroup>
 </Project>

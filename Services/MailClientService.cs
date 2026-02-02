@@ -2,7 +2,6 @@ using MailKit;
 using MailKit.Net.Pop3;
 using MailKit.Security;
 using MimeKit;
-using LogLibrary;
 using MailTrayNotifier.Models;
 
 namespace MailTrayNotifier.Services
@@ -54,7 +53,6 @@ namespace MailTrayNotifier.Services
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                JsonLogWriter.Log(LogLevel.Warning, $"POP3 서버 연결 실패: {settings.Pop3Server}:{settings.Pop3Port}", exception: ex);
                 throw;
             }
 
@@ -64,7 +62,6 @@ namespace MailTrayNotifier.Services
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                JsonLogWriter.Log(LogLevel.Error, $"POP3 인증 실패: {settings.UserId}", exception: ex);
                 throw;
             }
 
@@ -99,7 +96,6 @@ namespace MailTrayNotifier.Services
                 }
                 catch (Exception ex)
                 {
-                    JsonLogWriter.Log(LogLevel.Warning, $"메일 헤더 조회 실패 (인덱스: {i}, UID: {uid})", exception: ex);
                     continue;
                 }
 
@@ -117,7 +113,6 @@ namespace MailTrayNotifier.Services
                     consecutiveOldCount++;
                     if (consecutiveOldCount >= ConsecutiveOldMailThreshold)
                     {
-                        JsonLogWriter.Log(LogLevel.Debug, $"연속 {ConsecutiveOldMailThreshold}개 이상 오래된 메일 발견, 조회 종료");
                         break;
                     }
                     continue;

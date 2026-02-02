@@ -4,7 +4,6 @@ using System.Text;
 using System.Threading;
 using System.Windows.Controls;
 using Hardcodet.Wpf.TaskbarNotification;
-using LogLibrary;
 using MailTrayNotifier.Services;
 
 namespace MailTrayNotifier
@@ -84,13 +83,12 @@ namespace MailTrayNotifier
         {
             if (e.ExceptionObject is Exception ex)
             {
-                JsonLogWriter.Log(LogLevel.Critical, "Unhandled exception", exception: ex);
+               
             }
         }
 
         private void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
-            JsonLogWriter.Log(LogLevel.Error, "Dispatcher unhandled exception", exception: e.Exception);
             e.Handled = true;
         }
 
@@ -316,7 +314,6 @@ namespace MailTrayNotifier
             }
             catch (Exception ex)
             {
-                JsonLogWriter.Log(LogLevel.Error, "UID 저장 실패", exception: ex);
             }
         }
 
