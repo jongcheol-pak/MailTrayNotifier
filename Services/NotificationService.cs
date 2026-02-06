@@ -13,6 +13,7 @@ namespace MailTrayNotifier.Services
         private const int MaxSenderLength = 50;
         private const string ActionKey = "action";
         private const string ActionMarkAsRead = "markAsRead";
+        private const string ActionGoToMail = "goToMail";
         private const string UidsKey = "uids";
         private const string AccountKeyKey = "accountKey";
         private const string MailWebUrlKey = "mailWebUrl";
@@ -47,23 +48,28 @@ namespace MailTrayNotifier.Services
         {
             var args = ToastArguments.Parse(e.Argument);
 
-            if (args.TryGetValue(ActionKey, out var action) && action == ActionMarkAsRead)
+            if (!args.TryGetValue(AccountKeyKey, out var accountKey) ||
+                !args.TryGetValue(UidsKey, out var uidsString))
             {
-                if (args.TryGetValue(AccountKeyKey, out var accountKey) &&
-                    args.TryGetValue(UidsKey, out var uidsString))
-                {
-                    // UID 저장
-                    var uids = uidsString.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                    SaveUidsRequested?.Invoke(accountKey, uids);
+                return;
+            }
 
-                    // 메일 웹사이트 열기 (URL이 설정된 경우에만)
-                    if (args.TryGetValue(MailWebUrlKey, out var mailWebUrl) && 
-                        !string.IsNullOrWhiteSpace(mailWebUrl))
-                    {
-                        OpenMailWebsite(mailWebUrl);
-                    }
+            var uids = uidsString.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+            // UID 저장 (모든 경우에 저장)
+            SaveUidsRequested?.Invoke(accountKey, uids);
+
+            // 액션에 따라 추가 동작 수행
+            if (args.TryGetValue(ActionKey, out var action) && action == ActionGoToMail)
+            {
+                // 버튼 클릭: UID 저장 + URL 실행
+                if (args.TryGetValue(MailWebUrlKey, out var mailWebUrl) &&
+                    !string.IsNullOrWhiteSpace(mailWebUrl))
+                {
+                    OpenMailWebsite(mailWebUrl);
                 }
             }
+            // 알림 팝업 클릭 (ActionKey 없음 또는 ActionMarkAsRead): UID만 저장 (이미 위에서 저장됨)
         }
 
         /// <summary>
@@ -113,6 +119,18 @@ namespace MailTrayNotifier.Services
                         .AddText($"보낸 사람: {Truncate(mail.SenderDisplay, MaxSenderLength)}")
                         .AddText($"받은 시간: {mail.Date.LocalDateTime:yyyy년 MM월 dd일 HH시 mm분}")
                         .AddText($"새 메일: {Truncate(mail.Subject, MaxSubjectLength)}");
+
+                    // URL이 설정된 경우 버튼 추가
+                    if (!string.IsNullOrWhiteSpace(mailWebUrl))
+                    {
+                        builder.AddButton(new ToastButton()
+                            .SetContent("메일로 이동")
+                            .AddArgument(ActionKey, ActionGoToMail)
+                            .AddArgument(AccountKeyKey, accountKey)
+                            .AddArgument(UidsKey, uidsString)
+                            .AddArgument(MailWebUrlKey, mailWebUrl));
+                    }
+
                     builder.Show();
                 }
                 else
@@ -123,13 +141,25 @@ namespace MailTrayNotifier.Services
                         .AddArgument(ActionKey, ActionMarkAsRead)
                         .AddArgument(AccountKeyKey, accountKey)
                         .AddArgument(UidsKey, uidsString)
-                                        .AddArgument(MailWebUrlKey, mailWebUrl ?? string.Empty)
-                                        .SetToastDuration(ToastDuration.Long)
-                                        .AddText($"새 메일 {newMails.Count}건")
-                                        .AddText($"보낸 사람: {Truncate(latest.SenderDisplay, MaxSenderLength)}")
-                                        .AddText($"최근: {Truncate(latest.Subject, MaxSubjectLength)}");
-                                    builder.Show();
-                                }
+                        .AddArgument(MailWebUrlKey, mailWebUrl ?? string.Empty)
+                        .SetToastDuration(ToastDuration.Long)
+                        .AddText($"새 메일 {newMails.Count}건")
+                        .AddText($"보낸 사람: {Truncate(latest.SenderDisplay, MaxSenderLength)}")
+                        .AddText($"최근: {Truncate(latest.Subject, MaxSubjectLength)}");
+
+                    // URL이 설정된 경우 버튼 추가
+                    if (!string.IsNullOrWhiteSpace(mailWebUrl))
+                    {
+                        builder.AddButton(new ToastButton()
+                            .SetContent("메일로 이동")
+                            .AddArgument(ActionKey, ActionGoToMail)
+                            .AddArgument(AccountKeyKey, accountKey)
+                            .AddArgument(UidsKey, uidsString)
+                            .AddArgument(MailWebUrlKey, mailWebUrl));
+                    }
+
+                    builder.Show();
+                }
                             }
                             catch (Exception ex)
                             {
