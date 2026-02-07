@@ -10,7 +10,7 @@
 
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="24" VerticalAlignment="Top">
+            <StackPanel Margin="24" VerticalAlignment="Top" >
            
                 <ui:CardControl Icon="PlayCircle24">
                     <ui:CardControl.Header>
@@ -21,6 +21,18 @@
                     </ui:CardControl.Header>
                     <ui:ToggleSwitch IsChecked="{Binding RunAtStartup, Mode=TwoWay}" OnContent="On" OffContent="Off"/>
                 </ui:CardControl>
+
+                <!-- 전체 알림 설정 -->
+                <ui:CardControl Icon="PlayCircle24" Margin="0,16,0,0">
+                    <ui:CardControl.Header>
+                        <StackPanel >
+                            <ui:TextBlock Text="알림" FontTypography="Body" />
+                            <ui:TextBlock Text="설정된 메일 알림을 사용 하도록 설정합니다. Off로 설정된 경우 모든 메일 알림을 받을 수 없습니다." FontTypography="Caption" Foreground="WhiteSmoke" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </ui:CardControl.Header>
+                    <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding IsRefreshEnabled, Mode=TwoWay}" VerticalAlignment="Center" OnContent="On" OffContent="Off"/>
+                </ui:CardControl>
+
             </StackPanel>
         </ScrollViewer>
     </Grid>

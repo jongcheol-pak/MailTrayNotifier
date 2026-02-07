@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using MailTrayNotifier.ViewModels;
 
 namespace MailTrayNotifier.Views
 {
@@ -15,7 +16,7 @@ namespace MailTrayNotifier.Views
         }
 
         /// <summary>
-        /// ¼ýÀÚ¸¸ ÀÔ·Â Çã¿ë
+        /// ï¿½ï¿½ï¿½Ú¸ï¿½ ï¿½Ô·ï¿½ ï¿½ï¿½ï¿½
         /// </summary>
         private void NumericTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
@@ -23,7 +24,7 @@ namespace MailTrayNotifier.Views
         }
 
         /// <summary>
-        /// ºÙ¿©³Ö±â ½Ã ¼ýÀÚ¸¸ Çã¿ë
+        /// ï¿½Ù¿ï¿½ï¿½Ö±ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½Ú¸ï¿½ ï¿½ï¿½ï¿½
         /// </summary>
         private void NumericTextBox_Pasting(object sender, DataObjectPastingEventArgs e)
         {
@@ -38,6 +39,53 @@ namespace MailTrayNotifier.Views
             else
             {
                 e.CancelCommand();
+            }
+        }
+
+        /// <summary>
+        /// ê³„ì • íŽ¸ì§‘ ì‹œìž‘
+        /// </summary>
+        private void EditAccount_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is MailAccountViewModel account)
+            {
+                account.BeginEdit();
+            }
+        }
+
+        /// <summary>
+        /// ê³„ì • íŽ¸ì§‘ ì·¨ì†Œ
+        /// </summary>
+        private void CancelEdit_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is MailAccountViewModel account)
+            {
+                if (DataContext is SettingsViewModel viewModel)
+                {
+                    viewModel.CancelAccountEdit(account);
+                }
+                else
+                {
+                    account.CancelEdit();
+                }
+            }
+        }
+
+        /// <summary>
+        /// ê³„ì • íŽ¸ì§‘ ì €ìž¥
+        /// </summary>
+        private async void SaveEdit_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is MailAccountViewModel account)
+            {
+                if (DataContext is SettingsViewModel viewModel)
+                {
+                    await viewModel.SaveAccountAsync(account);
+                }
+                else
+                {
+                    account.EndEdit();
+                }
             }
         }
     }

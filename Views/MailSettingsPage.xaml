@@ -5,69 +5,238 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml" mc:Ignorable="d" d:DesignHeight="450" d:DesignWidth="800" Title="MailSettingsPage">
 
-
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="24,24,24,48" VerticalAlignment="Top">
-            <ui:CardControl Icon="PlayCircle24">
-                <ui:CardControl.Header>
-                    <StackPanel >
-                        <ui:TextBlock Text="알림" FontTypography="Body" />
-                        <ui:TextBlock Text="메일을 확인해서 알림을 보내도록 설정합니다." FontTypography="Caption" Foreground="WhiteSmoke"/>
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding IsRefreshEnabled, Mode=TwoWay}" VerticalAlignment="Center" OnContent="On" OffContent="Off"/>
-            </ui:CardControl>
-
-            <Border
-            Margin="0,12,0,0"
-            Padding="12"
-            Background="{ui:ThemeResource ControlFillColorDefaultBrush}"
-            CornerRadius="8">
-                <StackPanel>
-                    <StackPanel>
-                        <ui:TextBlock Text="POP3 서버" Margin="0,0,0,4" FontTypography="Body" Foreground="White"  />
-                        <Grid Margin="0,0,0,16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="100" />
-                            </Grid.ColumnDefinitions>
-                            <ui:TextBox Grid.Column="0" Margin="0,0,8,0" Text="{Binding Pop3Server, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Foreground="WhiteSmoke" />
-                            <ui:TextBox Grid.Column="1" Text="{Binding Pop3PortText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Foreground="WhiteSmoke" PlaceholderText="Port" PreviewTextInput="NumericTextBox_PreviewTextInput" DataObject.Pasting="NumericTextBox_Pasting" />
-                        </Grid>
-
-                        <ui:TextBlock Text="SMTP 서버" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
-                        <Grid Margin="0,0,0,16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="100" />
-                            </Grid.ColumnDefinitions>
-                            <ui:TextBox Grid.Column="0" Margin="0,0,8,0" Text="{Binding SmtpServer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Foreground="WhiteSmoke"/>
-                            <ui:TextBox Grid.Column="1" Text="{Binding SmtpPortText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Foreground="WhiteSmoke" PlaceholderText="Port" PreviewTextInput="NumericTextBox_PreviewTextInput" DataObject.Pasting="NumericTextBox_Pasting" />
-                        </Grid>
-
-                        <CheckBox Margin="0,0,0,16" IsChecked="{Binding UseSsl, Mode=TwoWay}" Content="Use SSL/TLS (SSL: 995, non-SSL: 110)" />
-
-                        <ui:TextBlock Text="아이디" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
-                        <ui:TextBox Margin="0,0,0,16" Text="{Binding UserId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Foreground="WhiteSmoke"/>
-
-                        <ui:TextBlock Text="비밀번호" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
-                        <ui:PasswordBox Margin="0,0,0,16" Foreground="WhiteSmoke" Password="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-                        <ui:TextBlock Text="동기화 시간(분)" Foreground="White" Margin="0,0,0,4" FontTypography="Body" />
-                        <ui:TextBox Margin="0,0,0,24" Foreground="WhiteSmoke" Text="{Binding RefreshMinutesText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PreviewTextInput="NumericTextBox_PreviewTextInput" DataObject.Pasting="NumericTextBox_Pasting" />
-
-                        <ui:TextBlock Text="이메일 사이트(선택)" Foreground="White" Margin="0,0,0,4" FontTypography="Body" />
-                        <ui:TextBox Margin="0,0,0,24" Foreground="WhiteSmoke" Text="{Binding MailWebUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="https://mail.example.com" />
-
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-
-            <Grid Margin="0,24,0,0">                
-                <ui:Button HorizontalAlignment="Left" Command="{Binding ResetCommand}" Content="초기화" Appearance="Secondary" Margin="0,0,0,0" />
-                <ui:Button HorizontalAlignment="Right" Command="{Binding SaveCommand}" Content="저장" Appearance="Primary" Margin="0,0,0,0" />
+           
+            <!-- 상단 헤더 -->
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- 계정 추가 버튼 -->
+                <ui:Button
+                    Grid.Column="0"
+                    Content="계정 추가"
+                    Command="{Binding AddAccountCommand}"
+                    Icon="Add24"
+                    Appearance="Secondary"
+                    HorizontalAlignment="Left" />
+                
+                <!-- 계정 개수 표시 -->
+                <ui:TextBlock
+                    Grid.Column="2"
+                    Text="{Binding AccountCountText}"
+                    FontSize="14"
+                    FontWeight="SemiBold"
+                    Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Right" />
             </Grid>
+
+            <!-- 계정 목록 -->
+            <ItemsControl ItemsSource="{Binding Accounts}" Margin="0,12,0,0">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Expander
+                            IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
+                            Margin="0,8,0,0">
+                            <Expander.Header>
+                                <Grid Margin="0,0,12,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <!--계정 오류 아이콘 -->
+                                    <ui:SymbolIcon
+                                        Grid.Column="0"
+                                        Symbol="MailWarning24"
+                                        Foreground="Red"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,8,0"
+                                        ToolTip="{Binding ErrorMessage}">
+                                        <ui:SymbolIcon.Style>
+                                            <Style TargetType="ui:SymbolIcon">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasError}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ui:SymbolIcon.Style>
+                                    </ui:SymbolIcon>
+
+                                    <!-- 계정 이름 TextBlock (읽기 전용) -->
+                                    <ui:TextBlock
+                                        Grid.Column="1"
+                                        Text="{Binding DisplayName}"
+                                        FontSize="14"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}"
+                                        VerticalAlignment="Center"
+                                        Padding="0" />
+
+                                    <!-- ToggleSwitch -->
+                                    <ui:ToggleSwitch
+                                        Grid.Column="2"
+                                        IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                        OnContent=""
+                                        OffContent=""
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Center"/>
+                                </Grid>
+                            </Expander.Header>
+
+                            <Border Padding="12" Background="{ui:ThemeResource ControlFillColorDefaultBrush}" CornerRadius="8">
+                                <StackPanel>
+                                    <ui:TextBlock Text="계정 이름" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
+                                    <ui:TextBox Margin="0,0,0,16" Text="{Binding AccountName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke" PlaceholderText="" />
+
+                                    <ui:TextBlock Text="POP3 서버" Margin="0,0,0,4" FontTypography="Body" Foreground="White"  />
+                                    <Grid Margin="0,0,0,16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="100" />
+                                        </Grid.ColumnDefinitions>
+                                        <ui:TextBox Grid.Column="0" Margin="0,0,8,0" Text="{Binding Pop3Server, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke" />
+                                        <ui:TextBox 
+                                            Grid.Column="1" 
+                                            Text="{Binding Pop3PortText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
+                                            IsEnabled="{Binding IsEditMode}" 
+                                            Foreground="WhiteSmoke" 
+                                            PlaceholderText="Port"
+                                            PreviewTextInput="NumericTextBox_PreviewTextInput"
+                                            DataObject.Pasting="NumericTextBox_Pasting" />
+                                    </Grid>
+
+                                    <ui:TextBlock Text="SMTP 서버" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
+                                    <Grid Margin="0,0,0,16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="100" />
+                                        </Grid.ColumnDefinitions>
+                                        <ui:TextBox Grid.Column="0" Margin="0,0,8,0" Text="{Binding SmtpServer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke"/>
+                                        <ui:TextBox 
+                                            Grid.Column="1" 
+                                            Text="{Binding SmtpPortText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
+                                            IsEnabled="{Binding IsEditMode}" 
+                                            Foreground="WhiteSmoke" 
+                                            PlaceholderText="Port"
+                                            PreviewTextInput="NumericTextBox_PreviewTextInput"
+                                            DataObject.Pasting="NumericTextBox_Pasting" />
+                                    </Grid>
+
+                                    <CheckBox Margin="0,0,0,16" IsChecked="{Binding UseSsl, Mode=TwoWay}" IsEnabled="{Binding IsEditMode}" Content="Use SSL/TLS (SSL: 995, non-SSL: 110)" />
+
+                                    <ui:TextBlock Text="아이디" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
+                                    <ui:TextBox Margin="0,0,0,16" Text="{Binding UserId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke"/>
+
+                                    <ui:TextBlock Text="비밀번호" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
+                                    <ui:PasswordBox Margin="0,0,0,16" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke" Password="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                    <ui:TextBlock Text="동기화 시간(분)" Foreground="White" Margin="0,0,0,4" FontTypography="Body" />
+                                    <ui:TextBox 
+                                        Margin="0,0,0,16" 
+                                        IsEnabled="{Binding IsEditMode}" 
+                                        Foreground="WhiteSmoke" 
+                                        Text="{Binding RefreshMinutesText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                        PreviewTextInput="NumericTextBox_PreviewTextInput"
+                                        DataObject.Pasting="NumericTextBox_Pasting" />
+
+                                    <ui:TextBlock Text="이메일 사이트(선택)" Foreground="White" Margin="0,0,0,4" FontTypography="Body" />
+                                    <ui:TextBox Margin="0,0,0,16" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke" Text="{Binding MailWebUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="https://mail.example.com" />
+
+                                    <!-- 버튼 그룹 -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <!-- 편집 모드가 아닐 때: 수정, 삭제 버튼 -->
+                                        <ui:Button
+                                            Content="수정"
+                                            Click="EditAccount_Click"
+                                            Tag="{Binding}"
+                                            Appearance="Secondary"
+                                            Margin="0,0,8,0"
+                                            HorizontalAlignment="Left">
+                                            <ui:Button.Style>
+                                                <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEditMode}" Value="False">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ui:Button.Style>
+                                        </ui:Button>
+
+                                        <ui:Button
+                                            Content="계정 삭제"
+                                            Command="{Binding DataContext.RemoveAccountCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            CommandParameter="{Binding}"
+                                            Appearance="Danger"
+                                            Margin="0,0,0,0"
+                                            HorizontalAlignment="Left">
+                                            <ui:Button.Style>
+                                                <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEditMode}" Value="False">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ui:Button.Style>
+                                        </ui:Button>
+
+                                        <!-- 편집 모드일 때: 취소, 저장 버튼 -->
+                                        <ui:Button
+                                            Content="취소"
+                                            Click="CancelEdit_Click"
+                                            Tag="{Binding}"
+                                            Appearance="Secondary"
+                                            Margin="0,0,8,0"
+                                            HorizontalAlignment="Left">
+                                            <ui:Button.Style>
+                                                <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ui:Button.Style>
+                                        </ui:Button>
+
+                                        <ui:Button
+                                            Content="저장"
+                                            Click="SaveEdit_Click"
+                                            Tag="{Binding}"
+                                            Appearance="Primary"
+                                            Margin="0,0,0,0"
+                                            HorizontalAlignment="Left">
+                                            <ui:Button.Style>
+                                                <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ui:Button.Style>
+                                        </ui:Button>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </Expander>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
         </StackPanel>
     </ScrollViewer>
 </Page>
-

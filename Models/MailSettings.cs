@@ -56,6 +56,16 @@ namespace MailTrayNotifier.Models
         public string MailWebUrl { get; set; } = string.Empty;
 
         /// <summary>
+        /// 계정 활성화 여부 (기본값: true)
+        /// </summary>
+        public bool IsEnabled { get; set; } = true;
+
+        /// <summary>
+        /// 계정 이름 (사용자 지정, 비어있으면 UserId@Server로 표시)
+        /// </summary>
+        public string AccountName { get; set; } = string.Empty;
+
+        /// <summary>
         /// 필수 설정 입력 여부
         /// </summary>
         public bool HasRequiredValues()

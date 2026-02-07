@@ -7,7 +7,8 @@
       "Bash(dotnet build:*)",
       "Bash(dotnet format:*)",
       "Bash(dir:*)",
-      "Bash(Select-Object -First 30)"
+      "Bash(Select-Object -First 30)",
+      "Bash(ls \"D:\\\\Personal Project\\\\Windows\\\\Project\\\\MailTrayNotifier\\\\MailTrayNotifier\\\\docs\\\\notes\"\" 2>nul || echo \"NOT_EXISTS \")"
     ]
   }
 }

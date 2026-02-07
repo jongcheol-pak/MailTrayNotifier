@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Text;
@@ -68,7 +69,13 @@ namespace MailTrayNotifier
             _window = new MainWindow();
             _window.Hide();
 
-            _ = InitializeServicesAsync();
+            _ = InitializeServicesAsync().ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                {
+                    Debug.WriteLine($"서비스 초기화 실패: {t.Exception?.GetBaseException().Message}");
+                }
+            }, TaskScheduler.Default);
         }
 
         protected override void OnExit(ExitEventArgs e)
@@ -83,12 +90,15 @@ namespace MailTrayNotifier
         {
             if (e.ExceptionObject is Exception ex)
             {
-               
+                Debug.WriteLine($"미처리 예외 발생: {ex.GetType().Name}: {ex.Message}");
+                Debug.WriteLine($"StackTrace: {ex.StackTrace}");
             }
         }
 
         private void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
+            Debug.WriteLine($"Dispatcher 미처리 예외: {e.Exception.GetType().Name}: {e.Exception.Message}");
+            Debug.WriteLine($"StackTrace: {e.Exception.StackTrace}");
             e.Handled = true;
         }
 
@@ -163,17 +173,34 @@ namespace MailTrayNotifier
         }
 
         /// <summary>
-        /// 폴링 시작/중지 토글
+        /// 폴링 시작/중지 토글 (IsRefreshEnabled 값도 함께 변경)
         /// </summary>
-        private void TogglePolling()
+        private async void TogglePolling()
         {
-            if (_mailPollingService.IsRunning)
+            try
             {
-                _mailPollingService.Stop();
+                var collection = await _settingsService.LoadCollectionAsync();
+
+                // IsRefreshEnabled 값을 토글
+                collection.IsRefreshEnabled = !collection.IsRefreshEnabled;
+
+                // 설정 저장
+                await _settingsService.SaveCollectionAsync(collection);
+
+                // 폴링 서비스에 적용 (자동으로 시작/중지됨)
+                _mailPollingService.ApplySettings(collection);
             }
-            else
+            catch (Exception)
             {
-                _mailPollingService.Start();
+                // 오류 발생 시 기존 방식으로 fallback
+                if (_mailPollingService.IsRunning)
+                {
+                    _mailPollingService.Stop();
+                }
+                else
+                {
+                    _mailPollingService.Start();
+                }
             }
         }
 
@@ -184,21 +211,7 @@ namespace MailTrayNotifier
         {
             Dispatcher.Invoke(() =>
             {
-                if (_toggleMenuItem is not null)
-                {
-                    _toggleMenuItem.Header = isRunning ? "메일 알림 중지" : "메일 알림 시작";
-                    // 실행 중이 아닐 때는 설정 유효성에 따라 활성화
-                    _toggleMenuItem.IsEnabled = isRunning || _mailPollingService.HasValidSettings;
-                }
-
-
-                if (_trayIcon is not null)
-                {
-                    _trayIcon.Icon = isRunning ? (_startIcon ?? SystemIcons.Application) : (_stopIcon ?? SystemIcons.Application);
-                    _trayIcon.ToolTipText = isRunning
-                        ? "메일 알림 - 실행 중"
-                        : (_mailPollingService.HasValidSettings ? "메일 알림 - 중지됨" : "메일 알림 - 설정 필요");
-                }
+                UpdateTrayUI();
             });
         }
 
@@ -209,15 +222,7 @@ namespace MailTrayNotifier
         {
             Dispatcher.Invoke(() =>
             {
-                if (_toggleMenuItem is not null && !_mailPollingService.IsRunning && _mailPollingService.IsRefreshEnabled)
-                {
-                    _toggleMenuItem.IsEnabled = isValid;
-                }
-
-                if (_trayIcon is not null && !_mailPollingService.IsRunning)
-                {
-                    _trayIcon.ToolTipText = isValid ? "메일 알림 - 중지됨" : "메일 알림 - 설정 필요";
-                }
+                UpdateTrayUI();
             });
         }
 
@@ -228,26 +233,61 @@ namespace MailTrayNotifier
         {
             Dispatcher.Invoke(() =>
             {
-                var visibility = isEnabled ? Visibility.Visible : Visibility.Collapsed;
-
-                if (_toggleMenuItem is not null)
-                {
-                    _toggleMenuItem.Visibility = visibility;
-                    _toggleMenuItem.IsEnabled = isEnabled && _mailPollingService.HasValidSettings;
-                }
-
-                if (_toggleMenuSeparator is not null)
-                {
-                    _toggleMenuSeparator.Visibility = visibility;
-                }
-
-                if (_trayIcon is not null && !_mailPollingService.IsRunning)
-                {
-                    _trayIcon.ToolTipText = isEnabled
-                        ? (_mailPollingService.HasValidSettings ? "메일 알림 - 중지됨" : "메일 알림 - 설정 필요")
-                        : "메일 알림";
-                }
+                UpdateTrayUI();
             });
+        }
+
+        /// <summary>
+        /// 트레이 UI 통합 업데이트 (IsRefreshEnabled 상태 반영)
+        /// </summary>
+        private void UpdateTrayUI()
+        {
+            var isRefreshEnabled = _mailPollingService.IsRefreshEnabled;
+            var isRunning = _mailPollingService.IsRunning;
+            var hasValidSettings = _mailPollingService.HasValidSettings;
+
+            // 메뉴 항목 업데이트
+            if (_toggleMenuItem is not null)
+            {
+                var menuVisibility = isRefreshEnabled ? Visibility.Visible : Visibility.Collapsed;
+                _toggleMenuItem.Visibility = menuVisibility;
+                _toggleMenuItem.Header = isRunning ? "메일 알림 중지" : "메일 알림 시작";
+                _toggleMenuItem.IsEnabled = isRefreshEnabled && (isRunning || hasValidSettings);
+            }
+
+            if (_toggleMenuSeparator is not null)
+            {
+                _toggleMenuSeparator.Visibility = isRefreshEnabled ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            // 트레이 아이콘 및 툴팁 업데이트 (IsRefreshEnabled 상태 반영)
+            if (_trayIcon is not null)
+            {
+                // IsRefreshEnabled가 false이면 항상 중지 아이콘 표시
+                var effectivelyRunning = isRefreshEnabled && isRunning;
+
+                _trayIcon.Icon = effectivelyRunning ? (_startIcon ?? SystemIcons.Application) : (_stopIcon ?? SystemIcons.Application);
+
+                _trayIcon.ToolTipText = GetToolTipText(isRefreshEnabled, isRunning, hasValidSettings);
+            }
+        }
+
+        /// <summary>
+        /// 툴팁 텍스트 생성
+        /// </summary>
+        private static string GetToolTipText(bool isRefreshEnabled, bool isRunning, bool hasValidSettings)
+        {
+            if (!isRefreshEnabled)
+            {
+                return "메일 알림 - 비활성화됨";
+            }
+
+            if (isRunning)
+            {
+                return "메일 알림 - 실행 중";
+            }
+
+            return hasValidSettings ? "메일 알림 - 중지됨" : "메일 알림 - 설정 필요";
         }
 
         /// <summary>
@@ -294,8 +334,8 @@ namespace MailTrayNotifier
             _notificationService.Initialize();
             _notificationService.SaveUidsRequested += OnSaveUidsRequested;
 
-            var settings = await _settingsService.LoadAsync();
-            _mailPollingService.ApplySettings(settings);
+            var collection = await _settingsService.LoadCollectionAsync();
+            _mailPollingService.ApplySettings(collection);
         }
 
         /// <summary>
@@ -314,6 +354,7 @@ namespace MailTrayNotifier
             }
             catch (Exception ex)
             {
+                Debug.WriteLine($"UID 저장 실패 [{accountKey}]: {ex.Message}");
             }
         }
 

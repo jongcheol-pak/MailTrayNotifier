@@ -1,5 +1,242 @@
 # 작업 노트
 
+## 상세 로그
+- [2026-02 작업 로그](docs/notes/2026-02.md)
+
+## 미해결 이슈
+- NotificationService.cs에 CS0168 경고 6건 (사용되지 않는 변수)
+
+## 주의 사항
+- 예외 래핑 시 반드시 원본 예외를 InnerException으로 전달할 것
+- 락을 이미 보유한 상태에서 같은 락을 획득하는 메서드를 호출하지 말 것 (데드락)
+- async 메서드에서 동기 File I/O를 사용하지 말 것
+- fire-and-forget 호출에는 반드시 예외 핸들러를 추가할 것
+- 파일은 반드시 UTF-8로 저장할 것
+
+---
+
+## 최근 변경 요약
+
+### 2026-02-07 (MailPollingService 2건 버그 수정)
+- [심각] RunAccountPollingAsync: 초기 즉시 확인에 개별 try-catch 래핑, 일시적 오류 시 폴링 루프 진입 보장
+- [중간] StartAllAccountPolling: TryAdd를 Task 시작 전으로 이동하여 경쟁 상태 해소
+- 검증: 빌드 성공 (오류 0건), dotnet format 완료
+
+### 2026-02-07 (코드 검토 이슈 전체 수정)
+- [심각] MailClientService: InnerException 보존하여 일시적 오류 분류 정상화
+- [심각] MailPollingService: 폴링 루프 내부 try-catch로 일시적 오류 시 영구 중지 방지
+- [심각] MailStateStore: SaveAsync 데드락 수정 (LoadFromCacheOrFileAsync 추출)
+- [중간] SettingsService: 동기 File I/O -> 실제 비동기 I/O 적용
+- [중간] App.xaml.cs, SettingsViewModel.cs: fire-and-forget 예외 처리 보강
+- [중간] App.xaml.cs: 빈 예외 핸들러에 Debug.WriteLine 진단 추가
+- [낮음] AccountBackup.cs, MailConstants.cs: 깨진 한글 주석 UTF-8로 재작성
+- 검증: 빌드 성공 (오류 0건), dotnet format 완료
+
+---
+
+## 2026-02-07 (계정 편집 모드 기능 추가)
+
+### 수행한 작업 요약
+- 계정별 수정/취소/저장 버튼 추가
+- 기본적으로는 모든 필드 읽기 전용 (편집 불가)
+- 수정 버튼 클릭 시 편집 모드 진입
+- 취소 버튼 클릭 시 이전 값으로 복원
+- 저장 버튼 클릭 시 편집 모드 종료
+
+### 변경된 파일 목록
+- `ViewModels/MailAccountViewModel.cs` (IsEditMode 속성, BeginEdit/CancelEdit/EndEdit 메서드, 백업 필드 추가)
+- `ViewModels/SettingsViewModel.cs` (InitializeAsync, SaveAsync에서 편집 모드 종료 로직 추가)
+- `Views/MailSettingsPage.xaml` (모든 필드에 IsEditMode 바인딩, 수정/취소/저장 버튼 추가)
+- `Views/MailSettingsPage.xaml.cs` (버튼 클릭 이벤트 핸들러 추가)
+
+### 변경 내용
+
+#### 1. ViewModel 변경사항
+- **IsEditMode 속성**: 편집 모드 여부
+- **백업 필드**: 취소 시 복원을 위한 모든 필드의 백업 (_backupPop3Server 등)
+- **BeginEdit()**: 편집 모드 진입 + 현재 값 백업
+- **CancelEdit()**: 백업된 값으로 복원 + 모든 속성 변경 알림 + 편집 모드 종료
+- **EndEdit()**: 편집 모드 종료 (이미 변경된 값 유지)
+- 새 계정 생성 시 자동으로 편집 모드 시작
+
+#### 2. SettingsViewModel 변경사항
+- **InitializeAsync()**: 기존 계정 로드 시 편집 모드 종료 상태로 설정
+- **SaveAsync()**: 저장 전 모든 계정의 편집 모드 종료
+
+#### 3. UI 변경사항
+- 모든 TextBox, PasswordBox, CheckBox에 `IsEnabled="{Binding IsEditMode}"` 바인딩
+- **버튼 그룹**:
+  - 편집 모드가 아닐 때: "수정", "계정 삭제" 버튼 표시
+  - 편집 모드일 때: "취소", "저장" 버튼 표시
+  - DataTrigger로 IsEditMode에 따라 버튼 표시/숨김 제어
+
+#### 4. 코드 비하인드 변경사항
+- **EditAccount_Click**: 계정.BeginEdit() 호출
+- **CancelEdit_Click**: 계정.CancelEdit() 호출
+- **SaveEdit_Click**: 계정.EndEdit() 호출
+
+### UI 동작
+- **기본 상태**: 모든 필드가 읽기 전용, "수정"과 "계정 삭제" 버튼 표시
+- **수정 버튼 클릭**: 편집 모드 진입, 모든 필드 편집 가능, "취소"와 "저장" 버튼 표시
+- **취소 버튼 클릭**: 편집 전 값으로 복원, 편집 모드 종료
+- **저장 버튼 클릭**: 현재 값으로 저장, 편집 모드 종료
+- **새 계정 추가**: 자동으로 편집 모드 시작
+
+### 검증 결과
+- 빌드: 성공 (경고 12건, 오류 0건)
+- LSP 진단: 오류 없음
+- dotnet format: 완료
+
+---
+
+## 2026-02-07 (계정별 활성화/비활성화 및 계정 이름 편집 기능 추가)
+
+### 수행한 작업 요약
+- 각 계정별로 ToggleSwitch로 활성화/비활성화 설정 가능
+- Expander 헤더에서 계정 이름 직접 편집 가능
+- 계정 이름 필드를 내부 설정에도 추가
+
+### 변경된 파일 목록
+- `Models/MailSettings.cs` (IsEnabled, AccountName 속성 추가)
+- `ViewModels/MailAccountViewModel.cs` (IsEnabled, AccountName 속성 추가, DisplayName 동적 업데이트)
+- `Services/MailPollingService.cs` (IsEnabled 확인 로직 추가)
+- `Views/MailSettingsPage.xaml` (Expander Header 커스터마이징, 계정 이름 필드 추가)
+
+### 변경 내용
+
+#### 1. 모델 변경사항
+- `MailSettings.IsEnabled`: 계정 활성화 여부 (기본값: true)
+- `MailSettings.AccountName`: 사용자 지정 계정 이름
+
+#### 2. ViewModel 변경사항
+- `MailAccountViewModel.IsEnabled`: ToggleSwitch 바인딩
+- `MailAccountViewModel.AccountName`: 계정 이름 (변경 시 DisplayName 자동 업데이트)
+- `DisplayName` 로직:
+  1. AccountName이 있으면 사용
+  2. 없으면 UserId @ Pop3Server 형식
+  3. 둘 다 없으면 "새 계정"
+
+#### 3. Service 변경사항
+- `MailPollingService.StartAllAccountPolling()`:
+  - `!account.IsEnabled` 확인 후 비활성화된 계정은 폴링 제외
+
+#### 4. UI 변경사항
+- **Expander Header 커스터마이징**:
+  - 좌측: 계정 이름 TextBox (IsExpanded=true일 때만 편집 가능)
+  - 우측: ToggleSwitch (계정 활성화/비활성화)
+- **계정 설정 내부**:
+  - "계정 이름(선택)" 필드 추가
+
+### UI 동작
+- Expander가 접힌 상태: 계정 이름 표시 (읽기 전용처럼 보임)
+- Expander가 펼쳐진 상태: 계정 이름 TextBox 편집 가능
+- ToggleSwitch off: 해당 계정 폴링 중지 (다른 계정은 계속 동작)
+
+### 검증 결과
+- 빌드: 성공 (경고 12건, 오류 0건)
+- LSP 진단: 오류 없음
+- dotnet format: 완료
+
+---
+
+## 2026-02-07 (다중 메일 계정 지원 구현)
+
+### 수행한 작업 요약
+- 단일 메일 계정만 지원하던 것을 최대 5개의 다중 계정으로 확장
+- 레거시 단일 계정 설정 자동 마이그레이션 기능 추가
+- 각 계정별 독립적인 병렬 폴링 구현
+
+### 변경된 파일 목록
+
+#### 신규 생성
+- `Models/MailSettingsCollection.cs` (다중 계정 컬렉션 모델)
+- `ViewModels/MailAccountViewModel.cs` (개별 계정 ViewModel)
+
+#### 수정
+- `ViewModels/SettingsViewModel.cs` (ObservableCollection, Add/RemoveAccountCommand)
+- `Services/SettingsService.cs` (LoadCollectionAsync/SaveCollectionAsync, 레거시 마이그레이션)
+- `Services/MailPollingService.cs` (다중 계정 병렬 폴링, ConcurrentDictionary)
+- `Views/MailSettingsPage.xaml` (ItemsControl + Expander 구조)
+- `App.xaml.cs` (LoadCollectionAsync 호출로 변경)
+- `README.md` (다중 계정 지원 설명 추가)
+
+### 변경 내용
+
+#### 1. 모델 구조 변경
+- `MailSettingsCollection`: 다중 계정 컨테이너 (IsRefreshEnabled + Accounts List)
+- `MailSettings`: 개별 계정 모델 (기존 유지, 하위 호환성)
+- JSON 구조: 단일 객체 → Accounts 배열
+
+#### 2. Service 변경사항
+- **SettingsService**:
+  - `LoadCollectionAsync()`: 신규 다중 계정 로드 + 레거시 자동 마이그레이션
+  - `SaveCollectionAsync()`: 다중 계정 저장 (비밀번호 DPAPI 암호화 유지)
+  - 레거시 단일 계정 형식 감지 시 자동 변환
+
+- **MailPollingService**:
+  - 각 계정별로 독립적인 `PeriodicTimer` 사용
+  - `ConcurrentDictionary<string, CancellationTokenSource>`로 계정별 폴링 관리
+  - 계정 추가/제거 시 해당 계정만 동적으로 시작/중지
+  - 영구적 오류 발생 시 해당 계정만 중지 (다른 계정은 계속 동작)
+
+#### 3. ViewModel 변경사항
+- **SettingsViewModel**:
+  - 단일 속성들(Pop3Server, UserId 등) 제거
+  - `ObservableCollection<MailAccountViewModel> Accounts` 추가
+  - `AddAccountCommand`: 계정 추가 (최대 5개 제한)
+  - `RemoveAccountCommand`: 계정 삭제 (확인 메시지 박스)
+  - 유효성 검사: 최소 1개 계정 필수
+
+- **MailAccountViewModel**:
+  - 개별 계정 설정 래핑
+  - `DisplayName`: "UserId @ Pop3Server" 형식 표시
+  - `IsExpanded`: UI Expander 확장 상태 (첫 번째 계정만 true)
+
+#### 4. UI 변경사항
+- `ItemsControl` + `Expander`로 계정 카드 표시
+- "계정 추가" 버튼으로 새 계정 생성
+- 각 계정 카드 내에 "계정 삭제" 버튼
+- 첫 번째 계정만 기본적으로 펼쳐진 상태
+
+### 레거시 마이그레이션 동작
+```
+기존 settings.json:
+{
+  "IsRefreshEnabled": true,
+  "Pop3Server": "pop.example.com",
+  "UserId": "user@example.com"
+}
+
+→ 자동 변환됨:
+
+{
+  "IsRefreshEnabled": true,
+  "Accounts": [
+    {
+      "Pop3Server": "pop.example.com",
+      "UserId": "user@example.com"
+    }
+  ]
+}
+```
+
+### 검증 결과
+- 빌드: 성공 (경고 12건, 오류 0건)
+  - 경고는 기존 코드의 사용하지 않는 변수 (CS0168)
+- LSP 진단: 오류 없음
+- dotnet format: 완료
+
+### 제한사항
+- 최대 5개 계정까지 추가 가능 (UI 복잡도 및 리소스 관리)
+- 각 계정별로 독립적인 폴링 주기 설정 가능
+
+### 동일 실수를 반복하지 않도록 참고
+- WPF-UI에는 `Expander` 컨트롤이 없음 (기본 WPF `Expander` 사용)
+- 다중 계정 구현 시 각 계정별로 독립적인 `CancellationTokenSource` 관리 필요
+- 레거시 데이터 마이그레이션은 앱 시작 시 1회 자동 수행되도록 구현
+
+---
+
 ## 2026-01-26 (초기화 버튼 기능 추가)
 
 ### 수행한 작업 요약

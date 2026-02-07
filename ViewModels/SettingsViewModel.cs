@@ -1,6 +1,8 @@
+using System.Collections.ObjectModel;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MailTrayNotifier.Constants;
 using MailTrayNotifier.Models;
 using MailTrayNotifier.Services;
 using Microsoft.Win32;
@@ -8,9 +10,9 @@ using Microsoft.Win32;
 namespace MailTrayNotifier.ViewModels
 {
     /// <summary>
-    /// 설정 화면 ViewModel
+    /// 설정 화면 ViewModel (다중 계정 지원)
     /// </summary>
-    public partial class SettingsViewModel : ObservableObject
+    public partial class SettingsViewModel : ObservableObject, IDisposable
     {
         private readonly SettingsService _settingsService;
         private readonly MailPollingService _mailPollingService;
@@ -36,18 +38,13 @@ namespace MailTrayNotifier.ViewModels
             _mailPollingService = mailPollingService;
             _mailClientService = mailClientService;
             _mailStateStore = mailStateStore;
+
+            // 메일 폴링 서비스의 계정별 오류 이벤트 구독
+            _mailPollingService.AccountErrorOccurred += OnAccountErrorOccurred;
+            _mailPollingService.AccountErrorCleared += OnAccountErrorCleared;
         }
 
         private bool _isRefreshEnabled = true;
-        private string _pop3Server = string.Empty;
-        private int _pop3Port = 995;
-        private string _smtpServer = string.Empty;
-        private int _smtpPort = 465;
-        private bool _useSsl = true;
-        private string _userId = string.Empty;
-        private string _password = string.Empty;
-        private int _refreshMinutes = 5;
-        private string _mailWebUrl = string.Empty;
 
         /// <summary>
         /// 새로고침 기능 사용 여부 (변경 시 즉시 저장 및 적용)
@@ -65,119 +62,34 @@ namespace MailTrayNotifier.ViewModels
         }
 
         /// <summary>
-        /// IsRefreshEnabled 값만 즉시 저장 및 적용
+        /// 메일 계정 목록
+        /// </summary>
+        public ObservableCollection<MailAccountViewModel> Accounts { get; } = new();
+
+        /// <summary>
+        /// 계정 개수 표시 텍스트 (예: "3/{MailConstants.MaxAccounts}")
+        /// </summary>
+        public string AccountCountText => $"{Accounts.Count}/{MailConstants.MaxAccounts}";
+
+        /// <summary>
+        /// IsRefreshEnabled 값만 즉시 저장 및 적용 (폴링 시작/중지 포함)
         /// </summary>
         private async Task SaveIsRefreshEnabledAsync(bool isEnabled)
         {
-            var settings = await _settingsService.LoadAsync();
-            settings.IsRefreshEnabled = isEnabled;
-            await _settingsService.SaveAsync(settings);
-            _mailPollingService.ApplySettings(settings);
-        }
+            var collection = await _settingsService.LoadCollectionAsync();
+            collection.IsRefreshEnabled = isEnabled;
+            await _settingsService.SaveCollectionAsync(collection);
+            _mailPollingService.ApplySettings(collection);
 
-        public string Pop3Server
-        {
-            get => _pop3Server;
-            set => SetProperty(ref _pop3Server, value);
-        }
-
-        public int Pop3Port
-        {
-            get => _pop3Port;
-            set => SetProperty(ref _pop3Port, value);
-        }
-
-        /// <summary>
-        /// POP3 포트 텍스트 (TextBox 바인딩용)
-        /// </summary>
-        public string Pop3PortText
-        {
-            get => _pop3Port.ToString();
-            set
+            // IsRefreshEnabled 값에 따라 메일 폴링 시작/중지
+            if (isEnabled)
             {
-                if (int.TryParse(value, out var port) && port > 0)
-                {
-                    Pop3Port = port;
-                }
-                OnPropertyChanged();
+                _mailPollingService.Start();
             }
-        }
-
-        public string SmtpServer
-        {
-            get => _smtpServer;
-            set => SetProperty(ref _smtpServer, value);
-        }
-
-        public int SmtpPort
-        {
-            get => _smtpPort;
-            set => SetProperty(ref _smtpPort, value);
-        }
-
-        /// <summary>
-        /// SMTP 포트 텍스트 (TextBox 바인딩용)
-        /// </summary>
-        public string SmtpPortText
-        {
-            get => _smtpPort.ToString();
-            set
+            else
             {
-                if (int.TryParse(value, out var port) && port > 0)
-                {
-                    SmtpPort = port;
-                }
-                OnPropertyChanged();
+                _mailPollingService.Stop();
             }
-        }
-
-        public bool UseSsl
-        {
-            get => _useSsl;
-            set => SetProperty(ref _useSsl, value);
-        }
-
-        public string UserId
-        {
-            get => _userId;
-            set => SetProperty(ref _userId, value);
-        }
-
-        public string Password
-        {
-            get => _password;
-            set => SetProperty(ref _password, value);
-        }
-
-        public int RefreshMinutes
-        {
-            get => _refreshMinutes;
-            set => SetProperty(ref _refreshMinutes, value);
-        }
-
-        /// <summary>
-        /// 새로고침 간격 텍스트 (TextBox 바인딩용)
-        /// </summary>
-        public string RefreshMinutesText
-        {
-            get => _refreshMinutes.ToString();
-            set
-            {
-                if (int.TryParse(value, out var minutes) && minutes > 0)
-                {
-                    RefreshMinutes = minutes;
-                }
-                OnPropertyChanged();
-            }
-        }
-
-        /// <summary>
-        /// 이메일 웹사이트 주소 (선택)
-        /// </summary>
-        public string MailWebUrl
-        {
-            get => _mailWebUrl;
-            set => SetProperty(ref _mailWebUrl, value);
         }
 
         public bool RunAtStartup
@@ -215,7 +127,7 @@ namespace MailTrayNotifier.ViewModels
             }
         }
 
-        public string LicenseInfo => 
+        public string LicenseInfo =>
 @"CommunityToolkit.Mvvm (MIT)
 Hardcodet.NotifyIcon.Wpf (MIT)
 Microsoft.Toolkit.Uwp.Notifications (MIT)
@@ -224,22 +136,228 @@ WPF-UI (MIT)";
 
         public async Task InitializeAsync()
         {
-            var settings = await _settingsService.LoadAsync();
-            IsRefreshEnabled = settings.IsRefreshEnabled;
-            Pop3Server = settings.Pop3Server;
-            Pop3Port = settings.Pop3Port;
-            SmtpServer = settings.SmtpServer;
-            SmtpPort = settings.SmtpPort;
-            UseSsl = settings.UseSsl;
-            UserId = settings.UserId;
-            Password = settings.Password;
-            RefreshMinutes = settings.RefreshMinutes;
-            MailWebUrl = settings.MailWebUrl;
-            
+            var collection = await _settingsService.LoadCollectionAsync();
+            IsRefreshEnabled = collection.IsRefreshEnabled;
+
+            Accounts.Clear();
+            for (int i = 0; i < collection.Accounts.Count; i++)
+            {
+                var accountVm = new MailAccountViewModel(collection.Accounts[i]);
+                // 첫 번째 계정만 펼쳐진 상태로 (이벤트 발생 없이)
+                accountVm.SetIsExpandedSilently(i == 0);
+                // 기존 계정은 편집 모드 종료 상태로
+                accountVm.EndEdit();
+                // IsEnabled 변경 이벤트 구독
+                accountVm.EnabledChanged += OnAccountEnabledChanged;
+                // Expander 확장 상태 변경 이벤트 구독
+                accountVm.ExpandedChanged += OnAccountExpandedChanged;
+                Accounts.Add(accountVm);
+            }
+
             _isInitialized = true;
-            
+
+            OnPropertyChanged(nameof(AccountCountText));
+
             // Notify startup property might have changed externally or just to be sure UI syncs
             OnPropertyChanged(nameof(RunAtStartup));
+        }
+
+        /// <summary>
+        /// 계정 추가 명령
+        /// </summary>
+        [RelayCommand]
+        private void AddAccount()
+        {
+            if (Accounts.Count >= MailConstants.MaxAccounts)
+            {
+                System.Windows.MessageBox.Show(
+                    $"최대 {MailConstants.MaxAccounts}개까지 계정을 추가할 수 있습니다.",
+                    "계정 추가 제한",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+                return;
+            }
+
+            var newAccount = new MailAccountViewModel
+            {
+                IsExpanded = true  // 새 계정은 펼쳐진 상태로
+            };
+
+            // IsEnabled 변경 이벤트 구독
+            newAccount.EnabledChanged += OnAccountEnabledChanged;
+            // Expander 확장 상태 변경 이벤트 구독  
+            newAccount.ExpandedChanged += OnAccountExpandedChanged;
+
+            // 다른 계정들은 모두 접기 (이벤트 발생 없이)
+            foreach (var account in Accounts)
+            {
+                account.SetIsExpandedSilently(false);
+            }
+
+            Accounts.Add(newAccount);
+            // 새 계정을 펼친 상태로 설정 (이미 IsExpanded = true로 기본 설정됨)
+            OnPropertyChanged(nameof(AccountCountText));
+        }
+
+        /// <summary>
+        /// 계정 삭제 명령
+        /// </summary>
+        [RelayCommand]
+        private void RemoveAccount(MailAccountViewModel? account)
+        {
+            if (account is null)
+            {
+                return;
+            }
+
+            var result = System.Windows.MessageBox.Show(
+                $"'{account.DisplayName}' 계정을 삭제하시겠습니까?",
+                "계정 삭제 확인",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Question);
+
+            if (result != System.Windows.MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            // 이벤트 구독 해제
+            account.EnabledChanged -= OnAccountEnabledChanged;
+            account.ExpandedChanged -= OnAccountExpandedChanged;
+
+            Accounts.Remove(account);
+            OnPropertyChanged(nameof(AccountCountText));
+
+            // 기존 계정이 삭제된 경우에만 저장 (새 계정은 아직 저장된 적 없음)
+            if (!account.IsNewAccount)
+            {
+                // 해당 계정의 메일 상태도 삭제
+                var accountKey = account.ToMailSettings().GetAccountKey();
+                _mailStateStore.ClearAccount(accountKey);
+
+                _ = SaveAllAccountsAsync().ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"계정 삭제 후 저장 실패: {t.Exception?.GetBaseException().Message}");
+                    }
+                }, TaskScheduler.Default);
+            }
+        }
+
+        /// <summary>
+        /// 개별 계정 저장 (검증 후)
+        /// </summary>
+        public async Task<bool> SaveAccountAsync(MailAccountViewModel account)
+        {
+            // 계정 이름 공백 제거
+            if (!string.IsNullOrWhiteSpace(account.AccountName))
+            {
+                account.AccountName = account.AccountName.Trim();
+            }
+
+            // 계정 이름 중복 확인
+            var nameValidationError = ValidateAccountName(account.AccountName, account);
+            if (nameValidationError != null && !nameValidationError.Contains("공백이 제거됩니다"))
+            {
+                System.Windows.MessageBox.Show(
+                    nameValidationError,
+                    "계정 이름 오류",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+                return false;
+            }
+
+            // 필수 입력 값 검증
+            var missingFields = account.GetMissingRequiredFields();
+            if (missingFields.Count > 0)
+            {
+                System.Windows.MessageBox.Show(
+                    $"다음 항목을 입력해주세요:\n\n• {string.Join("\n• ", missingFields)}",
+                    "입력 오류",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+                return false;
+            }
+
+            // 웹사이트 주소 검증 (선택 사항이지만 입력한 경우 유효성 검사)
+            if (!string.IsNullOrWhiteSpace(account.MailWebUrl))
+            {
+                if (!Uri.TryCreate(account.MailWebUrl, UriKind.Absolute, out var uri) ||
+                    (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                {
+                    System.Windows.MessageBox.Show(
+                        "이메일 사이트 주소가 올바르지 않습니다.\n예: https://mail.example.com",
+                        "입력 오류",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Warning);
+                    return false;
+                }
+            }
+
+            // 편집 모드 종료
+            account.EndEdit();
+
+            // 모든 계정을 settings.json에 저장
+            await SaveAllAccountsAsync();
+
+            return true;
+        }
+
+        /// <summary>
+        /// 모든 계정을 settings.json에 저장
+        /// </summary>
+        private async Task SaveAllAccountsAsync()
+        {
+            var collection = new MailSettingsCollection
+            {
+                IsRefreshEnabled = IsRefreshEnabled,
+                Accounts = Accounts
+                    .Where(a => a.HasRequiredValues())
+                    .Select(a => a.ToMailSettings())
+                    .ToList()
+            };
+
+            await _settingsService.SaveCollectionAsync(collection);
+            _mailPollingService.ApplySettings(collection);
+        }
+
+        /// <summary>
+        /// 계정 편집 취소 처리
+        /// </summary>
+        public void CancelAccountEdit(MailAccountViewModel account)
+        {
+            if (account.IsNewAccount)
+            {
+                // 새 계정인 경우 목록에서 제거
+                account.EnabledChanged -= OnAccountEnabledChanged;
+                Accounts.Remove(account);
+                OnPropertyChanged(nameof(AccountCountText));
+            }
+            else
+            {
+                // 기존 계정인 경우 원래 값으로 복원
+                account.CancelEdit();
+            }
+        }
+
+        /// <summary>
+        /// 계정의 활성화 상태 변경 시 호출 (즉시 저장)
+        /// </summary>
+        private void OnAccountEnabledChanged(MailAccountViewModel account)
+        {
+            // 새 계정이 아닌 경우에만 즉시 저장
+            if (!account.IsNewAccount && _isInitialized)
+            {
+                System.Diagnostics.Debug.WriteLine($"ToggleSwitch changed for account {account.DisplayName}: {account.IsEnabled}");
+                _ = SaveAllAccountsAsync().ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"계정 활성화 상태 저장 실패: {t.Exception?.GetBaseException().Message}");
+                    }
+                }, TaskScheduler.Default);
+            }
         }
 
         /// <summary>
@@ -247,41 +365,93 @@ WPF-UI (MIT)";
         /// </summary>
         private string? ValidateRequiredFields()
         {
-            var missingFields = new List<string>();
+            var validAccounts = Accounts.Where(a => a.HasRequiredValues()).ToList();
 
-            if (string.IsNullOrWhiteSpace(Pop3Server))
+            if (validAccounts.Count == 0)
             {
-                missingFields.Add("POP3 서버");
+                return "최소 하나 이상의 계정을 설정해야 합니다.\n\n필수 항목:\n• POP3 서버\n• 아이디\n• 비밀번호\n• 동기화 시간";
             }
 
-            if (string.IsNullOrWhiteSpace(UserId))
-            {
-                missingFields.Add("아이디");
-            }
+            var errors = new List<string>();
 
-            if (string.IsNullOrWhiteSpace(Password))
+            // 계정 이름 중복 검사 먼저 수행
+            var accountNamesUsed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < Accounts.Count; i++)
             {
-                missingFields.Add("비밀번호");
-            }
+                var account = Accounts[i];
 
-            if (RefreshMinutes <= 0)
-            {
-                missingFields.Add("동기화 시간");
-            }
-
-            // 웹사이트 주소 검증 (선택 사항이지만 입력한 경우 유효성 검사)
-            if (!string.IsNullOrWhiteSpace(MailWebUrl))
-            {
-                if (!Uri.TryCreate(MailWebUrl, UriKind.Absolute, out var uri) ||
-                    (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                // 빈 계정은 건너뜀
+                if (string.IsNullOrWhiteSpace(account.UserId) &&
+                    string.IsNullOrWhiteSpace(account.Pop3Server) &&
+                    string.IsNullOrWhiteSpace(account.Password) &&
+                    string.IsNullOrWhiteSpace(account.AccountName))
                 {
-                    return "이메일 사이트 주소가 올바르지 않습니다.\n\n예: https://mail.example.com";
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(account.AccountName))
+                {
+                    var trimmedName = account.AccountName.Trim();
+                    if (!accountNamesUsed.Add(trimmedName))
+                    {
+                        errors.Add($"계정 '{account.DisplayName}': 중복된 계정 이름입니다. ('{trimmedName}')");
+                    }
                 }
             }
 
-            if (missingFields.Count > 0)
+            for (int i = 0; i < Accounts.Count; i++)
             {
-                return $"다음 항목을 입력해주세요:\n\n• {string.Join("\n• ", missingFields)}";
+                var account = Accounts[i];
+
+                // 비어있지 않은 계정만 검증
+                if (string.IsNullOrWhiteSpace(account.UserId) &&
+                    string.IsNullOrWhiteSpace(account.Pop3Server) &&
+                    string.IsNullOrWhiteSpace(account.Password))
+                {
+                    continue;
+                }
+
+                var accountErrors = new List<string>();
+
+                if (string.IsNullOrWhiteSpace(account.Pop3Server))
+                {
+                    accountErrors.Add("POP3 서버");
+                }
+
+                if (string.IsNullOrWhiteSpace(account.UserId))
+                {
+                    accountErrors.Add("아이디");
+                }
+
+                if (string.IsNullOrWhiteSpace(account.Password))
+                {
+                    accountErrors.Add("비밀번호");
+                }
+
+                if (account.RefreshMinutes <= 0)
+                {
+                    accountErrors.Add("동기화 시간");
+                }
+
+                // 웹사이트 주소 검증 (선택 사항이지만 입력한 경우 유효성 검사)
+                if (!string.IsNullOrWhiteSpace(account.MailWebUrl))
+                {
+                    if (!Uri.TryCreate(account.MailWebUrl, UriKind.Absolute, out var uri) ||
+                        (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                    {
+                        errors.Add($"계정 {i + 1}: 이메일 사이트 주소가 올바르지 않습니다.\n  예: https://mail.example.com");
+                    }
+                }
+
+                if (accountErrors.Count > 0)
+                {
+                    errors.Add($"계정 '{account.DisplayName}' 누락 항목:\n  • {string.Join("\n  • ", accountErrors)}");
+                }
+            }
+
+            if (errors.Count > 0)
+            {
+                return string.Join("\n\n", errors);
             }
 
             return null;
@@ -302,49 +472,66 @@ WPF-UI (MIT)";
                 return;
             }
 
-            var normalizedMinutes = RefreshMinutes <= 0 ? 1 : RefreshMinutes;
-            RefreshMinutes = normalizedMinutes;
-            // Update text property if it was invalid
-            OnPropertyChanged(nameof(RefreshMinutesText));
+            var collection = new MailSettingsCollection
+            {
+                IsRefreshEnabled = IsRefreshEnabled,
+                Accounts = Accounts
+                    .Where(a => a.HasRequiredValues())
+                    .Select(a => a.ToMailSettings())
+                    .ToList()
+            };
 
-            var settings = new MailSettings
-                        {
-                            IsRefreshEnabled = IsRefreshEnabled,
-                            Pop3Server = Pop3Server.Trim(),
-                            Pop3Port = Pop3Port,
-                            SmtpServer = SmtpServer.Trim(),
-                            SmtpPort = SmtpPort,
-                            UseSsl = UseSsl,
-                            UserId = UserId.Trim(),
-                            Password = Password,
-                            RefreshMinutes = normalizedMinutes,
-                            MailWebUrl = MailWebUrl.Trim()
-                        };
+            // 새로고침이 활성화된 경우에만 유효한 계정에 대해 메일 서버 접속 테스트
+            if (IsRefreshEnabled && collection.Accounts.Count > 0)
+            {
+                var testResults = new List<string>();
 
-                        // 새로고침이 활성화된 경우에만 메일 서버 접속 테스트
-                        if (IsRefreshEnabled)
-                        {
-                            try
-                            {
-                                await _mailClientService.TestConnectionAsync(settings);
-                            }
-                            catch (Exception ex)
-                            {
-                                System.Windows.MessageBox.Show(
-                                    $"메일 서버 접속에 실패했습니다.\n\n{ex.Message}",
-                                    "접속 오류",
-                                    System.Windows.MessageBoxButton.OK,
-                                    System.Windows.MessageBoxImage.Error);
-                                return;
-                            }
-                        }
+                foreach (var account in collection.Accounts)
+                {
+                    var accountViewModel = Accounts.FirstOrDefault(a => a.ToMailSettings().GetAccountKey() == account.GetAccountKey());
 
-                        await _settingsService.SaveAsync(settings);
-                        _mailPollingService.ApplySettings(settings);
-
-                        // 저장 성공 시 창 닫기
-                        CloseRequested?.Invoke();
+                    try
+                    {
+                        await _mailClientService.TestConnectionAsync(account);
+                        // 연결 성공 시 오류 상태 해제
+                        accountViewModel?.ClearError();
                     }
+                    catch (Exception ex)
+                    {
+                        // 연결 실패 시 오류 상태 설정
+                        accountViewModel?.SetError(ex.Message);
+                        testResults.Add($"• {account.UserId}@{account.Pop3Server}: {ex.Message}");
+                    }
+                }
+
+                if (testResults.Count > 0)
+                {
+                    var result = System.Windows.MessageBox.Show(
+                        $"다음 계정의 메일 서버 접속에 실패했습니다:\n\n{string.Join("\n", testResults)}\n\n계속 진행하시겠습니까?",
+                        "접속 오류",
+                        System.Windows.MessageBoxButton.YesNo,
+                        System.Windows.MessageBoxImage.Warning);
+
+                    // 사용자가 아니요를 선택하면 저장 중단
+                    if (result == System.Windows.MessageBoxResult.No)
+                    {
+                        return;
+                    }
+                }
+            }
+
+            await _settingsService.SaveCollectionAsync(collection);
+            _mailPollingService.ApplySettings(collection);
+
+            // 모든 계정의 편집 모드 종료
+            foreach (var account in Accounts)
+            {
+                account.EndEdit();
+            }
+
+            // 저장 성공 시 창 닫기
+            CloseRequested?.Invoke();
+        }
 
         [RelayCommand]
         private void Reset()
@@ -372,21 +559,8 @@ WPF-UI (MIT)";
             // 화면 설정값 초기화
             _isInitialized = false;
             IsRefreshEnabled = true;
-            Pop3Server = string.Empty;
-            Pop3Port = 995;
-            SmtpServer = string.Empty;
-            SmtpPort = 465;
-            UseSsl = true;
-            UserId = string.Empty;
-            Password = string.Empty;
-            RefreshMinutes = 5;
-            MailWebUrl = string.Empty;
+            Accounts.Clear();
             _isInitialized = true;
-
-            // 포트 텍스트 갱신
-            OnPropertyChanged(nameof(Pop3PortText));
-            OnPropertyChanged(nameof(SmtpPortText));
-            OnPropertyChanged(nameof(RefreshMinutesText));
 
             System.Windows.MessageBox.Show(
                 "초기화 완료",
@@ -394,5 +568,162 @@ WPF-UI (MIT)";
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Information);
         }
+
+        /// <summary>
+        /// 특정 계정의 오류 상태 설정
+        /// </summary>
+        public void SetAccountError(string accountKey, string errorMessage)
+        {
+            var account = FindAccountByKey(accountKey);
+            if (account != null)
+            {
+                account.SetError(errorMessage);
+            }
+        }
+
+        /// <summary>
+        /// 특정 계정의 오류 상태 해제
+        /// </summary>
+        public void ClearAccountError(string accountKey)
+        {
+            var account = FindAccountByKey(accountKey);
+            if (account != null)
+            {
+                account.ClearError();
+            }
+        }
+
+        /// <summary>
+        /// 모든 계정의 오류 상태 해제
+        /// </summary>
+        public void ClearAllAccountErrors()
+        {
+            foreach (var account in Accounts)
+            {
+                account.ClearError();
+            }
+        }
+
+        /// <summary>
+        /// 계정 이름 중복 확인 (대소문자 구분 없이, 공백 제거 후)
+        /// </summary>
+        /// <param name="accountName">확인할 계정 이름</param>
+        /// <param name="excludeAccount">제외할 계정 (수정 시)</param>
+        /// <returns>중복되면 true, 아니면 false</returns>
+        public bool IsAccountNameDuplicate(string accountName, MailAccountViewModel? excludeAccount = null)
+        {
+            if (string.IsNullOrWhiteSpace(accountName))
+            {
+                return false;
+            }
+
+            var trimmedName = accountName.Trim();
+
+            return Accounts.Any(account =>
+                account != excludeAccount &&
+                string.Equals(account.AccountName?.Trim(), trimmedName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// 유효한 계정 이름인지 확인 (공백 제거, 중복 확인)
+        /// </summary>
+        /// <param name="accountName">확인할 계정 이름</param>
+        /// <param name="excludeAccount">제외할 계정 (수정 시)</param>
+        /// <returns>유효하면 null, 아니면 오류 메시지</returns>
+        public string? ValidateAccountName(string accountName, MailAccountViewModel? excludeAccount = null)
+        {
+            if (string.IsNullOrWhiteSpace(accountName))
+            {
+                return "계정 이름을 입력해주세요.";
+            }
+
+            var trimmedName = accountName.Trim();
+
+            if (trimmedName != accountName)
+            {
+                return "계정 이름 앞뒤 공백이 제거됩니다.";
+            }
+
+            if (IsAccountNameDuplicate(trimmedName, excludeAccount))
+            {
+                return "이미 사용 중인 계정 이름입니다.";
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 계정 키로 계정 ViewModel 찾기
+        /// </summary>
+        private MailAccountViewModel? FindAccountByKey(string accountKey)
+        {
+            return Accounts.FirstOrDefault(a => a.ToMailSettings().GetAccountKey() == accountKey);
+        }
+
+        /// <summary>
+        /// 메일 폴링 서비스에서 계정 오류 발생 시 호출
+        /// </summary>
+        private void OnAccountErrorOccurred(string accountKey, string errorMessage)
+        {
+            // UI 스레드에서 실행
+            if (System.Windows.Application.Current?.Dispatcher != null)
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    SetAccountError(accountKey, errorMessage);
+                });
+            }
+        }
+
+        /// <summary>
+        /// 메일 폴링 서비스에서 계정 오류 해제 시 호출
+        /// </summary>
+        private void OnAccountErrorCleared(string accountKey)
+        {
+            // UI 스레드에서 실행
+            if (System.Windows.Application.Current?.Dispatcher != null)
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    ClearAccountError(accountKey);
+                });
+            }
+        }
+
+        /// <summary>
+        /// 계정의 Expander 확장 상태 변경 시 호출 (아코디언 스타일)
+        /// </summary>
+        private void OnAccountExpandedChanged(MailAccountViewModel expandedAccount)
+        {
+            // 해당 계정이 확장된 경우에만 다른 계정들을 닫음
+            if (expandedAccount.IsExpanded)
+            {
+                foreach (var account in Accounts)
+                {
+                    if (account != expandedAccount && account.IsExpanded)
+                    {
+                        // 이벤트 순환 호출 방지를 위해 조용히 닫기
+                        account.SetIsExpandedSilently(false);
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// 리소스 해제
+        /// </summary>
+        public void Dispose()
+        {
+            // 이벤트 구독 해제
+            _mailPollingService.AccountErrorOccurred -= OnAccountErrorOccurred;
+            _mailPollingService.AccountErrorCleared -= OnAccountErrorCleared;
+
+            // 계정 이벤트 구독 해제
+            foreach (var account in Accounts)
+            {
+                account.EnabledChanged -= OnAccountEnabledChanged;
+                account.ExpandedChanged -= OnAccountExpandedChanged;
+            }
+        }
+    }
+}

@@ -94,7 +94,7 @@ namespace MailTrayNotifier.Services
         /// <summary>
         /// 새 메일 알림 표시
         /// </summary>
-        public void ShowNewMail(IReadOnlyList<MailInfo> newMails, string accountKey, string mailWebUrl)
+        public void ShowNewMail(IReadOnlyList<MailInfo> newMails, string accountKey, string mailWebUrl, string accountName)
         {
             if (newMails.Count == 0)
             {
@@ -108,7 +108,7 @@ namespace MailTrayNotifier.Services
 
                 if (newMails.Count == 1)
                 {
-                    // 단일 메일: 상세 정보 표시
+                    // 단일 메일: 상세 정보 표시 (최대 3줄)
                     var mail = newMails[0];
                     var builder = new ToastContentBuilder()
                         .AddArgument(ActionKey, ActionMarkAsRead)
@@ -116,9 +116,9 @@ namespace MailTrayNotifier.Services
                         .AddArgument(UidsKey, uidsString)
                         .AddArgument(MailWebUrlKey, mailWebUrl ?? string.Empty)
                         .SetToastDuration(ToastDuration.Long)
-                        .AddText($"보낸 사람: {Truncate(mail.SenderDisplay, MaxSenderLength)}")
-                        .AddText($"받은 시간: {mail.Date.LocalDateTime:yyyy년 MM월 dd일 HH시 mm분}")
-                        .AddText($"새 메일: {Truncate(mail.Subject, MaxSubjectLength)}");
+                        .AddText($"[{Truncate(accountName, 20)}] 새 메일")
+                        .AddText($"{Truncate(mail.SenderDisplay, MaxSenderLength)}")
+                        .AddText($"{Truncate(mail.Subject, MaxSubjectLength)}");
 
                     // URL이 설정된 경우 버튼 추가
                     if (!string.IsNullOrWhiteSpace(mailWebUrl))
@@ -135,7 +135,7 @@ namespace MailTrayNotifier.Services
                 }
                 else
                 {
-                    // 여러 메일: 최신 메일 정보 + 총 개수
+                    // 여러 메일: 최신 메일 정보 + 총 개수 (최대 3줄)
                     var latest = newMails.MaxBy(m => m.Date) ?? newMails[0];
                     var builder = new ToastContentBuilder()
                         .AddArgument(ActionKey, ActionMarkAsRead)
@@ -143,9 +143,9 @@ namespace MailTrayNotifier.Services
                         .AddArgument(UidsKey, uidsString)
                         .AddArgument(MailWebUrlKey, mailWebUrl ?? string.Empty)
                         .SetToastDuration(ToastDuration.Long)
-                        .AddText($"새 메일 {newMails.Count}건")
-                        .AddText($"보낸 사람: {Truncate(latest.SenderDisplay, MaxSenderLength)}")
-                        .AddText($"최근: {Truncate(latest.Subject, MaxSubjectLength)}");
+                        .AddText($"[{Truncate(accountName, 20)}] 새 메일 {newMails.Count}건")
+                        .AddText($"최근: {Truncate(latest.SenderDisplay, MaxSenderLength)}")
+                        .AddText($"{Truncate(latest.Subject, MaxSubjectLength)}");
 
                     // URL이 설정된 경우 버튼 추가
                     if (!string.IsNullOrWhiteSpace(mailWebUrl))
@@ -160,27 +160,27 @@ namespace MailTrayNotifier.Services
 
                     builder.Show();
                 }
-                            }
-                            catch (Exception ex)
-                            {
-                              
-                            }
-                        }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[알림 오류] Toast 알림 표시 실패: {ex.GetType().Name} - {ex.Message}");
+            }
+        }
 
-                        public void ShowError(string message)
-                        {
-                            try
-                            {
-                                new ToastContentBuilder()
-                                    .AddText("메일 확인 오류")
-                                    .AddText(Truncate(message, 100))
-                                    .Show();
-                            }
-                            catch (Exception ex)
-                            {
-                             
-                            }
-                        }
+        public void ShowError(string message)
+        {
+            try
+            {
+                new ToastContentBuilder()
+                    .AddText("메일 확인 오류")
+                    .AddText(Truncate(message, 100))
+                    .Show();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[알림 오류] 오류 Toast 표시 실패: {ex.GetType().Name} - {ex.Message}");
+            }
+        }
 
         private static string Truncate(string? text, int maxLength)
         {
