@@ -185,7 +185,7 @@ namespace MailTrayNotifier.Services
 
                 var cts = new CancellationTokenSource();
                 _accountPollingTasks.TryAdd(accountKey, cts);
-                _ = RunAccountPollingAsync(account, cts.Token);
+                _ = RunAccountPollingAsync(account, cts);
             }
         }
 
@@ -198,9 +198,8 @@ namespace MailTrayNotifier.Services
             {
                 kvp.Value.Cancel();
                 kvp.Value.Dispose();
-
-                // 각 계정의 리소스 정리
-                CleanupAccountResources(kvp.Key);
+                // SemaphoreSlim은 여기서 해제하지 않음
+                // 비동기 태스크가 아직 락을 보유 중일 수 있으므로 Dispose()에서 정리
             }
 
             _accountPollingTasks.Clear();
@@ -243,8 +242,9 @@ namespace MailTrayNotifier.Services
         /// <summary>
         /// 개별 계정 폴링 루프
         /// </summary>
-        private async Task RunAccountPollingAsync(MailSettings account, CancellationToken cancellationToken)
+        private async Task RunAccountPollingAsync(MailSettings account, CancellationTokenSource myCts)
         {
+            var cancellationToken = myCts.Token;
             var accountKey = account.GetAccountKey();
 
             try
@@ -289,13 +289,20 @@ namespace MailTrayNotifier.Services
             }
             catch (Exception ex)
             {
-                // 영구적 오류는 해당 계정만 중지하고 전체 중지
+                // 이미 중지되었거나 새 폴링이 시작된 경우 무시
+                // (StopAllAccountPolling 호출 후 발생한 부수 예외)
+                if (!_accountPollingTasks.TryGetValue(accountKey, out var currentCts) || currentCts != myCts)
+                {
+                    return;
+                }
+
+                // 영구적 오류는 해당 계정만 중지
                 _notificationService.ShowError($"계정 '{account.UserId}@{account.Pop3Server}' 메일 확인 중 오류가 발생했습니다.\n{ex.Message}");
 
                 // 해당 계정 폴링만 중지
-                if (_accountPollingTasks.TryRemove(accountKey, out var cts))
+                if (_accountPollingTasks.TryRemove(accountKey, out var removedCts))
                 {
-                    cts.Dispose();
+                    removedCts.Dispose();
                 }
 
                 // 계정 관련 리소스 정리

@@ -16,7 +16,7 @@ namespace MailTrayNotifier.Views
         }
 
         /// <summary>
-        /// ���ڸ� �Է� ���
+        /// 숫자만 입력 허용
         /// </summary>
         private void NumericTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
@@ -24,7 +24,7 @@ namespace MailTrayNotifier.Views
         }
 
         /// <summary>
-        /// �ٿ��ֱ� �� ���ڸ� ���
+        /// 붙여넣기 시 숫자만 허용
         /// </summary>
         private void NumericTextBox_Pasting(object sender, DataObjectPastingEventArgs e)
         {

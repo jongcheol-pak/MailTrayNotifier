@@ -278,7 +278,7 @@
                                         </ui:Button>                                       
                                     </StackPanel>
 
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,12,0,0">
+                                    <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" Margin="0,12,0,0">
                                         <StackPanel.Style>
                                             <Style TargetType="StackPanel">
                                                 <Setter Property="Visibility" Value="Collapsed"/>

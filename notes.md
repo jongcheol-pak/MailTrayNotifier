@@ -12,10 +12,22 @@
 - async 메서드에서 동기 File I/O를 사용하지 말 것
 - fire-and-forget 호출에는 반드시 예외 핸들러를 추가할 것
 - 파일은 반드시 UTF-8로 저장할 것
+- 비동기 태스크가 보유 중인 리소스(SemaphoreSlim 등)를 동기 메서드에서 즉시 dispose하지 말 것
+- fire-and-forget 태스크의 오류 핸들러에서 공유 딕셔너리 항목 제거 시 자신의 항목인지 확인할 것
 
 ---
 
 ## 최근 변경 요약
+
+### 2026-02-08 (MailSettingsPage.xaml.cs 깨진 한글 주석 수정)
+- Views/MailSettingsPage.xaml.cs: 깨진 한글 주석 2건 UTF-8로 재작성
+- 검증: 빌드 성공 (경고 0건, 오류 0건), dotnet format 완료
+
+### 2026-02-08 (폴링 재시작 시 오류 알림 버그 수정)
+- [심각] StopAllAccountPolling에서 SemaphoreSlim 조기 dispose로 인한 ObjectDisposedException → 오류 알림 발생
+- [심각] 이전 태스크의 오류 핸들러가 새 태스크의 CTS를 제거/dispose하여 새 폴링도 중단
+- 수정: SemaphoreSlim 해제를 Dispose()로 이동, RunAccountPollingAsync에서 stale 태스크 검증 추가
+- 검증: 빌드 성공 (경고 0건, 오류 0건), dotnet format 완료
 
 ### 2026-02-08 (미사용 코드 삭제)
 - NotificationService.cs: CS0168 경고 수정 (`catch (Exception ex)` -> `catch (Exception)`)
