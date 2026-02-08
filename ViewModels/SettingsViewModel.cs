@@ -80,16 +80,6 @@ namespace MailTrayNotifier.ViewModels
             collection.IsRefreshEnabled = isEnabled;
             await _settingsService.SaveCollectionAsync(collection);
             _mailPollingService.ApplySettings(collection);
-
-            // IsRefreshEnabled 값에 따라 메일 폴링 시작/중지
-            if (isEnabled)
-            {
-                _mailPollingService.Start();
-            }
-            else
-            {
-                _mailPollingService.Stop();
-            }
         }
 
         public bool RunAtStartup

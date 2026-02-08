@@ -49,15 +49,5 @@ namespace MailTrayNotifier.Constants
         /// 계정별 락 대기 시간 (초)
         /// </summary>
         public const int AccountLockTimeoutSeconds = 30;
-
-        /// <summary>
-        /// 기본 POP3 포트 (비SSL)
-        /// </summary>
-        public const int DefaultPop3NonSslPort = 110;
-
-        /// <summary>
-        /// 기본 SMTP 포트 (비SSL)
-        /// </summary>
-        public const int DefaultSmtpNonSslPort = 25;
     }
 }

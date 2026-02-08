@@ -4,7 +4,7 @@
 - [2026-02 작업 로그](docs/notes/2026-02.md)
 
 ## 미해결 이슈
-- NotificationService.cs에 CS0168 경고 6건 (사용되지 않는 변수)
+- 없음
 
 ## 주의 사항
 - 예외 래핑 시 반드시 원본 예외를 InnerException으로 전달할 것
@@ -16,6 +16,21 @@
 ---
 
 ## 최근 변경 요약
+
+### 2026-02-08 (미사용 코드 삭제)
+- NotificationService.cs: CS0168 경고 수정 (`catch (Exception ex)` -> `catch (Exception)`)
+- Models/MailStateFile.cs 삭제 (미사용)
+- Helpers/PasswordBoxHelper.cs 삭제 (미사용)
+- MailConstants.cs: 미사용 상수 `DefaultPop3NonSslPort`, `DefaultSmtpNonSslPort` 삭제
+- 검증: 빌드 성공 (경고 0건, 오류 0건), dotnet format 완료
+
+### 2026-02-08 (코드 분석 이슈 5건 수정)
+- [중간] App.xaml.cs: NotificationService.SaveUidsRequested 이벤트 구독 해제 추가
+- [중간] SettingsViewModel.cs: SaveIsRefreshEnabledAsync 중복 Start/Stop 호출 제거
+- [낮음] MailStateStore.cs: Clear/ClearAccount에서 SemaphoreSlim dispose 추가
+- [낮음] MailInfo.cs: 깨진 한글 주석 UTF-8로 재작성
+- [낮음] MailPollingService.cs: ApplySettings 불필요한 else 분기 정리 (유효하지 않은 설정 시 중지)
+- 검증: 빌드 성공 (오류 0건), dotnet format 완료
 
 ### 2026-02-07 (MailPollingService 2건 버그 수정)
 - [심각] RunAccountPollingAsync: 초기 즉시 확인에 개별 try-catch 래핑, 일시적 오류 시 폴링 루프 진입 보장

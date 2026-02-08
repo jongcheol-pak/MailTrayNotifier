@@ -1,37 +1,37 @@
 namespace MailTrayNotifier.Models
 {
     /// <summary>
-    /// ¸ŞÀÏ Çì´õ Á¤º¸
+    /// ë©”ì¼ ì •ë³´ ëª¨ë¸
     /// </summary>
     public sealed record MailInfo
     {
         /// <summary>
-        /// ¸ŞÀÏ UID
+        /// ë©”ì¼ UID
         /// </summary>
         public required string Uid { get; init; }
 
         /// <summary>
-        /// º¸³½ »ç¶÷ ÀÌ¸§
+        /// ë°œì‹ ì ì´ë¦„
         /// </summary>
         public string SenderName { get; init; } = string.Empty;
 
         /// <summary>
-        /// º¸³½ »ç¶÷ ÀÌ¸ŞÀÏ
+        /// ë°œì‹ ì ì´ë©”ì¼
         /// </summary>
         public string SenderEmail { get; init; } = string.Empty;
 
         /// <summary>
-        /// Á¦¸ñ
+        /// ì œëª©
         /// </summary>
         public string Subject { get; init; } = string.Empty;
 
         /// <summary>
-        /// ¹ß¼Û ³¯Â¥/½Ã°£
+        /// ë°œì†¡ ë‚ ì§œ/ì‹œê°„
         /// </summary>
         public DateTimeOffset Date { get; init; }
 
         /// <summary>
-        /// º¸³½ »ç¶÷ Ç¥½Ã¿ë ¹®ÀÚ¿­
+        /// ë°œì‹ ì í‘œì‹œìš© ë¬¸ìì—´
         /// </summary>
         public string SenderDisplay => string.IsNullOrWhiteSpace(SenderName) ? SenderEmail : SenderName;
     }

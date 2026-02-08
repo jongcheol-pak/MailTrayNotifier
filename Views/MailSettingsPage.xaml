@@ -36,6 +36,24 @@
                     HorizontalAlignment="Right" />
             </Grid>
 
+            <TextBlock
+                Text="설정에서 알림이 OFF로 되어 있어 알림을 받을 수 없습니다. 설정에서 알림을 ON으로 설정 후 알림을 받으세요."
+                FontSize="12"
+                FontWeight="Bold"
+                TextWrapping="Wrap"
+                Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsRefreshEnabled}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
             <!-- 계정 목록 -->
             <ItemsControl ItemsSource="{Binding Accounts}" Margin="0,12,0,0">
                 <ItemsControl.ItemTemplate>
@@ -55,6 +73,7 @@
                                         Grid.Column="0"
                                         Symbol="MailWarning24"
                                         Foreground="Red"
+                                        FontSize="24"
                                         VerticalAlignment="Center"
                                         Margin="0,0,8,0"
                                         ToolTip="{Binding ErrorMessage}">
@@ -62,9 +81,37 @@
                                             <Style TargetType="ui:SymbolIcon">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding HasError}" Value="True">
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding HasError}" Value="True"/>
+                                                            <Condition Binding="{Binding DataContext.IsRefreshEnabled, RelativeSource={RelativeSource AncestorType=Page}}" Value="True"/>
+                                                        </MultiDataTrigger.Conditions>
                                                         <Setter Property="Visibility" Value="Visible"/>
-                                                    </DataTrigger>
+                                                    </MultiDataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ui:SymbolIcon.Style>
+                                    </ui:SymbolIcon>
+
+                                    <!--계정 싱크 아이콘 -->
+                                    <ui:SymbolIcon
+                                        Grid.Column="0"
+                                        Symbol="CloudSync28"    
+                                        FontSize="28"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,8,0">
+                                        <ui:SymbolIcon.Style>
+                                            <Style TargetType="ui:SymbolIcon">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding IsEnabled}" Value="True"/>
+                                                            <Condition Binding="{Binding HasError}" Value="False"/>
+                                                            <Condition Binding="{Binding DataContext.IsRefreshEnabled, RelativeSource={RelativeSource AncestorType=Page}}" Value="True"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </MultiDataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </ui:SymbolIcon.Style>
@@ -228,7 +275,37 @@
                                                     </Style.Triggers>
                                                 </Style>
                                             </ui:Button.Style>
-                                        </ui:Button>
+                                        </ui:Button>                                       
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,12,0,0">
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasError}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+
+                                        <TextBlock
+         Text="오류 : "
+         FontSize="12"
+         Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+         VerticalAlignment="Center"
+         Margin="0,0,0,2"/>
+
+                                        <TextBox
+         Text="{Binding ErrorMessage}"
+         FontSize="12"
+         Foreground="Red"
+         VerticalAlignment="Center"
+         IsReadOnly="True"
+         BorderThickness="0"
+         TextWrapping="Wrap"
+         Background="Transparent"/>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>

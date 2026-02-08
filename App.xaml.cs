@@ -38,6 +38,8 @@ namespace MailTrayNotifier
         private Separator? _toggleMenuSeparator;
         private Icon? _startIcon;
         private Icon? _stopIcon;
+        private Icon? _warningIcon;
+        private bool _hasAccountError;
 
         public App()
         {
@@ -150,6 +152,8 @@ namespace MailTrayNotifier
             _mailPollingService.SettingsValidityChanged += OnSettingsValidityChanged;
             _mailPollingService.RefreshEnabledChanged += OnRefreshEnabledChanged;
             _mailPollingService.ErrorOccurred += OnPollingErrorOccurred;
+            _mailPollingService.AccountErrorOccurred += OnAccountErrorOccurred;
+            _mailPollingService.AccountErrorCleared += OnAccountErrorCleared;
         }
 
         /// <summary>
@@ -169,6 +173,12 @@ namespace MailTrayNotifier
             if (File.Exists(stopIconPath))
             {
                 _stopIcon = new Icon(stopIconPath);
+            }
+
+            var warningIconPath = Path.Combine(basePath, "Assets", "warning.ico");
+            if (File.Exists(warningIconPath))
+            {
+                _warningIcon = new Icon(warningIconPath);
             }
         }
 
@@ -263,19 +273,33 @@ namespace MailTrayNotifier
             // 트레이 아이콘 및 툴팁 업데이트 (IsRefreshEnabled 상태 반영)
             if (_trayIcon is not null)
             {
-                // IsRefreshEnabled가 false이면 항상 중지 아이콘 표시
-                var effectivelyRunning = isRefreshEnabled && isRunning;
+                // 아이콘 상태 결정:
+                // 1. IsRefreshEnabled가 false이거나 폴링 중인 계정이 없으면 stop.ico
+                // 2. IsRefreshEnabled가 true이고 오류가 있는 계정이 있으면 warning.ico
+                // 3. IsRefreshEnabled가 true이고 모든 계정에 오류가 없으면 start.ico
+                Icon icon;
+                if (!isRefreshEnabled || !isRunning)
+                {
+                    icon = _stopIcon ?? SystemIcons.Application;
+                }
+                else if (_hasAccountError)
+                {
+                    icon = _warningIcon ?? SystemIcons.Warning;
+                }
+                else
+                {
+                    icon = _startIcon ?? SystemIcons.Application;
+                }
 
-                _trayIcon.Icon = effectivelyRunning ? (_startIcon ?? SystemIcons.Application) : (_stopIcon ?? SystemIcons.Application);
-
-                _trayIcon.ToolTipText = GetToolTipText(isRefreshEnabled, isRunning, hasValidSettings);
+                _trayIcon.Icon = icon;
+                _trayIcon.ToolTipText = GetToolTipText(isRefreshEnabled, isRunning, hasValidSettings, _hasAccountError);
             }
         }
 
         /// <summary>
         /// 툴팁 텍스트 생성
         /// </summary>
-        private static string GetToolTipText(bool isRefreshEnabled, bool isRunning, bool hasValidSettings)
+        private static string GetToolTipText(bool isRefreshEnabled, bool isRunning, bool hasValidSettings, bool hasAccountError)
         {
             if (!isRefreshEnabled)
             {
@@ -284,7 +308,7 @@ namespace MailTrayNotifier
 
             if (isRunning)
             {
-                return "메일 알림 - 실행 중";
+                return hasAccountError ? "메일 알림 - 일부 계정 오류" : "메일 알림 - 실행 중";
             }
 
             return hasValidSettings ? "메일 알림 - 중지됨" : "메일 알림 - 설정 필요";
@@ -309,6 +333,44 @@ namespace MailTrayNotifier
                     _trayIcon.ToolTipText = "메일 알림 - 오류 발생";
                 }
             });
+        }
+
+        /// <summary>
+        /// 계정별 오류 발생 시 트레이 아이콘 업데이트
+        /// </summary>
+        private void OnAccountErrorOccurred(string accountKey, string errorMessage)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                _hasAccountError = true;
+                UpdateTrayUI();
+            });
+        }
+
+        /// <summary>
+        /// 계정별 오류 해제 시 트레이 아이콘 업데이트
+        /// </summary>
+        private void OnAccountErrorCleared(string accountKey)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                // 모든 계정의 오류 상태를 확인하여 _hasAccountError 갱신
+                _hasAccountError = CheckAnyAccountHasError();
+                UpdateTrayUI();
+            });
+        }
+
+        /// <summary>
+        /// 폴링 중인 계정 중 오류가 있는지 확인
+        /// </summary>
+        private bool CheckAnyAccountHasError()
+        {
+            if (_window?.ViewModel is not ViewModels.SettingsViewModel viewModel)
+            {
+                return false;
+            }
+
+            return viewModel.Accounts.Any(a => a.HasError && a.IsEnabled);
         }
 
         /// <summary>
@@ -382,7 +444,10 @@ namespace MailTrayNotifier
             _mailPollingService.SettingsValidityChanged -= OnSettingsValidityChanged;
             _mailPollingService.RefreshEnabledChanged -= OnRefreshEnabledChanged;
             _mailPollingService.ErrorOccurred -= OnPollingErrorOccurred;
+            _mailPollingService.AccountErrorOccurred -= OnAccountErrorOccurred;
+            _mailPollingService.AccountErrorCleared -= OnAccountErrorCleared;
             _mailPollingService.Dispose();
+            _notificationService.SaveUidsRequested -= OnSaveUidsRequested;
             _notificationService.Shutdown();
             _trayIcon?.Dispose();
             _trayIcon = null;
@@ -390,6 +455,8 @@ namespace MailTrayNotifier
             _startIcon = null;
             _stopIcon?.Dispose();
             _stopIcon = null;
+            _warningIcon?.Dispose();
+            _warningIcon = null;
 
             if (_window != null)
             {

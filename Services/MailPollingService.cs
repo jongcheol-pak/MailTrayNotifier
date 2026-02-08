@@ -112,18 +112,13 @@ namespace MailTrayNotifier.Services
             }
 
             // IsRefreshEnabled 값에 따라 폴링 시작/중지
-            if (!isRefreshEnabled)
+            if (!isRefreshEnabled || !isValid)
             {
-                Stop(); // 완전 중지
-            }
-            else if (isValid) // IsRefreshEnabled가 true이고 유효한 설정이 있을 때
-            {
-                RestartAllAccountPolling(); // 설정 변경을 반영하기 위해 항상 재시작
+                Stop(); // 비활성화 또는 유효한 설정이 없으면 중지
             }
             else
             {
-                // 설정은 유효하지 않지만 IsRefreshEnabled가 true인 경우
-                RestartAllAccountPolling(); // 설정만 업데이트
+                RestartAllAccountPolling(); // 설정 변경을 반영하기 위해 재시작
             }
         }
 
@@ -230,10 +225,18 @@ namespace MailTrayNotifier.Services
 
             StartAllAccountPolling();
 
-            if (!IsRunning)
+            // 실제로 폴링 중인 계정이 있는지 확인
+            var hasActivePolling = _accountPollingTasks.Count > 0;
+
+            if (hasActivePolling && !IsRunning)
             {
                 IsRunning = true;
                 RunningStateChanged?.Invoke(true);
+            }
+            else if (!hasActivePolling && IsRunning)
+            {
+                IsRunning = false;
+                RunningStateChanged?.Invoke(false);
             }
         }
 

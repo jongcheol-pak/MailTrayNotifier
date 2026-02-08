@@ -189,6 +189,13 @@ namespace MailTrayNotifier.Services
             // 모든 캐시 제거
             _cache.Clear();
 
+            // 모든 락 해제
+            foreach (var lockItem in _locks.Values)
+            {
+                lockItem.Dispose();
+            }
+            _locks.Clear();
+
             // mail 폴더의 모든 mail_state_*.json 파일 삭제
             if (Directory.Exists(StateFolder))
             {
@@ -236,6 +243,12 @@ namespace MailTrayNotifier.Services
             finally
             {
                 accountLock.Release();
+            }
+
+            // 락 제거 및 해제
+            if (_locks.TryRemove(accountKey, out var removedLock))
+            {
+                removedLock.Dispose();
             }
         }
     }

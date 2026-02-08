@@ -85,9 +85,8 @@ namespace MailTrayNotifier.Services
                     UseShellExecute = true
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-              
             }
         }
 
