@@ -6,6 +6,7 @@ using System.Threading;
 using System.Windows.Controls;
 using Hardcodet.Wpf.TaskbarNotification;
 using MailTrayNotifier.Services;
+using MailTrayNotifier.Resources;
 
 namespace MailTrayNotifier
 {
@@ -56,7 +57,7 @@ namespace MailTrayNotifier
             _mutex = new Mutex(true, MutexName, out var isNewInstance);
             if (!isNewInstance)
             {
-                MessageBox.Show("메일 알림이 이미 실행 중입니다.", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(Strings.AlreadyRunning, Strings.AlertTitle, MessageBoxButton.OK, MessageBoxImage.Information);
                 Shutdown();
                 return;
             }
@@ -119,7 +120,7 @@ namespace MailTrayNotifier
             // 초기 상태: 숨김 (새로고침 기능 비활성화 시 숨김)
             _toggleMenuItem = new MenuItem
             {
-                Header = "메일 알림 시작",
+                Header = Strings.TrayStartPolling,
                 IsEnabled = false,
                 Visibility = Visibility.Collapsed
             };
@@ -129,11 +130,11 @@ namespace MailTrayNotifier
             _toggleMenuSeparator = new Separator { Visibility = Visibility.Collapsed };
             contextMenu.Items.Add(_toggleMenuSeparator);
 
-            var settingsItem = new MenuItem { Header = "설정" };
+            var settingsItem = new MenuItem { Header = Strings.TraySettings };
             settingsItem.Click += (_, _) => ShowSettings();
             contextMenu.Items.Add(settingsItem);
 
-            var exitItem = new MenuItem { Header = "종료" };
+            var exitItem = new MenuItem { Header = Strings.TrayExit };
             exitItem.Click += (_, _) => ExitApp();
             contextMenu.Items.Add(exitItem);
 
@@ -141,7 +142,7 @@ namespace MailTrayNotifier
             _trayIcon = new TaskbarIcon
             {
                 Icon = _stopIcon ?? SystemIcons.Application,
-                ToolTipText = "메일 알림",
+                ToolTipText = Strings.TrayTooltip,
                 ContextMenu = contextMenu
             };
 
@@ -261,7 +262,7 @@ namespace MailTrayNotifier
             {
                 var menuVisibility = isRefreshEnabled ? Visibility.Visible : Visibility.Collapsed;
                 _toggleMenuItem.Visibility = menuVisibility;
-                _toggleMenuItem.Header = isRunning ? "메일 알림 중지" : "메일 알림 시작";
+                _toggleMenuItem.Header = isRunning ? Strings.TrayStopPolling : Strings.TrayStartPolling;
                 _toggleMenuItem.IsEnabled = isRefreshEnabled && (isRunning || hasValidSettings);
             }
 
@@ -303,15 +304,15 @@ namespace MailTrayNotifier
         {
             if (!isRefreshEnabled)
             {
-                return "메일 알림 - 비활성화됨";
+                return Strings.TrayTooltipDisabled;
             }
 
             if (isRunning)
             {
-                return hasAccountError ? "메일 알림 - 일부 계정 오류" : "메일 알림 - 실행 중";
+                return hasAccountError ? Strings.TrayTooltipAccountError : Strings.TrayTooltipRunning;
             }
 
-            return hasValidSettings ? "메일 알림 - 중지됨" : "메일 알림 - 설정 필요";
+            return hasValidSettings ? Strings.TrayTooltipStopped : Strings.TrayTooltipNeedSetup;
         }
 
         /// <summary>
@@ -323,14 +324,14 @@ namespace MailTrayNotifier
             {
                 if (_toggleMenuItem is not null)
                 {
-                    _toggleMenuItem.Header = "메일 알림 시작";
+                    _toggleMenuItem.Header = Strings.TrayStartPolling;
                     _toggleMenuItem.IsEnabled = false;
                 }
 
                 if (_trayIcon is not null)
                 {
                     _trayIcon.Icon = _stopIcon ?? SystemIcons.Application;
-                    _trayIcon.ToolTipText = "메일 알림 - 오류 발생";
+                    _trayIcon.ToolTipText = Strings.TrayTooltipError;
                 }
             });
         }

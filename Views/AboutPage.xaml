@@ -4,6 +4,7 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:res="clr-namespace:MailTrayNotifier.Resources"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="AboutPage">
@@ -15,7 +16,7 @@
 
                 <ui:Card Margin="0,0,0,24">
                     <StackPanel>
-                        <ui:TextBlock Text="메일 알림" FontTypography="BodyStrong" Margin="0,0,0,4"/>
+                        <ui:TextBlock Text="{x:Static res:Strings.AppName}" FontTypography="BodyStrong" Margin="0,0,0,4"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
                             <ui:TextBlock Text="Version: " FontTypography="Body"/>
                             <ui:TextBlock Text="{Binding AppVersion}" FontTypography="Body"/>

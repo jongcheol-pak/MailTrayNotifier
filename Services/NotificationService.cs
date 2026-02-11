@@ -1,5 +1,6 @@
 using Microsoft.Toolkit.Uwp.Notifications;
 using MailTrayNotifier.Models;
+using MailTrayNotifier.Resources;
 using System.Diagnostics;
 
 namespace MailTrayNotifier.Services
@@ -115,7 +116,7 @@ namespace MailTrayNotifier.Services
                         .AddArgument(UidsKey, uidsString)
                         .AddArgument(MailWebUrlKey, mailWebUrl ?? string.Empty)
                         .SetToastDuration(ToastDuration.Long)
-                        .AddText($"[{Truncate(accountName, 20)}] 새 메일")
+                        .AddText(string.Format(Strings.NewMailSingle, Truncate(accountName, 20)))
                         .AddText($"{Truncate(mail.SenderDisplay, MaxSenderLength)}")
                         .AddText($"{Truncate(mail.Subject, MaxSubjectLength)}");
 
@@ -123,7 +124,7 @@ namespace MailTrayNotifier.Services
                     if (!string.IsNullOrWhiteSpace(mailWebUrl))
                     {
                         builder.AddButton(new ToastButton()
-                            .SetContent("메일로 이동")
+                            .SetContent(Strings.GoToMail)
                             .AddArgument(ActionKey, ActionGoToMail)
                             .AddArgument(AccountKeyKey, accountKey)
                             .AddArgument(UidsKey, uidsString)
@@ -142,15 +143,15 @@ namespace MailTrayNotifier.Services
                         .AddArgument(UidsKey, uidsString)
                         .AddArgument(MailWebUrlKey, mailWebUrl ?? string.Empty)
                         .SetToastDuration(ToastDuration.Long)
-                        .AddText($"[{Truncate(accountName, 20)}] 새 메일 {newMails.Count}건")
-                        .AddText($"최근: {Truncate(latest.SenderDisplay, MaxSenderLength)}")
+                        .AddText(string.Format(Strings.NewMailMultiple, Truncate(accountName, 20), newMails.Count))
+                        .AddText(string.Format(Strings.NewMailLatest, Truncate(latest.SenderDisplay, MaxSenderLength)))
                         .AddText($"{Truncate(latest.Subject, MaxSubjectLength)}");
 
                     // URL이 설정된 경우 버튼 추가
                     if (!string.IsNullOrWhiteSpace(mailWebUrl))
                     {
                         builder.AddButton(new ToastButton()
-                            .SetContent("메일로 이동")
+                            .SetContent(Strings.GoToMail)
                             .AddArgument(ActionKey, ActionGoToMail)
                             .AddArgument(AccountKeyKey, accountKey)
                             .AddArgument(UidsKey, uidsString)
@@ -171,7 +172,7 @@ namespace MailTrayNotifier.Services
             try
             {
                 new ToastContentBuilder()
-                    .AddText("메일 확인 오류")
+                    .AddText(Strings.MailCheckError)
                     .AddText(Truncate(message, 100))
                     .Show();
             }

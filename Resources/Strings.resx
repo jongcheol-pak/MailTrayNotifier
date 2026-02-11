@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="0" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- MainWindow -->
+  <data name="AppTitle" xml:space="preserve"><value>Mail Notifier Settings</value></data>
+  <data name="NavMail" xml:space="preserve"><value>Mail</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>Settings</value></data>
+
+  <!-- GeneralSettingsPage -->
+  <data name="AutoStartTitle" xml:space="preserve"><value>Auto Start</value></data>
+  <data name="AutoStartDescription" xml:space="preserve"><value>Automatically starts when you log in to Windows.</value></data>
+  <data name="NotificationTitle" xml:space="preserve"><value>Notification</value></data>
+  <data name="NotificationDescription" xml:space="preserve"><value>Enable mail notifications. When set to Off, you will not receive any mail notifications.</value></data>
+
+  <!-- MailSettingsPage -->
+  <data name="AddAccount" xml:space="preserve"><value>Add Account</value></data>
+  <data name="NotificationOffWarning" xml:space="preserve"><value>Notifications are turned OFF in settings. Please turn ON notifications in settings to receive alerts.</value></data>
+  <data name="AccountName" xml:space="preserve"><value>Account Name</value></data>
+  <data name="Pop3Server" xml:space="preserve"><value>POP3 Server</value></data>
+  <data name="SmtpServer" xml:space="preserve"><value>SMTP Server</value></data>
+  <data name="UserId" xml:space="preserve"><value>User ID</value></data>
+  <data name="Password" xml:space="preserve"><value>Password</value></data>
+  <data name="SyncInterval" xml:space="preserve"><value>Sync Interval (min)</value></data>
+  <data name="MailWebsite" xml:space="preserve"><value>Mail Website (optional)</value></data>
+  <data name="Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="DeleteAccount" xml:space="preserve"><value>Delete Account</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Save" xml:space="preserve"><value>Save</value></data>
+  <data name="ErrorLabel" xml:space="preserve"><value>Error: </value></data>
+
+  <!-- AboutPage -->
+  <data name="AppName" xml:space="preserve"><value>Mail Notifier</value></data>
+
+  <!-- App.xaml.cs Tray -->
+  <data name="TrayStartPolling" xml:space="preserve"><value>Start Mail Notification</value></data>
+  <data name="TrayStopPolling" xml:space="preserve"><value>Stop Mail Notification</value></data>
+  <data name="TraySettings" xml:space="preserve"><value>Settings</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Exit</value></data>
+  <data name="TrayTooltip" xml:space="preserve"><value>Mail Notifier</value></data>
+  <data name="TrayTooltipDisabled" xml:space="preserve"><value>Mail Notifier - Disabled</value></data>
+  <data name="TrayTooltipRunning" xml:space="preserve"><value>Mail Notifier - Running</value></data>
+  <data name="TrayTooltipAccountError" xml:space="preserve"><value>Mail Notifier - Some Account Errors</value></data>
+  <data name="TrayTooltipStopped" xml:space="preserve"><value>Mail Notifier - Stopped</value></data>
+  <data name="TrayTooltipNeedSetup" xml:space="preserve"><value>Mail Notifier - Setup Required</value></data>
+  <data name="TrayTooltipError" xml:space="preserve"><value>Mail Notifier - Error Occurred</value></data>
+  <data name="AlreadyRunning" xml:space="preserve"><value>Mail Notifier is already running.</value></data>
+  <data name="AlertTitle" xml:space="preserve"><value>Notice</value></data>
+
+  <!-- SettingsViewModel -->
+  <data name="MaxAccountsReached" xml:space="preserve"><value>You can add up to {0} accounts.</value></data>
+  <data name="MaxAccountsTitle" xml:space="preserve"><value>Account Limit</value></data>
+  <data name="DeleteAccountConfirm" xml:space="preserve"><value>Are you sure you want to delete the '{0}' account?</value></data>
+  <data name="DeleteAccountTitle" xml:space="preserve"><value>Delete Account</value></data>
+  <data name="AccountNameError" xml:space="preserve"><value>Account Name Error</value></data>
+  <data name="InputError" xml:space="preserve"><value>Input Error</value></data>
+  <data name="MissingFieldsMessage" xml:space="preserve"><value>Please fill in the following fields:</value></data>
+  <data name="InvalidMailWebUrl" xml:space="preserve"><value>The mail website URL is invalid.\nExample: https://mail.example.com</value></data>
+  <data name="ConnectionErrorMessage" xml:space="preserve"><value>Failed to connect to the following mail servers:\n\n{0}\n\nDo you want to continue?</value></data>
+  <data name="ConnectionErrorTitle" xml:space="preserve"><value>Connection Error</value></data>
+  <data name="ResetConfirmMessage" xml:space="preserve"><value>Are you sure you want to reset all settings and mail states?\n\n• All settings will be deleted.\n• Read mail information will be deleted.</value></data>
+  <data name="ResetConfirmTitle" xml:space="preserve"><value>Reset Confirmation</value></data>
+  <data name="ResetCompleted" xml:space="preserve"><value>Reset completed.</value></data>
+  <data name="EnterAccountName" xml:space="preserve"><value>Please enter an account name.</value></data>
+  <data name="AccountNameTrimmed" xml:space="preserve"><value>Leading and trailing spaces in the account name will be removed.</value></data>
+  <data name="AccountNameDuplicate" xml:space="preserve"><value>This account name is already in use.</value></data>
+  <data name="MinOneAccount" xml:space="preserve"><value>At least one account must be configured.\n\nRequired fields:\n• POP3 Server\n• User ID\n• Password\n• Sync Interval</value></data>
+  <data name="DuplicateAccountName" xml:space="preserve"><value>Account '{0}': Duplicate account name. ('{1}')</value></data>
+  <data name="MissingFieldsForAccount" xml:space="preserve"><value>Account '{0}' missing fields:</value></data>
+  <data name="InvalidMailUrlForAccount" xml:space="preserve"><value>Account {0}: Invalid mail website URL.\n  Example: https://mail.example.com</value></data>
+
+  <!-- MailAccountViewModel -->
+  <data name="NewAccount" xml:space="preserve"><value>New Account</value></data>
+  <data name="FieldAccountName" xml:space="preserve"><value>Account Name</value></data>
+  <data name="FieldPop3Server" xml:space="preserve"><value>POP3 Server</value></data>
+  <data name="FieldUserId" xml:space="preserve"><value>User ID</value></data>
+  <data name="FieldPassword" xml:space="preserve"><value>Password</value></data>
+  <data name="FieldSyncInterval" xml:space="preserve"><value>Sync Interval</value></data>
+
+  <!-- NotificationService -->
+  <data name="NewMailSingle" xml:space="preserve"><value>[{0}] New Mail</value></data>
+  <data name="NewMailMultiple" xml:space="preserve"><value>[{0}] {1} New Mails</value></data>
+  <data name="NewMailLatest" xml:space="preserve"><value>Latest: {0}</value></data>
+  <data name="GoToMail" xml:space="preserve"><value>Go to Mail</value></data>
+  <data name="MailCheckError" xml:space="preserve"><value>Mail Check Error</value></data>
+</root>

@@ -11,7 +11,7 @@ POP3 메일 서버를 주기적으로 확인하고 새 메일이 발견되면 Wi
 ## 현재 기능 목록
 
 - POP3 서버 연결 및 UID 기반 새 메일 감지
-- 다중 메일 계정 지원 (최대 5개 계정, 각 계정별 독립 폴링)
+- 다중 메일 계정 지원 (최대 10개 계정, 각 계정별 독립 폴링)
 - 새 메일 발생 시 Windows 토스트 알림 표시
 - 트레이 아이콘 우클릭 메뉴(설정/종료)
 - 트레이 아이콘 좌클릭 시 설정 창 표시
@@ -21,16 +21,16 @@ POP3 메일 서버를 주기적으로 확인하고 새 메일이 발견되면 Wi
 
 ## 주요 클래스 구조
 
-| 클래스 | 역할 |
-|--------|------|
-| `MailSettingsCollection` | 다중 계정 설정 컨테이너 모델 |
-| `MailAccountViewModel` | 개별 계정 설정 ViewModel |
-| `MailClientService` | POP3 서버 연결 및 메일 헤더 조회 |
-| `MailPollingService` | 다중 계정 병렬 폴링 (각 계정별 PeriodicTimer) |
-| `MailStateStore` | UID 상태 파일 관리 (List 기반 순서 보장) |
-| `NotificationService` | Windows 토스트 알림 표시 및 클릭 이벤트 처리 |
-| `SettingsService` | JSON 설정 파일 저장/로드 (레거시 마이그레이션 포함) |
-| `SettingsViewModel` | 다중 계정 관리 ViewModel |
+| 클래스                      | 역할                                |
+| ------------------------ | --------------------------------- |
+| `MailSettingsCollection` | 다중 계정 설정 컨테이너 모델                  |
+| `MailAccountViewModel`   | 개별 계정 설정 ViewModel                |
+| `MailClientService`      | POP3 서버 연결 및 메일 헤더 조회             |
+| `MailPollingService`     | 다중 계정 병렬 폴링 (각 계정별 PeriodicTimer) |
+| `MailStateStore`         | UID 상태 파일 관리 (List 기반 순서 보장)      |
+| `NotificationService`    | Windows 토스트 알림 표시 및 클릭 이벤트 처리     |
+| `SettingsService`        | JSON 설정 파일 저장/로드 (레거시 마이그레이션 포함)  |
+| `SettingsViewModel`      | 다중 계정 관리 ViewModel                |
 
 ## 동작 방식(흐름)
 
@@ -42,7 +42,7 @@ POP3 메일 서버를 주기적으로 확인하고 새 메일이 발견되면 Wi
 
 ## 설정 정보
 
-- **계정**: 최대 5개까지 추가 가능
+- **계정**: 최대 10개까지 추가 가능
 - **POP3 서버**: 메일 수신 서버 주소
 - **SMTP 서버**: 메일 발신 서버 주소(현재 수신에는 사용하지 않음)
 - **아이디**: 로그인 계정

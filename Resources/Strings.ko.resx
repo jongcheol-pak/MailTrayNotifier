@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="0" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- MainWindow -->
+  <data name="AppTitle" xml:space="preserve"><value>메일 알림 설정</value></data>
+  <data name="NavMail" xml:space="preserve"><value>메일</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>설정</value></data>
+
+  <!-- GeneralSettingsPage -->
+  <data name="AutoStartTitle" xml:space="preserve"><value>자동 실행</value></data>
+  <data name="AutoStartDescription" xml:space="preserve"><value>Windows에 로그인할 때 자동으로 시작합니다.</value></data>
+  <data name="NotificationTitle" xml:space="preserve"><value>알림</value></data>
+  <data name="NotificationDescription" xml:space="preserve"><value>설정된 메일 알림을 사용 하도록 설정합니다. Off로 설정된 경우 모든 메일 알림을 받을 수 없습니다.</value></data>
+
+  <!-- MailSettingsPage -->
+  <data name="AddAccount" xml:space="preserve"><value>계정 추가</value></data>
+  <data name="NotificationOffWarning" xml:space="preserve"><value>설정에서 알림이 OFF로 되어 있어 알림을 받을 수 없습니다. 설정에서 알림을 ON으로 설정 후 알림을 받으세요.</value></data>
+  <data name="AccountName" xml:space="preserve"><value>계정 이름</value></data>
+  <data name="Pop3Server" xml:space="preserve"><value>POP3 서버</value></data>
+  <data name="SmtpServer" xml:space="preserve"><value>SMTP 서버</value></data>
+  <data name="UserId" xml:space="preserve"><value>아이디</value></data>
+  <data name="Password" xml:space="preserve"><value>비밀번호</value></data>
+  <data name="SyncInterval" xml:space="preserve"><value>동기화 시간(분)</value></data>
+  <data name="MailWebsite" xml:space="preserve"><value>이메일 사이트(선택)</value></data>
+  <data name="Edit" xml:space="preserve"><value>수정</value></data>
+  <data name="DeleteAccount" xml:space="preserve"><value>계정 삭제</value></data>
+  <data name="Cancel" xml:space="preserve"><value>취소</value></data>
+  <data name="Save" xml:space="preserve"><value>저장</value></data>
+  <data name="ErrorLabel" xml:space="preserve"><value>오류 : </value></data>
+
+  <!-- AboutPage -->
+  <data name="AppName" xml:space="preserve"><value>메일 알림</value></data>
+
+  <!-- App.xaml.cs Tray -->
+  <data name="TrayStartPolling" xml:space="preserve"><value>메일 알림 시작</value></data>
+  <data name="TrayStopPolling" xml:space="preserve"><value>메일 알림 중지</value></data>
+  <data name="TraySettings" xml:space="preserve"><value>설정</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>종료</value></data>
+  <data name="TrayTooltip" xml:space="preserve"><value>메일 알림</value></data>
+  <data name="TrayTooltipDisabled" xml:space="preserve"><value>메일 알림 - 비활성화됨</value></data>
+  <data name="TrayTooltipRunning" xml:space="preserve"><value>메일 알림 - 실행 중</value></data>
+  <data name="TrayTooltipAccountError" xml:space="preserve"><value>메일 알림 - 일부 계정 오류</value></data>
+  <data name="TrayTooltipStopped" xml:space="preserve"><value>메일 알림 - 중지됨</value></data>
+  <data name="TrayTooltipNeedSetup" xml:space="preserve"><value>메일 알림 - 설정 필요</value></data>
+  <data name="TrayTooltipError" xml:space="preserve"><value>메일 알림 - 오류 발생</value></data>
+  <data name="AlreadyRunning" xml:space="preserve"><value>메일 알림이 이미 실행 중입니다.</value></data>
+  <data name="AlertTitle" xml:space="preserve"><value>알림</value></data>
+
+  <!-- SettingsViewModel -->
+  <data name="MaxAccountsReached" xml:space="preserve"><value>최대 {0}개까지 계정을 추가할 수 있습니다.</value></data>
+  <data name="MaxAccountsTitle" xml:space="preserve"><value>계정 추가 제한</value></data>
+  <data name="DeleteAccountConfirm" xml:space="preserve"><value>'{0}' 계정을 삭제하시겠습니까?</value></data>
+  <data name="DeleteAccountTitle" xml:space="preserve"><value>계정 삭제 확인</value></data>
+  <data name="AccountNameError" xml:space="preserve"><value>계정 이름 오류</value></data>
+  <data name="InputError" xml:space="preserve"><value>입력 오류</value></data>
+  <data name="MissingFieldsMessage" xml:space="preserve"><value>다음 항목을 입력해주세요:</value></data>
+  <data name="InvalidMailWebUrl" xml:space="preserve"><value>이메일 사이트 주소가 올바르지 않습니다.\n예: https://mail.example.com</value></data>
+  <data name="ConnectionErrorMessage" xml:space="preserve"><value>다음 계정의 메일 서버 접속에 실패했습니다:\n\n{0}\n\n계속 진행하시겠습니까?</value></data>
+  <data name="ConnectionErrorTitle" xml:space="preserve"><value>접속 오류</value></data>
+  <data name="ResetConfirmMessage" xml:space="preserve"><value>모든 설정과 메일 상태를 초기화하시겠습니까?\n\n• 설정값이 모두 삭제됩니다.\n• 읽음 처리된 메일 정보가 삭제됩니다.</value></data>
+  <data name="ResetConfirmTitle" xml:space="preserve"><value>초기화 확인</value></data>
+  <data name="ResetCompleted" xml:space="preserve"><value>초기화 완료</value></data>
+  <data name="EnterAccountName" xml:space="preserve"><value>계정 이름을 입력해주세요.</value></data>
+  <data name="AccountNameTrimmed" xml:space="preserve"><value>계정 이름 앞뒤 공백이 제거됩니다.</value></data>
+  <data name="AccountNameDuplicate" xml:space="preserve"><value>이미 사용 중인 계정 이름입니다.</value></data>
+  <data name="MinOneAccount" xml:space="preserve"><value>최소 하나 이상의 계정을 설정해야 합니다.\n\n필수 항목:\n• POP3 서버\n• 아이디\n• 비밀번호\n• 동기화 시간</value></data>
+  <data name="DuplicateAccountName" xml:space="preserve"><value>계정 '{0}': 중복된 계정 이름입니다. ('{1}')</value></data>
+  <data name="MissingFieldsForAccount" xml:space="preserve"><value>계정 '{0}' 누락 항목:</value></data>
+  <data name="InvalidMailUrlForAccount" xml:space="preserve"><value>계정 {0}: 이메일 사이트 주소가 올바르지 않습니다.\n  예: https://mail.example.com</value></data>
+
+  <!-- MailAccountViewModel -->
+  <data name="NewAccount" xml:space="preserve"><value>새 계정</value></data>
+  <data name="FieldAccountName" xml:space="preserve"><value>계정 이름</value></data>
+  <data name="FieldPop3Server" xml:space="preserve"><value>POP3 서버</value></data>
+  <data name="FieldUserId" xml:space="preserve"><value>아이디</value></data>
+  <data name="FieldPassword" xml:space="preserve"><value>비밀번호</value></data>
+  <data name="FieldSyncInterval" xml:space="preserve"><value>동기화 시간</value></data>
+
+  <!-- NotificationService -->
+  <data name="NewMailSingle" xml:space="preserve"><value>[{0}] 새 메일</value></data>
+  <data name="NewMailMultiple" xml:space="preserve"><value>[{0}] 새 메일 {1}건</value></data>
+  <data name="NewMailLatest" xml:space="preserve"><value>최근: {0}</value></data>
+  <data name="GoToMail" xml:space="preserve"><value>메일로 이동</value></data>
+  <data name="MailCheckError" xml:space="preserve"><value>메일 확인 오류</value></data>
+</root>

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using MailTrayNotifier.Constants;
 using MailTrayNotifier.Models;
+using MailTrayNotifier.Resources;
 
 namespace MailTrayNotifier.ViewModels
 {
@@ -358,7 +359,7 @@ namespace MailTrayNotifier.ViewModels
                     return $"{UserId} @ {Pop3Server}";
                 }
 
-                return "새 계정";
+                return Strings.NewAccount;
             }
         }
 
@@ -465,27 +466,27 @@ namespace MailTrayNotifier.ViewModels
 
             if (string.IsNullOrWhiteSpace(AccountName?.Trim()))
             {
-                missingFields.Add("계정 이름");
+                missingFields.Add(Strings.FieldAccountName);
             }
 
             if (string.IsNullOrWhiteSpace(Pop3Server))
             {
-                missingFields.Add("POP3 서버");
+                missingFields.Add(Strings.FieldPop3Server);
             }
 
             if (string.IsNullOrWhiteSpace(UserId))
             {
-                missingFields.Add("아이디");
+                missingFields.Add(Strings.FieldUserId);
             }
 
             if (string.IsNullOrWhiteSpace(Password))
             {
-                missingFields.Add("비밀번호");
+                missingFields.Add(Strings.FieldPassword);
             }
 
             if (RefreshMinutes <= 0)
             {
-                missingFields.Add("동기화 시간");
+                missingFields.Add(Strings.FieldSyncInterval);
             }
 
             return missingFields;

@@ -5,7 +5,8 @@ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
 xmlns:local="clr-namespace:MailTrayNotifier"
 xmlns:views="clr-namespace:MailTrayNotifier.Views"
-Title="메일 알림 설정"
+xmlns:res="clr-namespace:MailTrayNotifier.Resources"
+Title="{x:Static res:Strings.AppTitle}"
 
 Width="500"
 Height="600"
@@ -58,7 +59,7 @@ ExtendsContentIntoTitleBar="True">
             <ui:TitleBar.Header>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Image Source="/Assets/icon.png" Width="16" Height="16" Margin="8,0,8,0"/>
-                    <TextBlock Text="메일 알림 설정" VerticalAlignment="Center" FontSize="12"/>                   
+                    <TextBlock Text="{x:Static res:Strings.AppTitle}" VerticalAlignment="Center" FontSize="12"/>
                 </StackPanel>
             </ui:TitleBar.Header>
         </ui:TitleBar>
@@ -75,13 +76,13 @@ ExtendsContentIntoTitleBar="True">
                     <RadioButton x:Name="MenuMail" GroupName="NavMenu" IsChecked="True" Click="NavMenu_Click" Style="{StaticResource NavMenuButtonStyle}">
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                             <ui:SymbolIcon Symbol="Mail24" FontSize="24" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                            <TextBlock Text="메일" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                            <TextBlock Text="{x:Static res:Strings.NavMail}" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                         </StackPanel>
                     </RadioButton>
                     <RadioButton x:Name="MenuSettings" GroupName="NavMenu" Click="NavMenu_Click" Style="{StaticResource NavMenuButtonStyle}">
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                             <ui:SymbolIcon Symbol="Settings24" FontSize="24" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                            <TextBlock Text="설정" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                            <TextBlock Text="{x:Static res:Strings.NavSettings}" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                         </StackPanel>
                     </RadioButton>
                     <RadioButton x:Name="MenuAbout" GroupName="NavMenu" Click="NavMenu_Click" Style="{StaticResource NavMenuButtonStyle}">

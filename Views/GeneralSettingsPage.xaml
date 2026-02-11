@@ -4,6 +4,7 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:res="clr-namespace:MailTrayNotifier.Resources"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="GeneralSettingsPage">
@@ -15,8 +16,8 @@
                 <ui:CardControl Icon="PlayCircle24">
                     <ui:CardControl.Header>
                         <StackPanel>
-                            <ui:TextBlock Text="자동 실행" FontTypography="Body" Foreground="White" />
-                            <ui:TextBlock Text="Windows에 로그인할 때 자동으로 시작합니다." FontTypography="Caption" Foreground="WhiteSmoke" />
+                            <ui:TextBlock Text="{x:Static res:Strings.AutoStartTitle}" FontTypography="Body" Foreground="White" />
+                            <ui:TextBlock Text="{x:Static res:Strings.AutoStartDescription}" FontTypography="Caption" Foreground="WhiteSmoke" />
                         </StackPanel>
                     </ui:CardControl.Header>
                     <ui:ToggleSwitch IsChecked="{Binding RunAtStartup, Mode=TwoWay}" OnContent="On" OffContent="Off"/>
@@ -26,8 +27,8 @@
                 <ui:CardControl Icon="PlayCircle24" Margin="0,16,0,0">
                     <ui:CardControl.Header>
                         <StackPanel >
-                            <ui:TextBlock Text="알림" FontTypography="Body" />
-                            <ui:TextBlock Text="설정된 메일 알림을 사용 하도록 설정합니다. Off로 설정된 경우 모든 메일 알림을 받을 수 없습니다." FontTypography="Caption" Foreground="WhiteSmoke" TextWrapping="Wrap"/>
+                            <ui:TextBlock Text="{x:Static res:Strings.NotificationTitle}" FontTypography="Body" />
+                            <ui:TextBlock Text="{x:Static res:Strings.NotificationDescription}" FontTypography="Caption" Foreground="WhiteSmoke" TextWrapping="Wrap"/>
                         </StackPanel>
                     </ui:CardControl.Header>
                     <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding IsRefreshEnabled, Mode=TwoWay}" VerticalAlignment="Center" OnContent="On" OffContent="Off"/>

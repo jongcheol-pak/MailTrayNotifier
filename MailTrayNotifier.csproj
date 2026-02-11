@@ -27,6 +27,16 @@
     </ItemGroup>
 
     <ItemGroup>
+      <EmbeddedResource Update="Resources\Strings.resx">
+        <Generator>PublicResXFileCodeGenerator</Generator>
+        <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+      </EmbeddedResource>
+      <EmbeddedResource Update="Resources\Strings.ko.resx">
+        <DependentUpon>Strings.resx</DependentUpon>
+      </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
         <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
         <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
@@ -44,5 +54,9 @@
     <Content Include="Assets\warning.ico" />
     <Resource Include="Assets\icon.png" />
         <Content Include="start.ico" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include=".github\copilot-instructions.md" />
     </ItemGroup>
 </Project>

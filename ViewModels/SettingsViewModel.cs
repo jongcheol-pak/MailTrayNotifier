@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using MailTrayNotifier.Constants;
 using MailTrayNotifier.Models;
 using MailTrayNotifier.Services;
+using MailTrayNotifier.Resources;
 using Microsoft.Win32;
 
 namespace MailTrayNotifier.ViewModels
@@ -161,8 +162,8 @@ WPF-UI (MIT)";
             if (Accounts.Count >= MailConstants.MaxAccounts)
             {
                 System.Windows.MessageBox.Show(
-                    $"최대 {MailConstants.MaxAccounts}개까지 계정을 추가할 수 있습니다.",
-                    "계정 추가 제한",
+                    string.Format(Strings.MaxAccountsReached, MailConstants.MaxAccounts),
+                    Strings.MaxAccountsTitle,
                     System.Windows.MessageBoxButton.OK,
                     System.Windows.MessageBoxImage.Information);
                 return;
@@ -201,8 +202,8 @@ WPF-UI (MIT)";
             }
 
             var result = System.Windows.MessageBox.Show(
-                $"'{account.DisplayName}' 계정을 삭제하시겠습니까?",
-                "계정 삭제 확인",
+                string.Format(Strings.DeleteAccountConfirm, account.DisplayName),
+                Strings.DeleteAccountTitle,
                 System.Windows.MessageBoxButton.YesNo,
                 System.Windows.MessageBoxImage.Question);
 
@@ -252,7 +253,7 @@ WPF-UI (MIT)";
             {
                 System.Windows.MessageBox.Show(
                     nameValidationError,
-                    "계정 이름 오류",
+                    Strings.AccountNameError,
                     System.Windows.MessageBoxButton.OK,
                     System.Windows.MessageBoxImage.Warning);
                 return false;
@@ -263,8 +264,8 @@ WPF-UI (MIT)";
             if (missingFields.Count > 0)
             {
                 System.Windows.MessageBox.Show(
-                    $"다음 항목을 입력해주세요:\n\n• {string.Join("\n• ", missingFields)}",
-                    "입력 오류",
+                    $"{Strings.MissingFieldsMessage}\n\n• {string.Join("\n• ", missingFields)}",
+                    Strings.InputError,
                     System.Windows.MessageBoxButton.OK,
                     System.Windows.MessageBoxImage.Warning);
                 return false;
@@ -277,8 +278,8 @@ WPF-UI (MIT)";
                     (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
                 {
                     System.Windows.MessageBox.Show(
-                        "이메일 사이트 주소가 올바르지 않습니다.\n예: https://mail.example.com",
-                        "입력 오류",
+                        Strings.InvalidMailWebUrl,
+                        Strings.InputError,
                         System.Windows.MessageBoxButton.OK,
                         System.Windows.MessageBoxImage.Warning);
                     return false;
@@ -359,7 +360,7 @@ WPF-UI (MIT)";
 
             if (validAccounts.Count == 0)
             {
-                return "최소 하나 이상의 계정을 설정해야 합니다.\n\n필수 항목:\n• POP3 서버\n• 아이디\n• 비밀번호\n• 동기화 시간";
+                return Strings.MinOneAccount;
             }
 
             var errors = new List<string>();
@@ -384,7 +385,7 @@ WPF-UI (MIT)";
                     var trimmedName = account.AccountName.Trim();
                     if (!accountNamesUsed.Add(trimmedName))
                     {
-                        errors.Add($"계정 '{account.DisplayName}': 중복된 계정 이름입니다. ('{trimmedName}')");
+                        errors.Add(string.Format(Strings.DuplicateAccountName, account.DisplayName, trimmedName));
                     }
                 }
             }
@@ -405,22 +406,22 @@ WPF-UI (MIT)";
 
                 if (string.IsNullOrWhiteSpace(account.Pop3Server))
                 {
-                    accountErrors.Add("POP3 서버");
+                    accountErrors.Add(Strings.FieldPop3Server);
                 }
 
                 if (string.IsNullOrWhiteSpace(account.UserId))
                 {
-                    accountErrors.Add("아이디");
+                    accountErrors.Add(Strings.FieldUserId);
                 }
 
                 if (string.IsNullOrWhiteSpace(account.Password))
                 {
-                    accountErrors.Add("비밀번호");
+                    accountErrors.Add(Strings.FieldPassword);
                 }
 
                 if (account.RefreshMinutes <= 0)
                 {
-                    accountErrors.Add("동기화 시간");
+                    accountErrors.Add(Strings.FieldSyncInterval);
                 }
 
                 // 웹사이트 주소 검증 (선택 사항이지만 입력한 경우 유효성 검사)
@@ -429,13 +430,13 @@ WPF-UI (MIT)";
                     if (!Uri.TryCreate(account.MailWebUrl, UriKind.Absolute, out var uri) ||
                         (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
                     {
-                        errors.Add($"계정 {i + 1}: 이메일 사이트 주소가 올바르지 않습니다.\n  예: https://mail.example.com");
+                        errors.Add(string.Format(Strings.InvalidMailUrlForAccount, i + 1));
                     }
                 }
 
                 if (accountErrors.Count > 0)
                 {
-                    errors.Add($"계정 '{account.DisplayName}' 누락 항목:\n  • {string.Join("\n  • ", accountErrors)}");
+                    errors.Add($"{string.Format(Strings.MissingFieldsForAccount, account.DisplayName)}\n  • {string.Join("\n  • ", accountErrors)}");
                 }
             }
 
@@ -456,7 +457,7 @@ WPF-UI (MIT)";
             {
                 System.Windows.MessageBox.Show(
                     validationError,
-                    "입력 오류",
+                    Strings.InputError,
                     System.Windows.MessageBoxButton.OK,
                     System.Windows.MessageBoxImage.Warning);
                 return;
@@ -497,8 +498,8 @@ WPF-UI (MIT)";
                 if (testResults.Count > 0)
                 {
                     var result = System.Windows.MessageBox.Show(
-                        $"다음 계정의 메일 서버 접속에 실패했습니다:\n\n{string.Join("\n", testResults)}\n\n계속 진행하시겠습니까?",
-                        "접속 오류",
+                        string.Format(Strings.ConnectionErrorMessage, string.Join("\n", testResults)),
+                        Strings.ConnectionErrorTitle,
                         System.Windows.MessageBoxButton.YesNo,
                         System.Windows.MessageBoxImage.Warning);
 
@@ -527,8 +528,8 @@ WPF-UI (MIT)";
         private void Reset()
         {
             var result = System.Windows.MessageBox.Show(
-                "모든 설정과 메일 상태를 초기화하시겠습니까?\n\n• 설정값이 모두 삭제됩니다.\n• 읽음 처리된 메일 정보가 삭제됩니다.",
-                "초기화 확인",
+                Strings.ResetConfirmMessage,
+                Strings.ResetConfirmTitle,
                 System.Windows.MessageBoxButton.YesNo,
                 System.Windows.MessageBoxImage.Warning);
 
@@ -553,8 +554,8 @@ WPF-UI (MIT)";
             _isInitialized = true;
 
             System.Windows.MessageBox.Show(
-                "초기화 완료",
-                "알림",
+                Strings.ResetCompleted,
+                Strings.AlertTitle,
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Information);
         }
@@ -624,19 +625,19 @@ WPF-UI (MIT)";
         {
             if (string.IsNullOrWhiteSpace(accountName))
             {
-                return "계정 이름을 입력해주세요.";
+                return Strings.EnterAccountName;
             }
 
             var trimmedName = accountName.Trim();
 
             if (trimmedName != accountName)
             {
-                return "계정 이름 앞뒤 공백이 제거됩니다.";
+                return Strings.AccountNameTrimmed;
             }
 
             if (IsAccountNameDuplicate(trimmedName, excludeAccount))
             {
-                return "이미 사용 중인 계정 이름입니다.";
+                return Strings.AccountNameDuplicate;
             }
 
             return null;

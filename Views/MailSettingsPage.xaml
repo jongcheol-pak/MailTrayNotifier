@@ -3,7 +3,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml" mc:Ignorable="d" d:DesignHeight="450" d:DesignWidth="800" Title="MailSettingsPage">
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:res="clr-namespace:MailTrayNotifier.Resources"
+    mc:Ignorable="d" d:DesignHeight="450" d:DesignWidth="800" Title="MailSettingsPage">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="24,24,24,48" VerticalAlignment="Top">
@@ -19,7 +21,7 @@
                 <!-- 계정 추가 버튼 -->
                 <ui:Button
                     Grid.Column="0"
-                    Content="계정 추가"
+                    Content="{x:Static res:Strings.AddAccount}"
                     Command="{Binding AddAccountCommand}"
                     Icon="Add24"
                     Appearance="Secondary"
@@ -37,7 +39,7 @@
             </Grid>
 
             <TextBlock
-                Text="설정에서 알림이 OFF로 되어 있어 알림을 받을 수 없습니다. 설정에서 알림을 ON으로 설정 후 알림을 받으세요."
+                Text="{x:Static res:Strings.NotificationOffWarning}"
                 FontSize="12"
                 FontWeight="Bold"
                 TextWrapping="Wrap"
@@ -140,10 +142,10 @@
 
                             <Border Padding="12" Background="{ui:ThemeResource ControlFillColorDefaultBrush}" CornerRadius="8">
                                 <StackPanel>
-                                    <ui:TextBlock Text="계정 이름" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
+                                    <ui:TextBlock Text="{x:Static res:Strings.AccountName}" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
                                     <ui:TextBox Margin="0,0,0,16" Text="{Binding AccountName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke" PlaceholderText="" />
 
-                                    <ui:TextBlock Text="POP3 서버" Margin="0,0,0,4" FontTypography="Body" Foreground="White"  />
+                                    <ui:TextBlock Text="{x:Static res:Strings.Pop3Server}" Margin="0,0,0,4" FontTypography="Body" Foreground="White"  />
                                     <Grid Margin="0,0,0,16">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -160,7 +162,7 @@
                                             DataObject.Pasting="NumericTextBox_Pasting" />
                                     </Grid>
 
-                                    <ui:TextBlock Text="SMTP 서버" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
+                                    <ui:TextBlock Text="{x:Static res:Strings.SmtpServer}" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
                                     <Grid Margin="0,0,0,16">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -179,13 +181,13 @@
 
                                     <CheckBox Margin="0,0,0,16" IsChecked="{Binding UseSsl, Mode=TwoWay}" IsEnabled="{Binding IsEditMode}" Content="Use SSL/TLS (SSL: 995, non-SSL: 110)" />
 
-                                    <ui:TextBlock Text="아이디" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
+                                    <ui:TextBlock Text="{x:Static res:Strings.UserId}" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
                                     <ui:TextBox Margin="0,0,0,16" Text="{Binding UserId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke"/>
 
-                                    <ui:TextBlock Text="비밀번호" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
+                                    <ui:TextBlock Text="{x:Static res:Strings.Password}" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
                                     <ui:PasswordBox Margin="0,0,0,16" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke" Password="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                                    <ui:TextBlock Text="동기화 시간(분)" Foreground="White" Margin="0,0,0,4" FontTypography="Body" />
+                                    <ui:TextBlock Text="{x:Static res:Strings.SyncInterval}" Foreground="White" Margin="0,0,0,4" FontTypography="Body" />
                                     <ui:TextBox 
                                         Margin="0,0,0,16" 
                                         IsEnabled="{Binding IsEditMode}" 
@@ -194,14 +196,14 @@
                                         PreviewTextInput="NumericTextBox_PreviewTextInput"
                                         DataObject.Pasting="NumericTextBox_Pasting" />
 
-                                    <ui:TextBlock Text="이메일 사이트(선택)" Foreground="White" Margin="0,0,0,4" FontTypography="Body" />
+                                    <ui:TextBlock Text="{x:Static res:Strings.MailWebsite}" Foreground="White" Margin="0,0,0,4" FontTypography="Body" />
                                     <ui:TextBox Margin="0,0,0,16" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke" Text="{Binding MailWebUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="https://mail.example.com" />
 
                                     <!-- 버튼 그룹 -->
                                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                         <!-- 편집 모드가 아닐 때: 수정, 삭제 버튼 -->
                                         <ui:Button
-                                            Content="수정"
+                                            Content="{x:Static res:Strings.Edit}"
                                             Click="EditAccount_Click"
                                             Tag="{Binding}"
                                             Appearance="Secondary"
@@ -220,7 +222,7 @@
                                         </ui:Button>
 
                                         <ui:Button
-                                            Content="계정 삭제"
+                                            Content="{x:Static res:Strings.DeleteAccount}"
                                             Command="{Binding DataContext.RemoveAccountCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                             CommandParameter="{Binding}"
                                             Appearance="Danger"
@@ -240,7 +242,7 @@
 
                                         <!-- 편집 모드일 때: 취소, 저장 버튼 -->
                                         <ui:Button
-                                            Content="취소"
+                                            Content="{x:Static res:Strings.Cancel}"
                                             Click="CancelEdit_Click"
                                             Tag="{Binding}"
                                             Appearance="Secondary"
@@ -259,7 +261,7 @@
                                         </ui:Button>
 
                                         <ui:Button
-                                            Content="저장"
+                                            Content="{x:Static res:Strings.Save}"
                                             Click="SaveEdit_Click"
                                             Tag="{Binding}"
                                             Appearance="Primary"
@@ -291,7 +293,7 @@
                                         </StackPanel.Style>
 
                                         <TextBlock
-         Text="오류 : "
+         Text="{x:Static res:Strings.ErrorLabel}"
          FontSize="12"
          Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
          VerticalAlignment="Center"
