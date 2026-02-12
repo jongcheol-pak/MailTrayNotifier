@@ -145,4 +145,15 @@
   <data name="NewMailLatest" xml:space="preserve"><value>Latest: {0}</value></data>
   <data name="GoToMail" xml:space="preserve"><value>Go to Mail</value></data>
   <data name="MailCheckError" xml:space="preserve"><value>Mail Check Error</value></data>
+
+  <!-- AboutPage Website -->
+  <data name="AboutWebsitePrefix" xml:space="preserve"><value>For more details, visit </value></data>
+  <data name="AboutWebsiteLink" xml:space="preserve"><value>official website</value></data>
+  <data name="AboutWebsiteSuffix" xml:space="preserve"><value>.</value></data>
+
+  <!-- UpdateCheck -->
+  <data name="LatestVersionLabel" xml:space="preserve"><value>Latest Version: </value></data>
+  <data name="UpdateButton" xml:space="preserve"><value>Update</value></data>
+  <data name="UpdateAvailableTitle" xml:space="preserve"><value>Update Available</value></data>
+  <data name="UpdateAvailableMessage" xml:space="preserve"><value>A new version {0} is available. (Current: {1})</value></data>
 </root>

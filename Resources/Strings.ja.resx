@@ -145,4 +145,15 @@
   <data name="NewMailLatest" xml:space="preserve"><value>最新: {0}</value></data>
   <data name="GoToMail" xml:space="preserve"><value>メールを開く</value></data>
   <data name="MailCheckError" xml:space="preserve"><value>メール確認エラー</value></data>
+
+  <!-- AboutPage Website -->
+  <data name="AboutWebsitePrefix" xml:space="preserve"><value>詳細は</value></data>
+  <data name="AboutWebsiteLink" xml:space="preserve"><value>公式サイト</value></data>
+  <data name="AboutWebsiteSuffix" xml:space="preserve"><value>をご覧ください。</value></data>
+
+  <!-- UpdateCheck -->
+  <data name="LatestVersionLabel" xml:space="preserve"><value>最新バージョン: </value></data>
+  <data name="UpdateButton" xml:space="preserve"><value>アップデート</value></data>
+  <data name="UpdateAvailableTitle" xml:space="preserve"><value>アップデートあり</value></data>
+  <data name="UpdateAvailableMessage" xml:space="preserve"><value>新しいバージョン {0} があります。(現在: {1})</value></data>
 </root>

@@ -51,6 +51,8 @@ namespace MailTrayNotifier
         private Icon? _stopIcon;
         private Icon? _warningIcon;
         private bool _hasAccountError;
+        private readonly UpdateCheckService _updateCheckService = new();
+        private CancellationTokenSource? _updateCheckCts;
 
         public App()
         {
@@ -95,6 +97,9 @@ namespace MailTrayNotifier
                     Debug.WriteLine($"서비스 초기화 실패: {t.Exception?.GetBaseException().Message}");
                 }
             }, TaskScheduler.Default);
+
+            // 앱 시작 10분 후 업데이트 확인 (1회)
+            ScheduleUpdateCheck();
         }
 
         protected override void OnExit(ExitEventArgs e)
@@ -454,6 +459,15 @@ namespace MailTrayNotifier
             _window.Show();
             _window.WindowState = WindowState.Normal;
             _window.Activate();
+
+            // 설정 창 열릴 때마다 업데이트 확인 (실패해도 무시)
+            _ = _window.ViewModel.CheckForUpdateAsync().ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                {
+                    Debug.WriteLine($"업데이트 확인 실패: {t.Exception?.GetBaseException().Message}");
+                }
+            }, TaskScheduler.Default);
         }
 
         /// <summary>
@@ -504,10 +518,65 @@ namespace MailTrayNotifier
         }
 
         /// <summary>
+        /// 앱 시작 10분 후 업데이트 확인 예약 (1회)
+        /// </summary>
+        private void ScheduleUpdateCheck()
+        {
+            _updateCheckCts = new CancellationTokenSource();
+            var ct = _updateCheckCts.Token;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(TimeSpan.FromMinutes(10), ct);
+                    await CheckAndNotifyUpdateAsync(ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    // 앱 종료 시 취소
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"업데이트 확인 실패: {ex.Message}");
+                }
+            }, ct);
+        }
+
+        /// <summary>
+        /// 업데이트 확인 후 알림 표시
+        /// </summary>
+        private async Task CheckAndNotifyUpdateAsync(CancellationToken cancellationToken)
+        {
+            var release = await _updateCheckService.GetLatestReleaseAsync(cancellationToken);
+            if (release is null)
+            {
+                return;
+            }
+
+            var currentVersionString = _window?.ViewModel.AppVersion ?? "0.0.0";
+            if (!Version.TryParse(currentVersionString, out var currentVersion))
+            {
+                return;
+            }
+
+            if (release.Version > currentVersion)
+            {
+                var latestVersionText = $"{release.Version.Major}.{release.Version.Minor}.{release.Version.Build}";
+                _notificationService.ShowUpdateAvailable(latestVersionText, currentVersionString, release.Url);
+            }
+        }
+
+        /// <summary>
         /// 리소스 정리
         /// </summary>
         private void CleanupResources()
         {
+            _updateCheckCts?.Cancel();
+            _updateCheckCts?.Dispose();
+            _updateCheckCts = null;
+            _updateCheckService.Dispose();
+
             _mailPollingService.RunningStateChanged -= OnPollingStateChanged;
             _mailPollingService.SettingsValidityChanged -= OnSettingsValidityChanged;
             _mailPollingService.RefreshEnabledChanged -= OnRefreshEnabledChanged;

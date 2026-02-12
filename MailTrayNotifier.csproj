@@ -15,15 +15,19 @@
         <LangVersion>latest</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>MailTrayNotifier</RootNamespace>
-        <ApplicationIcon>start.ico</ApplicationIcon>
+        <ApplicationIcon>icon2.ico</ApplicationIcon>
 
         <!-- Windows 알림에 표시될 앱 이름 -->
         <AssemblyTitle>메일 알림</AssemblyTitle>
         <Product>메일 알림</Product>
         <Version>1.0.0</Version>
+
+        <!-- 배포 시 불필요한 NuGet 패키지 생성 방지 -->
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
     <ItemGroup>
       <None Remove="Assets\warning.ico" />
+      <None Remove="icon2.ico" />
     </ItemGroup>
 
     <ItemGroup>
@@ -54,14 +58,14 @@
     </ItemGroup>
 
     <ItemGroup>
-    <Content Include="Assets\start.ico" Condition="Exists('Assets\start.ico')">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="Assets\stop.ico" Condition="Exists('Assets\stop.ico')">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Assets\warning.ico" Condition="Exists('Assets\warning.ico')">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="icon2.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Resource Include="Assets\icon.png" />
         <Content Include="start.ico" />

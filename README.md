@@ -20,6 +20,7 @@ POP3 메일 서버를 주기적으로 확인하고 새 메일이 발견되면 Wi
 - 레거시 단일 계정 설정 자동 마이그레이션
 - 다국어 지원 (영어/한국어/일본어/중국어 간체·번체, 시스템 기본 언어 선택 가능)
 - 테마 변경 지원 (시스템 기본 / 다크 / 라이트, 설정 유지)
+- GitHub Releases 기반 업데이트 확인 (앱 시작 10분 후 토스트 알림, 설정 창에서 최신 버전 안내)
 
 ## 주요 클래스 구조
 
@@ -32,6 +33,7 @@ POP3 메일 서버를 주기적으로 확인하고 새 메일이 발견되면 Wi
 | `MailStateStore`         | UID 상태 파일 관리 (List 기반 순서 보장)      |
 | `NotificationService`    | Windows 토스트 알림 표시 및 클릭 이벤트 처리     |
 | `SettingsService`        | JSON 설정 파일 저장/로드 (레거시 마이그레이션 포함)  |
+| `UpdateCheckService`     | GitHub Releases API로 최신 버전 확인     |
 | `SettingsViewModel`      | 다중 계정 관리 ViewModel                |
 
 ## 동작 방식(흐름)

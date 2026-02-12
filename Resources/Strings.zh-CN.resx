@@ -145,4 +145,15 @@
   <data name="NewMailLatest" xml:space="preserve"><value>最新: {0}</value></data>
   <data name="GoToMail" xml:space="preserve"><value>前往邮箱</value></data>
   <data name="MailCheckError" xml:space="preserve"><value>邮件检查错误</value></data>
+
+  <!-- AboutPage Website -->
+  <data name="AboutWebsitePrefix" xml:space="preserve"><value>了解更多信息，请访问</value></data>
+  <data name="AboutWebsiteLink" xml:space="preserve"><value>官方网站</value></data>
+  <data name="AboutWebsiteSuffix" xml:space="preserve"><value>。</value></data>
+
+  <!-- UpdateCheck -->
+  <data name="LatestVersionLabel" xml:space="preserve"><value>最新版本: </value></data>
+  <data name="UpdateButton" xml:space="preserve"><value>更新</value></data>
+  <data name="UpdateAvailableTitle" xml:space="preserve"><value>有可用更新</value></data>
+  <data name="UpdateAvailableMessage" xml:space="preserve"><value>新版本 {0} 已发布。(当前: {1})</value></data>
 </root>

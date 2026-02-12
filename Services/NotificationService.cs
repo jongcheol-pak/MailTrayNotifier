@@ -15,9 +15,11 @@ namespace MailTrayNotifier.Services
         private const string ActionKey = "action";
         private const string ActionMarkAsRead = "markAsRead";
         private const string ActionGoToMail = "goToMail";
+        private const string ActionOpenUpdate = "openUpdate";
         private const string UidsKey = "uids";
         private const string AccountKeyKey = "accountKey";
         private const string MailWebUrlKey = "mailWebUrl";
+        private const string UpdateUrlKey = "updateUrl";
 
         /// <summary>
         /// 알림 클릭 시 UID 저장 요청 이벤트
@@ -48,6 +50,17 @@ namespace MailTrayNotifier.Services
         private void OnToastActivated(ToastNotificationActivatedEventArgsCompat e)
         {
             var args = ToastArguments.Parse(e.Argument);
+
+            // 업데이트 알림 처리
+            if (args.TryGetValue(ActionKey, out var actionValue) && actionValue == ActionOpenUpdate)
+            {
+                if (args.TryGetValue(UpdateUrlKey, out var updateUrl) &&
+                    !string.IsNullOrWhiteSpace(updateUrl))
+                {
+                    OpenMailWebsite(updateUrl);
+                }
+                return;
+            }
 
             if (!args.TryGetValue(AccountKeyKey, out var accountKey) ||
                 !args.TryGetValue(UidsKey, out var uidsString))
@@ -164,6 +177,35 @@ namespace MailTrayNotifier.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[알림 오류] Toast 알림 표시 실패: {ex.GetType().Name} - {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 업데이트 가능 알림 표시
+        /// </summary>
+        public void ShowUpdateAvailable(string latestVersion, string currentVersion, string releaseUrl)
+        {
+            try
+            {
+                var builder = new ToastContentBuilder()
+                    .AddArgument(ActionKey, ActionOpenUpdate)
+                    .AddArgument(UpdateUrlKey, releaseUrl)
+                    .AddText(Strings.UpdateAvailableTitle)
+                    .AddText(string.Format(Strings.UpdateAvailableMessage, latestVersion, currentVersion));
+
+                if (!string.IsNullOrWhiteSpace(releaseUrl))
+                {
+                    builder.AddButton(new ToastButton()
+                        .SetContent(Strings.UpdateButton)
+                        .AddArgument(ActionKey, ActionOpenUpdate)
+                        .AddArgument(UpdateUrlKey, releaseUrl));
+                }
+
+                builder.Show();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[알림 오류] 업데이트 Toast 표시 실패: {ex.GetType().Name} - {ex.Message}");
             }
         }
 

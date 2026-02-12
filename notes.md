@@ -19,6 +19,38 @@
 
 ## 최근 변경 요약
 
+### AboutPage에 공식 웹 사이트 링크 추가
+- 최신 버전 카드 아래에 "자세한 내용은 공식 웹 사이트로 이동하세요." 문구 추가
+- "공식 웹 사이트" 클릭 시 `https://jongcheol-pak.github.io/projects/mailtraynotifier/` 이동
+- 5개 언어 리소스에 AboutWebsitePrefix/Link/Suffix 문자열 추가
+- 변경 파일: AboutPage.xaml, Strings.resx, Strings.ko/ja/zh-CN/zh-TW.resx, Strings.Designer.cs
+- 검증: 빌드 성공
+
+### AppVersion 레지스트리 읽기로 변경
+- `AppVersion`을 어셈블리 버전 대신 `HKLM\SOFTWARE\PJC\MailTrayNotifier\Version` 레지스트리에서 읽도록 변경
+- 레지스트리 값이 없는 경우 빈 문자열 표시
+- 변경 파일: `ViewModels/SettingsViewModel.cs`
+- 검증: 빌드 성공
+
+### 빌드 출력 배포 불필요 파일 삭제
+- 모든 bin 디렉토리에서 배포에 불필요한 파일/폴더 삭제: `.pdb`, `.nupkg`, `settings.json`, `mail_state.json`, `mail\`, `logs\`
+- `MailTrayNotifier.csproj`에 `<IsPackable>false</IsPackable>` 추가하여 `.nupkg` 재생성 방지
+- 검증: 빌드 성공
+
+### 업데이트 확인 로직 변경 및 Windows 알림 추가
+- 앱 시작 10분 후 GitHub Releases에서 업데이트 확인 (1회) → 새 버전 있으면 Windows 토스트 알림 표시
+- 토스트 알림에 업데이트 버튼 추가 → 클릭 시 GitHub 릴리스 페이지 열기
+- 설정 창을 열 때마다 업데이트 확인 → About 페이지에 최신 버전 표시
+- InitializeAsync에서의 업데이트 확인 제거 (App.ShowSettings로 이동)
+- 변경 파일: App.xaml.cs, SettingsViewModel.cs, NotificationService.cs, 리소스 5개 + Designer.cs
+- 검증: 빌드 성공
+
+### GitHub 최신 버전 확인 및 업데이트 안내 기능 추가
+- AboutPage에서 현재 버전보다 새로운 GitHub Release가 있으면 최신 버전과 업데이트 버튼 표시
+- 업데이트 버튼 클릭 시 GitHub 릴리스 페이지를 브라우저에서 열기
+- 변경 파일: UpdateCheckService.cs (신규), SettingsViewModel.cs, AboutPage.xaml, Strings.Designer.cs, 리소스 5개
+- 검증: 빌드 성공
+
 ### 좌측 메뉴 About 버튼 하단 배치
 - MainWindow.xaml 좌측 내비게이션의 StackPanel을 DockPanel로 변경
 - MenuAbout 버튼을 DockPanel.Dock="Bottom"으로 하단 고정

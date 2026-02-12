@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
-using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MailTrayNotifier.Constants;
@@ -22,6 +21,7 @@ namespace MailTrayNotifier.ViewModels
         private readonly MailPollingService _mailPollingService;
         private readonly MailClientService _mailClientService;
         private readonly MailStateStore _mailStateStore;
+        private readonly UpdateCheckService _updateCheckService = new();
         private const string RegistryKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
         private const string AppName = "MailTrayNotifier";
 
@@ -194,12 +194,60 @@ namespace MailTrayNotifier.ViewModels
             }
         }
 
+        private const string VersionRegistryKeyPath = @"SOFTWARE\PJC\MailTrayNotifier";
+        private const string VersionRegistryValueName = "Version";
+
         public string AppVersion
         {
             get
             {
-                var version = Assembly.GetExecutingAssembly().GetName().Version;
-                return version != null ? $"{version.Major}.{version.Minor}.{version.Build}" : "1.0.0";
+                using var key = Registry.LocalMachine.OpenSubKey(VersionRegistryKeyPath);
+                return key?.GetValue(VersionRegistryValueName) as string ?? string.Empty;
+            }
+        }
+
+        [ObservableProperty]
+        private string _latestVersion = string.Empty;
+
+        [ObservableProperty]
+        private bool _isUpdateAvailable;
+
+        private string _latestDownloadUrl = string.Empty;
+
+        /// <summary>
+        /// GitHub Releases에서 최신 버전을 확인한다.
+        /// </summary>
+        public async Task CheckForUpdateAsync()
+        {
+            var release = await _updateCheckService.GetLatestReleaseAsync();
+            if (release is null)
+            {
+                return;
+            }
+
+            var currentVersionString = AppVersion;
+            if (!Version.TryParse(currentVersionString, out var currentVersion))
+            {
+                return;
+            }
+
+            if (release.Version > currentVersion)
+            {
+                LatestVersion = $"{release.Version.Major}.{release.Version.Minor}.{release.Version.Build}";
+                _latestDownloadUrl = release.Url;
+                IsUpdateAvailable = true;
+            }
+        }
+
+        /// <summary>
+        /// GitHub 릴리스 페이지를 브라우저에서 연다.
+        /// </summary>
+        [RelayCommand]
+        private void OpenUpdatePage()
+        {
+            if (!string.IsNullOrEmpty(_latestDownloadUrl))
+            {
+                Process.Start(new ProcessStartInfo(_latestDownloadUrl) { UseShellExecute = true });
             }
         }
 
@@ -938,6 +986,8 @@ namespace MailTrayNotifier.ViewModels
                 account.EnabledChanged -= OnAccountEnabledChanged;
                 account.ExpandedChanged -= OnAccountExpandedChanged;
             }
+
+            _updateCheckService.Dispose();
         }
     }
 }

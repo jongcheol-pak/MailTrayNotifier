@@ -88,6 +88,9 @@ namespace MailTrayNotifier.Resources {
         public static string About => ResourceManager.GetString("About", resourceCulture)!;
         public static string VersionLabel => ResourceManager.GetString("VersionLabel", resourceCulture)!;
         public static string OpenSourceLicenses => ResourceManager.GetString("OpenSourceLicenses", resourceCulture)!;
+        public static string AboutWebsitePrefix => ResourceManager.GetString("AboutWebsitePrefix", resourceCulture)!;
+        public static string AboutWebsiteLink => ResourceManager.GetString("AboutWebsiteLink", resourceCulture)!;
+        public static string AboutWebsiteSuffix => ResourceManager.GetString("AboutWebsiteSuffix", resourceCulture)!;
         public static string TrayStartPolling => ResourceManager.GetString("TrayStartPolling", resourceCulture)!;
         public static string TrayStopPolling => ResourceManager.GetString("TrayStopPolling", resourceCulture)!;
         public static string TraySettings => ResourceManager.GetString("TraySettings", resourceCulture)!;
@@ -143,5 +146,9 @@ namespace MailTrayNotifier.Resources {
         public static string MailAccountAuthFailed => ResourceManager.GetString("MailAccountAuthFailed", resourceCulture)!;
         public static string MailAuthError => ResourceManager.GetString("MailAuthError", resourceCulture)!;
         public static string AccountMailCheckError => ResourceManager.GetString("AccountMailCheckError", resourceCulture)!;
+        public static string LatestVersionLabel => ResourceManager.GetString("LatestVersionLabel", resourceCulture)!;
+        public static string UpdateButton => ResourceManager.GetString("UpdateButton", resourceCulture)!;
+        public static string UpdateAvailableTitle => ResourceManager.GetString("UpdateAvailableTitle", resourceCulture)!;
+        public static string UpdateAvailableMessage => ResourceManager.GetString("UpdateAvailableMessage", resourceCulture)!;
     }
 }

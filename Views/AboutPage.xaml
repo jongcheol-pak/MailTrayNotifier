@@ -9,6 +9,10 @@
       d:DesignHeight="450" d:DesignWidth="800"
       Title="AboutPage">
 
+    <Page.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </Page.Resources>
+
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="24" VerticalAlignment="Top">
@@ -21,8 +25,24 @@
                             <ui:TextBlock Text="{x:Static res:Strings.VersionLabel}" FontTypography="Body"/>
                             <ui:TextBlock Text="{Binding AppVersion}" FontTypography="Body"/>
                         </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0"
+                                    Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <ui:TextBlock Text="{x:Static res:Strings.LatestVersionLabel}" FontTypography="Body"/>
+                            <ui:TextBlock Text="{Binding LatestVersion}" FontTypography="Body"/>
+                            <ui:Button Content="{x:Static res:Strings.UpdateButton}"
+                                       Appearance="Primary"
+                                       Margin="12,0,0,0"
+                                       Padding="12,4"
+                                       Command="{Binding OpenUpdatePageCommand}" />                           
+                        </StackPanel>
+
+                        <ui:TextBlock Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" FontTypography="Body">
+<Run Text="{x:Static res:Strings.AboutWebsitePrefix}"/><Hyperlink Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Command="{Binding OpenLicenseUrlCommand}" CommandParameter="https://jongcheol-pak.github.io/projects/mailtraynotifier/"><Run Text="{x:Static res:Strings.AboutWebsiteLink}"/></Hyperlink><Run Text="{x:Static res:Strings.AboutWebsiteSuffix}"/>
+                        </ui:TextBlock>
                     </StackPanel>
                 </ui:Card>
+
+              
 
                 <ui:TextBlock Text="{x:Static res:Strings.OpenSourceLicenses}" FontTypography="BodyStrong" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" Margin="0,0,0,8" />
                 <ItemsControl ItemsSource="{Binding OpenSourceLibraries}">
