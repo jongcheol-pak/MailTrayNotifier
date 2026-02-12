@@ -65,6 +65,11 @@ namespace MailTrayNotifier.Resources {
         public static string LanguageTitle => ResourceManager.GetString("LanguageTitle", resourceCulture)!;
         public static string LanguageDescription => ResourceManager.GetString("LanguageDescription", resourceCulture)!;
         public static string LanguageSystemDefault => ResourceManager.GetString("LanguageSystemDefault", resourceCulture)!;
+        public static string ThemeTitle => ResourceManager.GetString("ThemeTitle", resourceCulture)!;
+        public static string ThemeDescription => ResourceManager.GetString("ThemeDescription", resourceCulture)!;
+        public static string ThemeSystemDefault => ResourceManager.GetString("ThemeSystemDefault", resourceCulture)!;
+        public static string ThemeDark => ResourceManager.GetString("ThemeDark", resourceCulture)!;
+        public static string ThemeLight => ResourceManager.GetString("ThemeLight", resourceCulture)!;
         public static string AddAccount => ResourceManager.GetString("AddAccount", resourceCulture)!;
         public static string NotificationOffWarning => ResourceManager.GetString("NotificationOffWarning", resourceCulture)!;
         public static string AccountName => ResourceManager.GetString("AccountName", resourceCulture)!;

@@ -168,6 +168,7 @@ namespace MailTrayNotifier.Services
             {
                 IsRefreshEnabled = collection.IsRefreshEnabled,
                 Language = collection.Language,
+                Theme = collection.Theme,
                 Accounts = collection.Accounts.Select(account => new MailSettings
                 {
                     Pop3Server = account.Pop3Server,
@@ -250,6 +251,28 @@ namespace MailTrayNotifier.Services
                 var json = File.ReadAllText(SettingsFile);
                 var node = JsonNode.Parse(json);
                 return node?["Language"]?.GetValue<string>() ?? string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// 저장된 테마 코드를 동기적으로 로드 (앱 시작 시 UI 생성 전 호출)
+        /// </summary>
+        public static string LoadThemeSync()
+        {
+            if (!File.Exists(SettingsFile))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                var json = File.ReadAllText(SettingsFile);
+                var node = JsonNode.Parse(json);
+                return node?["Theme"]?.GetValue<string>() ?? string.Empty;
             }
             catch
             {

@@ -46,6 +46,13 @@
   <data name="LanguageDescription" xml:space="preserve"><value>アプリの表示言語を選択します。</value></data>
   <data name="LanguageSystemDefault" xml:space="preserve"><value>システム既定</value></data>
 
+  <!-- Theme -->
+  <data name="ThemeTitle" xml:space="preserve"><value>テーマ</value></data>
+  <data name="ThemeDescription" xml:space="preserve"><value>アプリの表示テーマを選択します。</value></data>
+  <data name="ThemeSystemDefault" xml:space="preserve"><value>システム既定</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>ダーク</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>ライト</value></data>
+
   <!-- MailSettingsPage -->
   <data name="AddAccount" xml:space="preserve"><value>アカウント追加</value></data>
   <data name="NotificationOffWarning" xml:space="preserve"><value>設定で通知がOFFになっているため、通知を受信できません。設定で通知をONにしてください。</value></data>

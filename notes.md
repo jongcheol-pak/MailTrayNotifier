@@ -19,6 +19,31 @@
 
 ## 최근 변경 요약
 
+### 좌측 메뉴 About 버튼 하단 배치
+- MainWindow.xaml 좌측 내비게이션의 StackPanel을 DockPanel로 변경
+- MenuAbout 버튼을 DockPanel.Dock="Bottom"으로 하단 고정
+- 검증: 빌드 성공
+
+### Reset 시 테마/언어 미초기화 버그 수정
+- SettingsViewModel.Reset()에서 테마/언어가 시스템 기본으로 초기화되지 않는 버그 수정
+- `_selectedThemeCode`, `_selectedLanguageCode`를 빈 문자열로 초기화 + ApplyTheme/ApplyLanguage 호출
+- 초기화 완료 후 LanguageChanged 이벤트로 UI 갱신
+- 검증: 빌드 성공
+
+### MainWindow 하드코딩 배경색 제거
+- MainWindow.xaml의 하드코딩 배경색 4곳(`#151c26` 3곳, `#21262d` 1곳)을 테마 리소스로 교체
+- Grid/TitleBar/Nav: Transparent (Mica 배경 투과)
+- 콘텐츠 영역: `CardBackgroundFillColorDefaultBrush` (테마 연동)
+- 검증: 빌드 성공
+
+### 테마 변경 기능 추가
+- GeneralSettingsPage 언어 설정 아래에 테마 변경 기능 추가 (시스템 기본 / 다크 / 라이트)
+- WPF-UI ApplicationThemeManager를 사용한 테마 전환
+- 선택한 테마는 settings.json에 저장, 앱 재시작 시에도 유지
+- 5개 언어 리소스 파일에 테마 문자열 추가
+- 변경 파일: ThemeOption.cs (신규), MailSettingsCollection.cs, SettingsService.cs, SettingsViewModel.cs, GeneralSettingsPage.xaml, App.xaml.cs, 리소스 5개
+- 검증: 빌드 성공
+
 ### 배포 전 코드 검증 및 이슈 수정
 - `MailTrayNotifier.csproj`: `warning.ico`에 `CopyToOutputDirectory=PreserveNewest` 추가 (배포 시 아이콘 누락 수정)
 - `MainWindow.xaml.cs`: `ForceClose()`에서 `ViewModel.Dispose()` 호출 추가 (이벤트 구독 해제 누락 수정)

@@ -142,38 +142,36 @@
 
                             <Border Padding="12" Background="{ui:ThemeResource ControlFillColorDefaultBrush}" CornerRadius="8">
                                 <StackPanel>
-                                    <ui:TextBlock Text="{x:Static res:Strings.AccountName}" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
-                                    <ui:TextBox Margin="0,0,0,16" Text="{Binding AccountName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke" PlaceholderText="" />
+                                    <ui:TextBlock Text="{x:Static res:Strings.AccountName}" Margin="0,0,0,4" FontTypography="Body" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}"/>
+                                    <ui:TextBox Margin="0,0,0,16" Text="{Binding AccountName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsEditMode}" PlaceholderText="" />
 
-                                    <ui:TextBlock Text="{x:Static res:Strings.Pop3Server}" Margin="0,0,0,4" FontTypography="Body" Foreground="White"  />
+                                    <ui:TextBlock Text="{x:Static res:Strings.Pop3Server}" Margin="0,0,0,4" FontTypography="Body" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}"  />
                                     <Grid Margin="0,0,0,16">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="100" />
                                         </Grid.ColumnDefinitions>
-                                        <ui:TextBox Grid.Column="0" Margin="0,0,8,0" Text="{Binding Pop3Server, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke" />
+                                        <ui:TextBox Grid.Column="0" Margin="0,0,8,0" Text="{Binding Pop3Server, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsEditMode}" />
                                         <ui:TextBox 
                                             Grid.Column="1" 
                                             Text="{Binding Pop3PortText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
                                             IsEnabled="{Binding IsEditMode}" 
-                                            Foreground="WhiteSmoke" 
                                             PlaceholderText="{x:Static res:Strings.PortPlaceholder}"
                                             PreviewTextInput="NumericTextBox_PreviewTextInput"
                                             DataObject.Pasting="NumericTextBox_Pasting" />
                                     </Grid>
 
-                                    <ui:TextBlock Text="{x:Static res:Strings.SmtpServer}" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
+                                    <ui:TextBlock Text="{x:Static res:Strings.SmtpServer}" Margin="0,0,0,4" FontTypography="Body" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}"/>
                                     <Grid Margin="0,0,0,16">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="100" />
                                         </Grid.ColumnDefinitions>
-                                        <ui:TextBox Grid.Column="0" Margin="0,0,8,0" Text="{Binding SmtpServer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke"/>
+                                        <ui:TextBox Grid.Column="0" Margin="0,0,8,0" Text="{Binding SmtpServer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsEditMode}"/>
                                         <ui:TextBox 
                                             Grid.Column="1" 
                                             Text="{Binding SmtpPortText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
                                             IsEnabled="{Binding IsEditMode}" 
-                                            Foreground="WhiteSmoke" 
                                             PlaceholderText="{x:Static res:Strings.PortPlaceholder}"
                                             PreviewTextInput="NumericTextBox_PreviewTextInput"
                                             DataObject.Pasting="NumericTextBox_Pasting" />
@@ -181,23 +179,22 @@
 
                                     <CheckBox Margin="0,0,0,16" IsChecked="{Binding UseSsl, Mode=TwoWay}" IsEnabled="{Binding IsEditMode}" Content="{x:Static res:Strings.UseSslLabel}" />
 
-                                    <ui:TextBlock Text="{x:Static res:Strings.UserId}" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
-                                    <ui:TextBox Margin="0,0,0,16" Text="{Binding UserId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke"/>
+                                    <ui:TextBlock Text="{x:Static res:Strings.UserId}" Margin="0,0,0,4" FontTypography="Body" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}"/>
+                                    <ui:TextBox Margin="0,0,0,16" Text="{Binding UserId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsEditMode}"/>
 
-                                    <ui:TextBlock Text="{x:Static res:Strings.Password}" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
-                                    <ui:PasswordBox Margin="0,0,0,16" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke" Password="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <ui:TextBlock Text="{x:Static res:Strings.Password}" Margin="0,0,0,4" FontTypography="Body" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}"/>
+                                    <ui:PasswordBox Margin="0,0,0,16" IsEnabled="{Binding IsEditMode}" Password="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                                    <ui:TextBlock Text="{x:Static res:Strings.SyncInterval}" Foreground="White" Margin="0,0,0,4" FontTypography="Body" />
+                                    <ui:TextBlock Text="{x:Static res:Strings.SyncInterval}" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" Margin="0,0,0,4" FontTypography="Body" />
                                     <ui:TextBox 
                                         Margin="0,0,0,16" 
                                         IsEnabled="{Binding IsEditMode}" 
-                                        Foreground="WhiteSmoke" 
                                         Text="{Binding RefreshMinutesText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                                         PreviewTextInput="NumericTextBox_PreviewTextInput"
                                         DataObject.Pasting="NumericTextBox_Pasting" />
 
-                                    <ui:TextBlock Text="{x:Static res:Strings.MailWebsite}" Foreground="White" Margin="0,0,0,4" FontTypography="Body" />
-                                    <ui:TextBox Margin="0,0,0,16" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke" Text="{Binding MailWebUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="https://mail.example.com" />
+                                    <ui:TextBlock Text="{x:Static res:Strings.MailWebsite}" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" Margin="0,0,0,4" FontTypography="Body" />
+                                    <ui:TextBox Margin="0,0,0,16" IsEnabled="{Binding IsEditMode}" Text="{Binding MailWebUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="https://mail.example.com" />
 
                                     <!-- 버튼 그룹 -->
                                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">

@@ -8,6 +8,8 @@ using System.Windows.Controls;
 using Hardcodet.Wpf.TaskbarNotification;
 using MailTrayNotifier.Services;
 using MailTrayNotifier.Resources;
+using MailTrayNotifier.ViewModels;
+using Wpf.Ui.Appearance;
 
 namespace MailTrayNotifier
 {
@@ -63,6 +65,9 @@ namespace MailTrayNotifier
 
             // 저장된 언어 설정 적용 (UI 생성 전)
             ApplyStartupLanguage();
+
+            // 저장된 테마 설정 적용 (UI 생성 전)
+            ApplyStartupTheme();
 
             // 중복 실행 방지
             _mutex = new Mutex(true, MutexName, out var isNewInstance);
@@ -407,6 +412,15 @@ namespace MailTrayNotifier
                     // 잘못된 언어 코드 무시
                 }
             }
+        }
+
+        /// <summary>
+        /// 앱 시작 시 저장된 테마 설정 적용 (UI 생성 전 호출)
+        /// </summary>
+        private static void ApplyStartupTheme()
+        {
+            var themeCode = SettingsService.LoadThemeSync();
+            SettingsViewModel.ApplyTheme(themeCode);
         }
 
         /// <summary>

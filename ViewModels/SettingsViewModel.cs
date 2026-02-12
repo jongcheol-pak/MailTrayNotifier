@@ -9,6 +9,7 @@ using MailTrayNotifier.Models;
 using MailTrayNotifier.Services;
 using MailTrayNotifier.Resources;
 using Microsoft.Win32;
+using Wpf.Ui.Appearance;
 
 namespace MailTrayNotifier.ViewModels
 {
@@ -37,6 +38,8 @@ namespace MailTrayNotifier.ViewModels
         private bool _isInitialized;
         private string _selectedLanguageCode = string.Empty;
         private bool _isChangingLanguage;
+        private string _selectedThemeCode = string.Empty;
+        private bool _isChangingTheme;
 
         /// <summary>
         /// 사용 가능한 언어 목록
@@ -70,6 +73,41 @@ namespace MailTrayNotifier.ViewModels
                         if (t.IsFaulted)
                         {
                             Debug.WriteLine($"언어 변경 실패: {t.Exception?.GetBaseException().Message}");
+                        }
+                    }, TaskScheduler.Default);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 사용 가능한 테마 목록
+        /// </summary>
+        public IReadOnlyList<ThemeOption> AvailableThemes =>
+        [
+            new(string.Empty, Strings.ThemeSystemDefault),
+            new("dark", Strings.ThemeDark),
+            new("light", Strings.ThemeLight),
+        ];
+
+        /// <summary>
+        /// 선택된 테마 코드 (빈 문자열 = 시스템 기본)
+        /// </summary>
+        public string SelectedThemeCode
+        {
+            get => _selectedThemeCode;
+            set
+            {
+                // 테마 변경 중 ComboBox 재생성에 의한 재진입 방지
+                if (_isChangingTheme) return;
+
+                var normalized = value ?? string.Empty;
+                if (SetProperty(ref _selectedThemeCode, normalized) && _isInitialized)
+                {
+                    _ = ChangeThemeAsync(normalized).ContinueWith(t =>
+                    {
+                        if (t.IsFaulted)
+                        {
+                            Debug.WriteLine($"테마 변경 실패: {t.Exception?.GetBaseException().Message}");
                         }
                     }, TaskScheduler.Default);
                 }
@@ -192,6 +230,8 @@ namespace MailTrayNotifier.ViewModels
             IsRefreshEnabled = collection.IsRefreshEnabled;
             _selectedLanguageCode = collection.Language;
             OnPropertyChanged(nameof(SelectedLanguageCode));
+            _selectedThemeCode = collection.Theme;
+            OnPropertyChanged(nameof(SelectedThemeCode));
 
             Accounts.Clear();
             for (int i = 0; i < collection.Accounts.Count; i++)
@@ -366,6 +406,8 @@ namespace MailTrayNotifier.ViewModels
             var collection = new MailSettingsCollection
             {
                 IsRefreshEnabled = IsRefreshEnabled,
+                Language = _selectedLanguageCode,
+                Theme = _selectedThemeCode,
                 Accounts = Accounts
                     .Where(a => a.HasRequiredValues())
                     .Select(a => a.ToMailSettings())
@@ -548,6 +590,8 @@ namespace MailTrayNotifier.ViewModels
             var collection = new MailSettingsCollection
             {
                 IsRefreshEnabled = IsRefreshEnabled,
+                Language = _selectedLanguageCode,
+                Theme = _selectedThemeCode,
                 Accounts = Accounts
                     .Where(a => a.HasRequiredValues())
                     .Select(a => a.ToMailSettings())
@@ -633,6 +677,17 @@ namespace MailTrayNotifier.ViewModels
             _isInitialized = false;
             IsRefreshEnabled = true;
             Accounts.Clear();
+
+            // 테마를 시스템 기본으로 초기화
+            _selectedThemeCode = string.Empty;
+            OnPropertyChanged(nameof(SelectedThemeCode));
+            ApplyTheme(string.Empty);
+
+            // 언어를 시스템 기본으로 초기화
+            _selectedLanguageCode = string.Empty;
+            OnPropertyChanged(nameof(SelectedLanguageCode));
+            ApplyLanguage(string.Empty);
+
             _isInitialized = true;
 
             System.Windows.MessageBox.Show(
@@ -640,6 +695,9 @@ namespace MailTrayNotifier.ViewModels
                 Strings.AlertTitle,
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Information);
+
+            // 언어가 변경되었을 수 있으므로 UI 갱신 요청
+            LanguageChanged?.Invoke();
         }
 
         /// <summary>
@@ -815,6 +873,54 @@ namespace MailTrayNotifier.ViewModels
             Thread.CurrentThread.CurrentUICulture = culture;
             Thread.CurrentThread.CurrentCulture = culture;
             Strings.Culture = culture;
+        }
+
+        /// <summary>
+        /// 테마 변경 처리 (설정 저장 + 테마 적용)
+        /// </summary>
+        private async Task ChangeThemeAsync(string themeCode)
+        {
+            _isChangingTheme = true;
+            try
+            {
+                var collection = await _settingsService.LoadCollectionAsync();
+                collection.Theme = themeCode;
+                await _settingsService.SaveCollectionAsync(collection);
+
+                // UI 스레드에서 테마 적용
+                if (System.Windows.Application.Current?.Dispatcher is { } dispatcher)
+                {
+                    dispatcher.Invoke(() => ApplyTheme(themeCode));
+                }
+            }
+            finally
+            {
+                _isChangingTheme = false;
+            }
+        }
+
+        /// <summary>
+        /// 테마 코드에 따른 WPF-UI 테마 적용
+        /// </summary>
+        public static void ApplyTheme(string themeCode)
+        {
+            if (themeCode is "dark")
+            {
+                ApplicationThemeManager.Apply(ApplicationTheme.Dark);
+            }
+            else if (themeCode is "light")
+            {
+                ApplicationThemeManager.Apply(ApplicationTheme.Light);
+            }
+            else
+            {
+                // 시스템 기본 테마 적용
+                var systemTheme = ApplicationThemeManager.GetSystemTheme();
+                ApplicationThemeManager.Apply(
+                    systemTheme is SystemTheme.Light or SystemTheme.HC1 or SystemTheme.HC2
+                        ? ApplicationTheme.Light
+                        : ApplicationTheme.Dark);
+            }
         }
 
         /// <summary>

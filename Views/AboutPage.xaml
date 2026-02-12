@@ -12,7 +12,7 @@
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="24" VerticalAlignment="Top">
-                <ui:TextBlock Text="{x:Static res:Strings.About}" FontTypography="Subtitle" Foreground="White" HorizontalAlignment="Left" Margin="0,0,0,24" />
+                <ui:TextBlock Text="{x:Static res:Strings.About}" FontTypography="Subtitle" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" HorizontalAlignment="Left" Margin="0,0,0,24" />
 
                 <ui:Card Margin="0,0,0,24">
                     <StackPanel>
@@ -24,7 +24,7 @@
                     </StackPanel>
                 </ui:Card>
 
-                <ui:TextBlock Text="{x:Static res:Strings.OpenSourceLicenses}" FontTypography="BodyStrong" Foreground="White" Margin="0,0,0,8" />
+                <ui:TextBlock Text="{x:Static res:Strings.OpenSourceLicenses}" FontTypography="BodyStrong" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" Margin="0,0,0,8" />
                 <ItemsControl ItemsSource="{Binding OpenSourceLibraries}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -36,9 +36,9 @@
                                        Appearance="Secondary">
                                 <StackPanel Orientation="Horizontal">
                                     <ui:TextBlock Text="{Binding Name}" FontTypography="Body" />
-                                    <ui:TextBlock Text=" (" FontTypography="Caption" Foreground="Gray" VerticalAlignment="Center" />
-                                    <ui:TextBlock Text="{Binding License}" FontTypography="Caption" Foreground="Gray" VerticalAlignment="Center" />
-                                    <ui:TextBlock Text=")" FontTypography="Caption" Foreground="Gray" VerticalAlignment="Center" />
+                                    <ui:TextBlock Text=" (" FontTypography="Caption" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                    <ui:TextBlock Text="{Binding License}" FontTypography="Caption" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                    <ui:TextBlock Text=")" FontTypography="Caption" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </ui:Button>
                         </DataTemplate>

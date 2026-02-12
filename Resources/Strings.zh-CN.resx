@@ -46,6 +46,13 @@
   <data name="LanguageDescription" xml:space="preserve"><value>选择应用的显示语言。</value></data>
   <data name="LanguageSystemDefault" xml:space="preserve"><value>系统默认</value></data>
 
+  <!-- Theme -->
+  <data name="ThemeTitle" xml:space="preserve"><value>主题</value></data>
+  <data name="ThemeDescription" xml:space="preserve"><value>选择应用的显示主题。</value></data>
+  <data name="ThemeSystemDefault" xml:space="preserve"><value>系统默认</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>深色</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>浅色</value></data>
+
   <!-- MailSettingsPage -->
   <data name="AddAccount" xml:space="preserve"><value>添加账户</value></data>
   <data name="NotificationOffWarning" xml:space="preserve"><value>设置中通知已关闭，无法接收通知。请在设置中开启通知。</value></data>

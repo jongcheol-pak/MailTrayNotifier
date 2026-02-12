@@ -10,7 +10,10 @@ Title="{x:Static res:Strings.AppTitle}"
 
 Width="500"
 Height="600"
-MinHeight="400"
+MinHeight="600"
+MinWidth="500"
+    MaxHeight="600"
+MaxWidth="500"
 ResizeMode="NoResize"
 WindowBackdropType="Mica"
 ExtendsContentIntoTitleBar="True">
@@ -44,7 +47,7 @@ ExtendsContentIntoTitleBar="True">
         </Setter>
     </Style>
 </ui:FluentWindow.Resources>
-    <Grid  Background="#151c26">
+    <Grid  Background="Transparent">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -54,7 +57,7 @@ ExtendsContentIntoTitleBar="True">
         <ui:TitleBar Grid.Row="0" 
                      ShowMaximize="False"
                      ShowMinimize="False"
-                     Background="#151c26"
+                     Background="Transparent"
                      Margin="0,0,0,0">
             <ui:TitleBar.Header>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -71,32 +74,31 @@ ExtendsContentIntoTitleBar="True">
             </Grid.ColumnDefinitions>
 
             <!-- 좌측 메뉴 -->
-            <Border Grid.Column="0" Background="#151c26" BorderThickness="0,0,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
-                <StackPanel Margin="0,8,0,0">
-                    <RadioButton x:Name="MenuMail" GroupName="NavMenu" IsChecked="True" Click="NavMenu_Click" Style="{StaticResource NavMenuButtonStyle}">
+            <Border Grid.Column="0" Background="Transparent" BorderThickness="0,0,0,0" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
+                <DockPanel Margin="0,8,0,8" LastChildFill="False">
+                    <RadioButton x:Name="MenuMail" DockPanel.Dock="Top" GroupName="NavMenu" IsChecked="True" Click="NavMenu_Click" Style="{StaticResource NavMenuButtonStyle}">
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                             <ui:SymbolIcon Symbol="Mail24" FontSize="24" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                             <TextBlock x:Name="NavMailText" Text="{x:Static res:Strings.NavMail}" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                         </StackPanel>
                     </RadioButton>
-                    <RadioButton x:Name="MenuSettings" GroupName="NavMenu" Click="NavMenu_Click" Style="{StaticResource NavMenuButtonStyle}">
+                    <RadioButton x:Name="MenuSettings" DockPanel.Dock="Top" GroupName="NavMenu" Click="NavMenu_Click" Style="{StaticResource NavMenuButtonStyle}">
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                             <ui:SymbolIcon Symbol="Settings24" FontSize="24" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                             <TextBlock x:Name="NavSettingsText" Text="{x:Static res:Strings.NavSettings}" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                         </StackPanel>
                     </RadioButton>
-                    <RadioButton x:Name="MenuAbout" GroupName="NavMenu" Click="NavMenu_Click" Style="{StaticResource NavMenuButtonStyle}">
+                    <RadioButton x:Name="MenuAbout" DockPanel.Dock="Bottom" GroupName="NavMenu" Click="NavMenu_Click" Style="{StaticResource NavMenuButtonStyle}">
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
                             <ui:SymbolIcon Symbol="Info24" FontSize="24" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                             <TextBlock x:Name="NavAboutText" Text="{x:Static res:Strings.About}" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                         </StackPanel>
                     </RadioButton>
-                  
-                </StackPanel>
+                </DockPanel>
             </Border>
 
             <!-- 콘텐츠 영역 -->
-            <Border Grid.Column="1" CornerRadius="8" Background="#21262d" Margin="4">
+            <Border Grid.Column="1" CornerRadius="8" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Margin="4">
                 <Frame x:Name="ContentFrame" NavigationUIVisibility="Hidden" Padding="0,0,0,4"/>
             </Border>
         </Grid>

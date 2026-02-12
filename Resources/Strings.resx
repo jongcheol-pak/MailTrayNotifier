@@ -46,6 +46,13 @@
   <data name="LanguageDescription" xml:space="preserve"><value>Select the display language for the application.</value></data>
   <data name="LanguageSystemDefault" xml:space="preserve"><value>System Default</value></data>
 
+  <!-- Theme -->
+  <data name="ThemeTitle" xml:space="preserve"><value>Theme</value></data>
+  <data name="ThemeDescription" xml:space="preserve"><value>Select the display theme for the application.</value></data>
+  <data name="ThemeSystemDefault" xml:space="preserve"><value>System Default</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>Dark</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>Light</value></data>
+
   <!-- MailSettingsPage -->
   <data name="AddAccount" xml:space="preserve"><value>Add Account</value></data>
   <data name="NotificationOffWarning" xml:space="preserve"><value>Notifications are turned OFF in settings. Please turn ON notifications in settings to receive alerts.</value></data>

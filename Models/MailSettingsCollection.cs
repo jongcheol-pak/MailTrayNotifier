@@ -18,6 +18,11 @@ namespace MailTrayNotifier.Models
         public string Language { get; set; } = string.Empty;
 
         /// <summary>
+        /// UI 테마 코드 (빈 문자열 = 시스템 기본, "dark", "light")
+        /// </summary>
+        public string Theme { get; set; } = string.Empty;
+
+        /// <summary>
         /// 메일 계정 목록
         /// </summary>
         public List<MailSettings> Accounts { get; set; } = new();
