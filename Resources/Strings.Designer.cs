@@ -62,6 +62,9 @@ namespace MailTrayNotifier.Resources {
         public static string AutoStartDescription => ResourceManager.GetString("AutoStartDescription", resourceCulture)!;
         public static string NotificationTitle => ResourceManager.GetString("NotificationTitle", resourceCulture)!;
         public static string NotificationDescription => ResourceManager.GetString("NotificationDescription", resourceCulture)!;
+        public static string LanguageTitle => ResourceManager.GetString("LanguageTitle", resourceCulture)!;
+        public static string LanguageDescription => ResourceManager.GetString("LanguageDescription", resourceCulture)!;
+        public static string LanguageSystemDefault => ResourceManager.GetString("LanguageSystemDefault", resourceCulture)!;
         public static string AddAccount => ResourceManager.GetString("AddAccount", resourceCulture)!;
         public static string NotificationOffWarning => ResourceManager.GetString("NotificationOffWarning", resourceCulture)!;
         public static string AccountName => ResourceManager.GetString("AccountName", resourceCulture)!;
@@ -77,6 +80,9 @@ namespace MailTrayNotifier.Resources {
         public static string Save => ResourceManager.GetString("Save", resourceCulture)!;
         public static string ErrorLabel => ResourceManager.GetString("ErrorLabel", resourceCulture)!;
         public static string AppName => ResourceManager.GetString("AppName", resourceCulture)!;
+        public static string About => ResourceManager.GetString("About", resourceCulture)!;
+        public static string VersionLabel => ResourceManager.GetString("VersionLabel", resourceCulture)!;
+        public static string OpenSourceLicenses => ResourceManager.GetString("OpenSourceLicenses", resourceCulture)!;
         public static string TrayStartPolling => ResourceManager.GetString("TrayStartPolling", resourceCulture)!;
         public static string TrayStopPolling => ResourceManager.GetString("TrayStopPolling", resourceCulture)!;
         public static string TraySettings => ResourceManager.GetString("TraySettings", resourceCulture)!;
@@ -121,5 +127,16 @@ namespace MailTrayNotifier.Resources {
         public static string NewMailLatest => ResourceManager.GetString("NewMailLatest", resourceCulture)!;
         public static string GoToMail => ResourceManager.GetString("GoToMail", resourceCulture)!;
         public static string MailCheckError => ResourceManager.GetString("MailCheckError", resourceCulture)!;
+        public static string PortPlaceholder => ResourceManager.GetString("PortPlaceholder", resourceCulture)!;
+        public static string UseSslLabel => ResourceManager.GetString("UseSslLabel", resourceCulture)!;
+        public static string ToggleOn => ResourceManager.GetString("ToggleOn", resourceCulture)!;
+        public static string ToggleOff => ResourceManager.GetString("ToggleOff", resourceCulture)!;
+        public static string MailServerAuthFailed => ResourceManager.GetString("MailServerAuthFailed", resourceCulture)!;
+        public static string MailServerConnectionFailed => ResourceManager.GetString("MailServerConnectionFailed", resourceCulture)!;
+        public static string MailServerTimeout => ResourceManager.GetString("MailServerTimeout", resourceCulture)!;
+        public static string MailServerConnectionError => ResourceManager.GetString("MailServerConnectionError", resourceCulture)!;
+        public static string MailAccountAuthFailed => ResourceManager.GetString("MailAccountAuthFailed", resourceCulture)!;
+        public static string MailAuthError => ResourceManager.GetString("MailAuthError", resourceCulture)!;
+        public static string AccountMailCheckError => ResourceManager.GetString("AccountMailCheckError", resourceCulture)!;
     }
 }

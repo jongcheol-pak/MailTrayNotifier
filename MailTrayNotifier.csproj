@@ -34,6 +34,15 @@
       <EmbeddedResource Update="Resources\Strings.ko.resx">
         <DependentUpon>Strings.resx</DependentUpon>
       </EmbeddedResource>
+      <EmbeddedResource Update="Resources\Strings.ja.resx">
+        <DependentUpon>Strings.resx</DependentUpon>
+      </EmbeddedResource>
+      <EmbeddedResource Update="Resources\Strings.zh-CN.resx">
+        <DependentUpon>Strings.resx</DependentUpon>
+      </EmbeddedResource>
+      <EmbeddedResource Update="Resources\Strings.zh-TW.resx">
+        <DependentUpon>Strings.resx</DependentUpon>
+      </EmbeddedResource>
     </ItemGroup>
 
     <ItemGroup>
@@ -51,7 +60,9 @@
     <Content Include="Assets\stop.ico" Condition="Exists('Assets\stop.ico')">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Assets\warning.ico" />
+    <Content Include="Assets\warning.ico" Condition="Exists('Assets\warning.ico')">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Resource Include="Assets\icon.png" />
         <Content Include="start.ico" />
     </ItemGroup>

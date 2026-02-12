@@ -12,25 +12,38 @@
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="24" VerticalAlignment="Top">
-                <ui:TextBlock Text="About" FontTypography="Subtitle" Foreground="White" HorizontalAlignment="Left" Margin="0,0,0,24" />
+                <ui:TextBlock Text="{x:Static res:Strings.About}" FontTypography="Subtitle" Foreground="White" HorizontalAlignment="Left" Margin="0,0,0,24" />
 
                 <ui:Card Margin="0,0,0,24">
                     <StackPanel>
                         <ui:TextBlock Text="{x:Static res:Strings.AppName}" FontTypography="BodyStrong" Margin="0,0,0,4"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
-                            <ui:TextBlock Text="Version: " FontTypography="Body"/>
+                            <ui:TextBlock Text="{x:Static res:Strings.VersionLabel}" FontTypography="Body"/>
                             <ui:TextBlock Text="{Binding AppVersion}" FontTypography="Body"/>
                         </StackPanel>
                     </StackPanel>
                 </ui:Card>
 
-                <ui:TextBlock Text="Open Source Licenses" FontTypography="BodyStrong" Foreground="White" Margin="0,0,0,8" />
-                <TextBox Height="150"
-                         Text="{Binding LicenseInfo, Mode=OneWay}"
-                         IsReadOnly="True"
-                         VerticalScrollBarVisibility="Auto"
-                         AcceptsReturn="True"
-                         TextWrapping="Wrap" />
+                <ui:TextBlock Text="{x:Static res:Strings.OpenSourceLicenses}" FontTypography="BodyStrong" Foreground="White" Margin="0,0,0,8" />
+                <ItemsControl ItemsSource="{Binding OpenSourceLibraries}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <ui:Button Margin="0,0,0,4"
+                                       HorizontalAlignment="Stretch"
+                                       HorizontalContentAlignment="Left"
+                                       Command="{Binding DataContext.OpenLicenseUrlCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                       CommandParameter="{Binding Url}"
+                                       Appearance="Secondary">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:TextBlock Text="{Binding Name}" FontTypography="Body" />
+                                    <ui:TextBlock Text=" (" FontTypography="Caption" Foreground="Gray" VerticalAlignment="Center" />
+                                    <ui:TextBlock Text="{Binding License}" FontTypography="Caption" Foreground="Gray" VerticalAlignment="Center" />
+                                    <ui:TextBlock Text=")" FontTypography="Caption" Foreground="Gray" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </ui:Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </StackPanel>
         </ScrollViewer>
     </Grid>

@@ -20,7 +20,7 @@
                             <ui:TextBlock Text="{x:Static res:Strings.AutoStartDescription}" FontTypography="Caption" Foreground="WhiteSmoke" />
                         </StackPanel>
                     </ui:CardControl.Header>
-                    <ui:ToggleSwitch IsChecked="{Binding RunAtStartup, Mode=TwoWay}" OnContent="On" OffContent="Off"/>
+                    <ui:ToggleSwitch IsChecked="{Binding RunAtStartup, Mode=TwoWay}" OnContent="{x:Static res:Strings.ToggleOn}" OffContent="{x:Static res:Strings.ToggleOff}"/>
                 </ui:CardControl>
 
                 <!-- 전체 알림 설정 -->
@@ -31,7 +31,24 @@
                             <ui:TextBlock Text="{x:Static res:Strings.NotificationDescription}" FontTypography="Caption" Foreground="WhiteSmoke" TextWrapping="Wrap"/>
                         </StackPanel>
                     </ui:CardControl.Header>
-                    <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding IsRefreshEnabled, Mode=TwoWay}" VerticalAlignment="Center" OnContent="On" OffContent="Off"/>
+                    <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding IsRefreshEnabled, Mode=TwoWay}" VerticalAlignment="Center" OnContent="{x:Static res:Strings.ToggleOn}" OffContent="{x:Static res:Strings.ToggleOff}"/>
+                </ui:CardControl>
+
+                <!-- 언어 설정 -->
+                <ui:CardControl Icon="LocalLanguage24" Margin="0,16,0,0">
+                    <ui:CardControl.Header>
+                        <StackPanel>
+                            <ui:TextBlock Text="{x:Static res:Strings.LanguageTitle}" FontTypography="Body" Foreground="White" />
+                            <ui:TextBlock Text="{x:Static res:Strings.LanguageDescription}" FontTypography="Caption" Foreground="WhiteSmoke" />
+                        </StackPanel>
+                    </ui:CardControl.Header>
+                    <ComboBox
+                        ItemsSource="{Binding AvailableLanguages}"
+                        DisplayMemberPath="DisplayName"
+                        SelectedValuePath="Code"
+                        SelectedValue="{Binding SelectedLanguageCode, Mode=TwoWay}"
+                        MinWidth="140"
+                        VerticalAlignment="Center" />
                 </ui:CardControl>
 
             </StackPanel>

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Net.NetworkInformation;
 using MailTrayNotifier.Constants;
 using MailTrayNotifier.Models;
+using MailTrayNotifier.Resources;
 
 namespace MailTrayNotifier.Services
 {
@@ -297,7 +298,7 @@ namespace MailTrayNotifier.Services
                 }
 
                 // 영구적 오류는 해당 계정만 중지
-                _notificationService.ShowError($"계정 '{account.UserId}@{account.Pop3Server}' 메일 확인 중 오류가 발생했습니다.\n{ex.Message}");
+                _notificationService.ShowError(string.Format(Strings.AccountMailCheckError, $"{account.UserId}@{account.Pop3Server}", ex.Message));
 
                 // 해당 계정 폴링만 중지
                 if (_accountPollingTasks.TryRemove(accountKey, out var removedCts))

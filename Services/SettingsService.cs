@@ -2,6 +2,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using MailTrayNotifier.Models;
 
 namespace MailTrayNotifier.Services
@@ -166,6 +167,7 @@ namespace MailTrayNotifier.Services
             var collectionToSave = new MailSettingsCollection
             {
                 IsRefreshEnabled = collection.IsRefreshEnabled,
+                Language = collection.Language,
                 Accounts = collection.Accounts.Select(account => new MailSettings
                 {
                     Pop3Server = account.Pop3Server,
@@ -230,6 +232,28 @@ namespace MailTrayNotifier.Services
             if (File.Exists(SettingsFile))
             {
                 File.Delete(SettingsFile);
+            }
+        }
+
+        /// <summary>
+        /// 저장된 언어 코드를 동기적으로 로드 (앱 시작 시 UI 생성 전 호출)
+        /// </summary>
+        public static string LoadLanguageSync()
+        {
+            if (!File.Exists(SettingsFile))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                var json = File.ReadAllText(SettingsFile);
+                var node = JsonNode.Parse(json);
+                return node?["Language"]?.GetValue<string>() ?? string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
             }
         }
     }

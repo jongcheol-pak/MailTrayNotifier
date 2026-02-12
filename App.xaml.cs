@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -17,6 +18,11 @@ namespace MailTrayNotifier
     {
         private const string MutexName = "MailTrayNotifier_SingleInstance_Mutex";
         private static Mutex? _mutex;
+
+        /// <summary>
+        /// 시스템 기본 문화 (앱 시작 시 캡처)
+        /// </summary>
+        public static CultureInfo SystemDefaultCulture { get; } = CultureInfo.CurrentUICulture;
 
         public static App? Instance { get; private set; }
 
@@ -37,6 +43,8 @@ namespace MailTrayNotifier
         private bool _isExiting;
         private MenuItem? _toggleMenuItem;
         private Separator? _toggleMenuSeparator;
+        private MenuItem? _settingsMenuItem;
+        private MenuItem? _exitMenuItem;
         private Icon? _startIcon;
         private Icon? _stopIcon;
         private Icon? _warningIcon;
@@ -52,6 +60,9 @@ namespace MailTrayNotifier
         {
             // 한국어 레거시 인코딩 지원 (EUC-KR, ISO-2022-KR 등)
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+            // 저장된 언어 설정 적용 (UI 생성 전)
+            ApplyStartupLanguage();
 
             // 중복 실행 방지
             _mutex = new Mutex(true, MutexName, out var isNewInstance);
@@ -132,10 +143,12 @@ namespace MailTrayNotifier
 
             var settingsItem = new MenuItem { Header = Strings.TraySettings };
             settingsItem.Click += (_, _) => ShowSettings();
+            _settingsMenuItem = settingsItem;
             contextMenu.Items.Add(settingsItem);
 
             var exitItem = new MenuItem { Header = Strings.TrayExit };
             exitItem.Click += (_, _) => ExitApp();
+            _exitMenuItem = exitItem;
             contextMenu.Items.Add(exitItem);
 
 
@@ -372,6 +385,46 @@ namespace MailTrayNotifier
             }
 
             return viewModel.Accounts.Any(a => a.HasError && a.IsEnabled);
+        }
+
+        /// <summary>
+        /// 앱 시작 시 저장된 언어 설정 적용 (UI 생성 전 호출)
+        /// </summary>
+        private static void ApplyStartupLanguage()
+        {
+            var languageCode = SettingsService.LoadLanguageSync();
+            if (!string.IsNullOrEmpty(languageCode))
+            {
+                try
+                {
+                    var culture = new CultureInfo(languageCode);
+                    Thread.CurrentThread.CurrentUICulture = culture;
+                    Thread.CurrentThread.CurrentCulture = culture;
+                    Strings.Culture = culture;
+                }
+                catch
+                {
+                    // 잘못된 언어 코드 무시
+                }
+            }
+        }
+
+        /// <summary>
+        /// 트레이 메뉴 텍스트 언어 갱신
+        /// </summary>
+        public void RefreshTrayMenuLanguage()
+        {
+            if (_settingsMenuItem is not null)
+            {
+                _settingsMenuItem.Header = Strings.TraySettings;
+            }
+
+            if (_exitMenuItem is not null)
+            {
+                _exitMenuItem.Header = Strings.TrayExit;
+            }
+
+            UpdateTrayUI();
         }
 
         /// <summary>

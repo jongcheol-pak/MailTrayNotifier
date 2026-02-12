@@ -157,7 +157,7 @@
                                             Text="{Binding Pop3PortText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
                                             IsEnabled="{Binding IsEditMode}" 
                                             Foreground="WhiteSmoke" 
-                                            PlaceholderText="Port"
+                                            PlaceholderText="{x:Static res:Strings.PortPlaceholder}"
                                             PreviewTextInput="NumericTextBox_PreviewTextInput"
                                             DataObject.Pasting="NumericTextBox_Pasting" />
                                     </Grid>
@@ -174,12 +174,12 @@
                                             Text="{Binding SmtpPortText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
                                             IsEnabled="{Binding IsEditMode}" 
                                             Foreground="WhiteSmoke" 
-                                            PlaceholderText="Port"
+                                            PlaceholderText="{x:Static res:Strings.PortPlaceholder}"
                                             PreviewTextInput="NumericTextBox_PreviewTextInput"
                                             DataObject.Pasting="NumericTextBox_Pasting" />
                                     </Grid>
 
-                                    <CheckBox Margin="0,0,0,16" IsChecked="{Binding UseSsl, Mode=TwoWay}" IsEnabled="{Binding IsEditMode}" Content="Use SSL/TLS (SSL: 995, non-SSL: 110)" />
+                                    <CheckBox Margin="0,0,0,16" IsChecked="{Binding UseSsl, Mode=TwoWay}" IsEnabled="{Binding IsEditMode}" Content="{x:Static res:Strings.UseSslLabel}" />
 
                                     <ui:TextBlock Text="{x:Static res:Strings.UserId}" Margin="0,0,0,4" FontTypography="Body" Foreground="White"/>
                                     <ui:TextBox Margin="0,0,0,16" Text="{Binding UserId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsEditMode}" Foreground="WhiteSmoke"/>

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using MailTrayNotifier.Resources;
 using MailTrayNotifier.ViewModels;
 using MailTrayNotifier.Views;
 using Wpf.Ui.Controls;
@@ -15,6 +16,7 @@ namespace MailTrayNotifier
         // 페이지 캐시 (매번 새로 생성하지 않음)
         private readonly Dictionary<Type, Page> _pageCache = new();
         private bool _forceClose;
+        private Type? _currentPageType;
 
         public SettingsViewModel ViewModel { get; }
 
@@ -25,6 +27,7 @@ namespace MailTrayNotifier
             var app = App.Instance ?? (App)Application.Current;
             ViewModel = new SettingsViewModel(app.SettingsService, app.MailPollingService, app.MailClientService, app.MailStateStore);
             ViewModel.CloseRequested += OnCloseRequested;
+            ViewModel.LanguageChanged += OnLanguageChanged;
             DataContext = ViewModel;
 
             Loaded += OnLoaded;
@@ -75,6 +78,7 @@ namespace MailTrayNotifier
                 _pageCache[pageType] = page;
             }
 
+            _currentPageType = pageType;
             ContentFrame.Navigate(page);
 
             // 저널 기록 제거 (메모리 누적 방지)
@@ -85,12 +89,37 @@ namespace MailTrayNotifier
         }
 
         /// <summary>
+        /// 언어 변경 시 UI 갱신
+        /// </summary>
+        private void OnLanguageChanged()
+        {
+            // MainWindow의 정적 텍스트 갱신
+            Title = Strings.AppTitle;
+            TitleText.Text = Strings.AppTitle;
+            NavMailText.Text = Strings.NavMail;
+            NavSettingsText.Text = Strings.NavSettings;
+            NavAboutText.Text = Strings.About;
+
+            // 페이지 캐시 클리어 후 현재 페이지 재로드
+            _pageCache.Clear();
+            if (_currentPageType is not null)
+            {
+                NavigateToPage(_currentPageType);
+            }
+
+            // 트레이 메뉴 텍스트 갱신
+            App.Instance?.RefreshTrayMenuLanguage();
+        }
+
+        /// <summary>
         /// 앱 종료 시 강제 닫기
         /// </summary>
         public void ForceClose()
         {
             _forceClose = true;
             ViewModel.CloseRequested -= OnCloseRequested;
+            ViewModel.LanguageChanged -= OnLanguageChanged;
+            ViewModel.Dispose();
             Closing -= OnClosing;
             _pageCache.Clear();
             Close();
@@ -107,6 +136,10 @@ namespace MailTrayNotifier
             }
 
             e.Cancel = true;
+
+            // 미저장 신규 계정 제거
+            ViewModel.RemoveUnsavedAccounts();
+
             Hide();
         }
     }

@@ -13,6 +13,11 @@ namespace MailTrayNotifier.Models
         public bool IsRefreshEnabled { get; set; } = true;
 
         /// <summary>
+        /// UI 언어 코드 (빈 문자열 = 시스템 기본)
+        /// </summary>
+        public string Language { get; set; } = string.Empty;
+
+        /// <summary>
         /// 메일 계정 목록
         /// </summary>
         public List<MailSettings> Accounts { get; set; } = new();

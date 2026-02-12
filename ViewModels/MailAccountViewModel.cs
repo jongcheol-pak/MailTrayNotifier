@@ -20,7 +20,7 @@ namespace MailTrayNotifier.ViewModels
         private int _refreshMinutes = MailConstants.DefaultRefreshMinutes;
         private string _mailWebUrl = string.Empty;
         private bool _isExpanded = false;
-        private bool _isEnabled = true;
+        private bool _isEnabled = false;
         private string _accountName = string.Empty;
         private bool _isEditMode;
         private bool _hasError;
@@ -268,7 +268,7 @@ namespace MailTrayNotifier.ViewModels
         }
 
         /// <summary>
-        /// UI에서 Expander 확장 상태 (첫 번째 계정만 true)
+        /// UI에서 Expander 확장 상태
         /// </summary>
         public bool IsExpanded
         {

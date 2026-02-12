@@ -19,6 +19,51 @@
 
 ## 최근 변경 요약
 
+### 배포 전 코드 검증 및 이슈 수정
+- `MailTrayNotifier.csproj`: `warning.ico`에 `CopyToOutputDirectory=PreserveNewest` 추가 (배포 시 아이콘 누락 수정)
+- `MainWindow.xaml.cs`: `ForceClose()`에서 `ViewModel.Dispose()` 호출 추가 (이벤트 구독 해제 누락 수정)
+- `README.md`: 최대 계정 수 "5개" -> "10개"로 수정 (MailConstants.MaxAccounts=10과 일치)
+- 검증: 빌드 성공 (경고 0건, 오류 0건)
+
+### 일본어/중국어(간체·번체) 리소스 추가
+- `Strings.ja.resx` (일본어), `Strings.zh-CN.resx` (중국어 간체), `Strings.zh-TW.resx` (중국어 번체) 리소스 파일 생성
+- `SettingsViewModel.cs`: `AvailableLanguages`에 일본어/중국어(간체/번체) 3개 언어 추가
+- `MailTrayNotifier.csproj`: 3개 resx 파일 등록 (`DependentUpon`)
+- 해당 언어가 없는 경우 .NET 리소스 폴백에 의해 영어(Strings.resx)로 표시
+- 검증: 빌드 성공
+
+### 신규 계정 IsEnabled 기본값 및 미저장 계정 정리
+- 신규 계정 추가 시 `IsEnabled` 기본값을 `false`로 변경 (저장 전 싱크/오류 아이콘 미표시)
+- 창 닫기(숨기기) 시 미저장 신규 계정 자동 제거 (`RemoveUnsavedAccounts`)
+- 변경 파일: MailAccountViewModel.cs (`_isEnabled` 기본값), SettingsViewModel.cs (`RemoveUnsavedAccounts` 추가), MainWindow.xaml.cs (`OnClosing`에서 호출)
+- 검증: 빌드 성공
+
+### 계정 목록 Expander 기본 상태 변경
+- 계정 목록의 모든 Expander가 접힌 상태로 초기화되도록 수정 (기존: 첫 번째 계정만 펼침)
+- 변경 파일: SettingsViewModel.cs, MailAccountViewModel.cs
+- 검증: 빌드 성공
+
+### GeneralSettingsPage 언어 변경 기능 추가
+- 설정 화면에서 언어 선택 (시스템 기본 / English / 한국어)
+- 언어 변경 시 즉시 UI 갱신 (페이지 캐시 클리어 + 재로드, MainWindow 정적 텍스트 갱신, 트레이 메뉴 갱신)
+- 앱 시작 시 저장된 언어 설정 자동 적용 (UI 생성 전)
+- 변경 파일: MailSettingsCollection (Language 속성), SettingsService (LoadLanguageSync), LanguageOption (신규), SettingsViewModel (언어 변경 로직), GeneralSettingsPage.xaml (ComboBox), MainWindow.xaml/cs (x:Name + 핸들러), App.xaml.cs (시작 언어 적용 + 트레이 갱신)
+- 리소스 키 3개 추가: LanguageTitle, LanguageDescription, LanguageSystemDefault
+- 검증: 빌드 성공
+
+### 하드코딩된 문자열 리소스 파일로 이동
+- 12개 하드코딩된 사용자 노출 문자열을 `Strings.resx` / `Strings.ko.resx`로 이동
+- XAML: MainWindow.xaml (About), MailSettingsPage.xaml (Port, SSL), GeneralSettingsPage.xaml (On/Off)
+- C#: MailClientService.cs (6개 오류 메시지), MailPollingService.cs (1개 알림 메시지)
+- SettingsViewModel.cs: 하드코딩된 한국어 문자열 비교를 `Strings.AccountNameTrimmed` 직접 비교로 수정
+- 검증: 빌드 성공
+
+### AboutPage Open Source Licenses 버튼 링크 변환
+- `Models/OpenSourceLibrary.cs`: 오픈 소스 라이브러리 정보 record 추가 (Name, License, Url)
+- `ViewModels/SettingsViewModel.cs`: `LicenseInfo` 문자열 → `OpenSourceLibraries` 컬렉션 + `OpenLicenseUrlCommand` 로 교체
+- `Views/AboutPage.xaml`: TextBox → ItemsControl + Button 목록으로 변경, 버튼 클릭 시 해당 라이브러리 홈페이지 열기
+- 검증: 빌드 성공
+
 ### 2026-02-08 (MailSettingsPage.xaml.cs 깨진 한글 주석 수정)
 - Views/MailSettingsPage.xaml.cs: 깨진 한글 주석 2건 UTF-8로 재작성
 - 검증: 빌드 성공 (경고 0건, 오류 0건), dotnet format 완료

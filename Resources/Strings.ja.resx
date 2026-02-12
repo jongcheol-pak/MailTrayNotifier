@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="0" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- MainWindow -->
+  <data name="AppTitle" xml:space="preserve"><value>メール通知設定</value></data>
+  <data name="NavMail" xml:space="preserve"><value>メール</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>設定</value></data>
+
+  <!-- GeneralSettingsPage -->
+  <data name="AutoStartTitle" xml:space="preserve"><value>自動起動</value></data>
+  <data name="AutoStartDescription" xml:space="preserve"><value>Windowsにログインすると自動的に起動します。</value></data>
+  <data name="NotificationTitle" xml:space="preserve"><value>通知</value></data>
+  <data name="NotificationDescription" xml:space="preserve"><value>メール通知を有効にします。OFFに設定するとすべてのメール通知を受信できません。</value></data>
+  <data name="LanguageTitle" xml:space="preserve"><value>言語</value></data>
+  <data name="LanguageDescription" xml:space="preserve"><value>アプリの表示言語を選択します。</value></data>
+  <data name="LanguageSystemDefault" xml:space="preserve"><value>システム既定</value></data>
+
+  <!-- MailSettingsPage -->
+  <data name="AddAccount" xml:space="preserve"><value>アカウント追加</value></data>
+  <data name="NotificationOffWarning" xml:space="preserve"><value>設定で通知がOFFになっているため、通知を受信できません。設定で通知をONにしてください。</value></data>
+  <data name="AccountName" xml:space="preserve"><value>アカウント名</value></data>
+  <data name="Pop3Server" xml:space="preserve"><value>POP3サーバー</value></data>
+  <data name="SmtpServer" xml:space="preserve"><value>SMTPサーバー</value></data>
+  <data name="UserId" xml:space="preserve"><value>ユーザーID</value></data>
+  <data name="Password" xml:space="preserve"><value>パスワード</value></data>
+  <data name="SyncInterval" xml:space="preserve"><value>同期間隔（分）</value></data>
+  <data name="MailWebsite" xml:space="preserve"><value>メールサイト（任意）</value></data>
+  <data name="Edit" xml:space="preserve"><value>編集</value></data>
+  <data name="DeleteAccount" xml:space="preserve"><value>アカウント削除</value></data>
+  <data name="Cancel" xml:space="preserve"><value>キャンセル</value></data>
+  <data name="Save" xml:space="preserve"><value>保存</value></data>
+  <data name="ErrorLabel" xml:space="preserve"><value>エラー: </value></data>
+
+  <!-- AboutPage -->
+  <data name="AppName" xml:space="preserve"><value>メール通知</value></data>
+  <data name="About" xml:space="preserve"><value>情報</value></data>
+  <data name="VersionLabel" xml:space="preserve"><value>バージョン: </value></data>
+  <data name="OpenSourceLicenses" xml:space="preserve"><value>オープンソースライセンス</value></data>
+
+  <!-- App.xaml.cs Tray -->
+  <data name="TrayStartPolling" xml:space="preserve"><value>メール通知を開始</value></data>
+  <data name="TrayStopPolling" xml:space="preserve"><value>メール通知を停止</value></data>
+  <data name="TraySettings" xml:space="preserve"><value>設定</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>終了</value></data>
+  <data name="TrayTooltip" xml:space="preserve"><value>メール通知</value></data>
+  <data name="TrayTooltipDisabled" xml:space="preserve"><value>メール通知 - 無効</value></data>
+  <data name="TrayTooltipRunning" xml:space="preserve"><value>メール通知 - 実行中</value></data>
+  <data name="TrayTooltipAccountError" xml:space="preserve"><value>メール通知 - 一部アカウントエラー</value></data>
+  <data name="TrayTooltipStopped" xml:space="preserve"><value>メール通知 - 停止中</value></data>
+  <data name="TrayTooltipNeedSetup" xml:space="preserve"><value>メール通知 - 設定が必要</value></data>
+  <data name="TrayTooltipError" xml:space="preserve"><value>メール通知 - エラー発生</value></data>
+  <data name="AlreadyRunning" xml:space="preserve"><value>メール通知は既に実行中です。</value></data>
+  <data name="AlertTitle" xml:space="preserve"><value>お知らせ</value></data>
+
+  <!-- SettingsViewModel -->
+  <data name="MaxAccountsReached" xml:space="preserve"><value>最大{0}個までアカウントを追加できます。</value></data>
+  <data name="MaxAccountsTitle" xml:space="preserve"><value>アカウント上限</value></data>
+  <data name="DeleteAccountConfirm" xml:space="preserve"><value>'{0}' アカウントを削除しますか？</value></data>
+  <data name="DeleteAccountTitle" xml:space="preserve"><value>アカウント削除</value></data>
+  <data name="AccountNameError" xml:space="preserve"><value>アカウント名エラー</value></data>
+  <data name="InputError" xml:space="preserve"><value>入力エラー</value></data>
+  <data name="MissingFieldsMessage" xml:space="preserve"><value>以下の項目を入力してください:</value></data>
+  <data name="InvalidMailWebUrl" xml:space="preserve"><value>メールサイトのURLが正しくありません。\n例: https://mail.example.com</value></data>
+  <data name="ConnectionErrorMessage" xml:space="preserve"><value>以下のアカウントのメールサーバーへの接続に失敗しました:\n\n{0}\n\n続行しますか？</value></data>
+  <data name="ConnectionErrorTitle" xml:space="preserve"><value>接続エラー</value></data>
+  <data name="ResetConfirmMessage" xml:space="preserve"><value>すべての設定とメール状態をリセットしますか？\n\n・すべての設定が削除されます。\n・既読メール情報が削除されます。</value></data>
+  <data name="ResetConfirmTitle" xml:space="preserve"><value>リセット確認</value></data>
+  <data name="ResetCompleted" xml:space="preserve"><value>リセット完了</value></data>
+  <data name="EnterAccountName" xml:space="preserve"><value>アカウント名を入力してください。</value></data>
+  <data name="AccountNameTrimmed" xml:space="preserve"><value>アカウント名の前後の空白が削除されます。</value></data>
+  <data name="AccountNameDuplicate" xml:space="preserve"><value>このアカウント名は既に使用されています。</value></data>
+  <data name="MinOneAccount" xml:space="preserve"><value>少なくとも1つのアカウントを設定する必要があります。\n\n必須項目:\n・POP3サーバー\n・ユーザーID\n・パスワード\n・同期間隔</value></data>
+  <data name="DuplicateAccountName" xml:space="preserve"><value>アカウント '{0}': アカウント名が重複しています。('{1}')</value></data>
+  <data name="MissingFieldsForAccount" xml:space="preserve"><value>アカウント '{0}' の未入力項目:</value></data>
+  <data name="InvalidMailUrlForAccount" xml:space="preserve"><value>アカウント {0}: メールサイトのURLが正しくありません。\n  例: https://mail.example.com</value></data>
+
+  <!-- MailAccountViewModel -->
+  <data name="NewAccount" xml:space="preserve"><value>新しいアカウント</value></data>
+  <data name="FieldAccountName" xml:space="preserve"><value>アカウント名</value></data>
+  <data name="FieldPop3Server" xml:space="preserve"><value>POP3サーバー</value></data>
+  <data name="FieldUserId" xml:space="preserve"><value>ユーザーID</value></data>
+  <data name="FieldPassword" xml:space="preserve"><value>パスワード</value></data>
+  <data name="FieldSyncInterval" xml:space="preserve"><value>同期間隔</value></data>
+
+  <!-- MailSettingsPage -->
+  <data name="PortPlaceholder" xml:space="preserve"><value>ポート</value></data>
+  <data name="UseSslLabel" xml:space="preserve"><value>SSL/TLSを使用（SSL: 995、非SSL: 110）</value></data>
+
+  <!-- GeneralSettingsPage -->
+  <data name="ToggleOn" xml:space="preserve"><value>オン</value></data>
+  <data name="ToggleOff" xml:space="preserve"><value>オフ</value></data>
+
+  <!-- MailClientService -->
+  <data name="MailServerAuthFailed" xml:space="preserve"><value>メールサーバーの認証に失敗しました: {0}</value></data>
+  <data name="MailServerConnectionFailed" xml:space="preserve"><value>メールサーバーに接続できません: {0} ({1})</value></data>
+  <data name="MailServerTimeout" xml:space="preserve"><value>メールサーバーへの接続がタイムアウトしました: {0}</value></data>
+  <data name="MailServerConnectionError" xml:space="preserve"><value>メールサーバー接続中にエラーが発生しました: {0}</value></data>
+  <data name="MailAccountAuthFailed" xml:space="preserve"><value>メールアカウントの認証に失敗しました: {0}</value></data>
+  <data name="MailAuthError" xml:space="preserve"><value>メール認証中にエラーが発生しました: {0}</value></data>
+
+  <!-- MailPollingService -->
+  <data name="AccountMailCheckError" xml:space="preserve"><value>アカウント '{0}' のメール確認中にエラーが発生しました。\n{1}</value></data>
+
+  <!-- NotificationService -->
+  <data name="NewMailSingle" xml:space="preserve"><value>[{0}] 新着メール</value></data>
+  <data name="NewMailMultiple" xml:space="preserve"><value>[{0}] 新着メール {1}件</value></data>
+  <data name="NewMailLatest" xml:space="preserve"><value>最新: {0}</value></data>
+  <data name="GoToMail" xml:space="preserve"><value>メールを開く</value></data>
+  <data name="MailCheckError" xml:space="preserve"><value>メール確認エラー</value></data>
+</root>

@@ -4,6 +4,7 @@ using MailKit.Security;
 using MimeKit;
 using MailTrayNotifier.Constants;
 using MailTrayNotifier.Models;
+using MailTrayNotifier.Resources;
 
 namespace MailTrayNotifier.Services
 {
@@ -49,19 +50,19 @@ namespace MailTrayNotifier.Services
             }
             catch (MailKit.Security.AuthenticationException)
             {
-                throw new InvalidOperationException($"메일 서버 인증에 실패했습니다: {settings.Pop3Server}");
+                throw new InvalidOperationException(string.Format(Strings.MailServerAuthFailed, settings.Pop3Server));
             }
             catch (System.Net.Sockets.SocketException ex)
             {
-                throw new InvalidOperationException($"메일 서버에 연결할 수 없습니다: {settings.Pop3Server} ({ex.Message})", ex);
+                throw new InvalidOperationException(string.Format(Strings.MailServerConnectionFailed, settings.Pop3Server, ex.Message), ex);
             }
             catch (TimeoutException ex)
             {
-                throw new InvalidOperationException($"메일 서버 연결 시간이 초과되었습니다: {settings.Pop3Server}", ex);
+                throw new InvalidOperationException(string.Format(Strings.MailServerTimeout, settings.Pop3Server), ex);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                throw new InvalidOperationException($"메일 서버 연결 중 오류가 발생했습니다: {ex.Message}", ex);
+                throw new InvalidOperationException(string.Format(Strings.MailServerConnectionError, ex.Message), ex);
             }
 
             try
@@ -70,11 +71,11 @@ namespace MailTrayNotifier.Services
             }
             catch (MailKit.Security.AuthenticationException)
             {
-                throw new UnauthorizedAccessException($"메일 계정 인증에 실패했습니다: {settings.UserId}");
+                throw new UnauthorizedAccessException(string.Format(Strings.MailAccountAuthFailed, settings.UserId));
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                throw new InvalidOperationException($"메일 인증 중 오류가 발생했습니다: {ex.Message}", ex);
+                throw new InvalidOperationException(string.Format(Strings.MailAuthError, ex.Message), ex);
             }
 
             if (client.Count == 0)

@@ -42,6 +42,9 @@
   <data name="AutoStartDescription" xml:space="preserve"><value>Windows에 로그인할 때 자동으로 시작합니다.</value></data>
   <data name="NotificationTitle" xml:space="preserve"><value>알림</value></data>
   <data name="NotificationDescription" xml:space="preserve"><value>설정된 메일 알림을 사용 하도록 설정합니다. Off로 설정된 경우 모든 메일 알림을 받을 수 없습니다.</value></data>
+  <data name="LanguageTitle" xml:space="preserve"><value>언어</value></data>
+  <data name="LanguageDescription" xml:space="preserve"><value>앱의 표시 언어를 선택합니다.</value></data>
+  <data name="LanguageSystemDefault" xml:space="preserve"><value>시스템 기본</value></data>
 
   <!-- MailSettingsPage -->
   <data name="AddAccount" xml:space="preserve"><value>계정 추가</value></data>
@@ -61,6 +64,9 @@
 
   <!-- AboutPage -->
   <data name="AppName" xml:space="preserve"><value>메일 알림</value></data>
+  <data name="About" xml:space="preserve"><value>정보</value></data>
+  <data name="VersionLabel" xml:space="preserve"><value>버전: </value></data>
+  <data name="OpenSourceLicenses" xml:space="preserve"><value>오픈 소스 라이선스</value></data>
 
   <!-- App.xaml.cs Tray -->
   <data name="TrayStartPolling" xml:space="preserve"><value>메일 알림 시작</value></data>
@@ -106,6 +112,25 @@
   <data name="FieldUserId" xml:space="preserve"><value>아이디</value></data>
   <data name="FieldPassword" xml:space="preserve"><value>비밀번호</value></data>
   <data name="FieldSyncInterval" xml:space="preserve"><value>동기화 시간</value></data>
+
+  <!-- MailSettingsPage -->
+  <data name="PortPlaceholder" xml:space="preserve"><value>포트</value></data>
+  <data name="UseSslLabel" xml:space="preserve"><value>SSL/TLS 사용 (SSL: 995, 비SSL: 110)</value></data>
+
+  <!-- GeneralSettingsPage -->
+  <data name="ToggleOn" xml:space="preserve"><value>켜기</value></data>
+  <data name="ToggleOff" xml:space="preserve"><value>끄기</value></data>
+
+  <!-- MailClientService -->
+  <data name="MailServerAuthFailed" xml:space="preserve"><value>메일 서버 인증에 실패했습니다: {0}</value></data>
+  <data name="MailServerConnectionFailed" xml:space="preserve"><value>메일 서버에 연결할 수 없습니다: {0} ({1})</value></data>
+  <data name="MailServerTimeout" xml:space="preserve"><value>메일 서버 연결 시간이 초과되었습니다: {0}</value></data>
+  <data name="MailServerConnectionError" xml:space="preserve"><value>메일 서버 연결 중 오류가 발생했습니다: {0}</value></data>
+  <data name="MailAccountAuthFailed" xml:space="preserve"><value>메일 계정 인증에 실패했습니다: {0}</value></data>
+  <data name="MailAuthError" xml:space="preserve"><value>메일 인증 중 오류가 발생했습니다: {0}</value></data>
+
+  <!-- MailPollingService -->
+  <data name="AccountMailCheckError" xml:space="preserve"><value>계정 '{0}' 메일 확인 중 오류가 발생했습니다.\n{1}</value></data>
 
   <!-- NotificationService -->
   <data name="NewMailSingle" xml:space="preserve"><value>[{0}] 새 메일</value></data>

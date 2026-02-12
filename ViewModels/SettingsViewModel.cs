@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -27,7 +29,52 @@ namespace MailTrayNotifier.ViewModels
         /// </summary>
         public event Action? CloseRequested;
 
+        /// <summary>
+        /// 언어 변경 시 UI 갱신 요청 이벤트
+        /// </summary>
+        public event Action? LanguageChanged;
+
         private bool _isInitialized;
+        private string _selectedLanguageCode = string.Empty;
+        private bool _isChangingLanguage;
+
+        /// <summary>
+        /// 사용 가능한 언어 목록
+        /// </summary>
+        public IReadOnlyList<LanguageOption> AvailableLanguages =>
+        [
+            new(string.Empty, Strings.LanguageSystemDefault),
+            new("en", "English"),
+            new("ko", "한국어"),
+            new("ja", "日本語"),
+            new("zh-CN", "简体中文"),
+            new("zh-TW", "繁體中文"),
+        ];
+
+        /// <summary>
+        /// 선택된 언어 코드 (빈 문자열 = 시스템 기본)
+        /// </summary>
+        public string SelectedLanguageCode
+        {
+            get => _selectedLanguageCode;
+            set
+            {
+                // 언어 변경 중 ComboBox 재생성에 의한 재진입 방지
+                if (_isChangingLanguage) return;
+
+                var normalized = value ?? string.Empty;
+                if (SetProperty(ref _selectedLanguageCode, normalized) && _isInitialized)
+                {
+                    _ = ChangeLanguageAsync(normalized).ContinueWith(t =>
+                    {
+                        if (t.IsFaulted)
+                        {
+                            Debug.WriteLine($"언어 변경 실패: {t.Exception?.GetBaseException().Message}");
+                        }
+                    }, TaskScheduler.Default);
+                }
+            }
+        }
 
         public SettingsViewModel(
             SettingsService settingsService,
@@ -118,24 +165,40 @@ namespace MailTrayNotifier.ViewModels
             }
         }
 
-        public string LicenseInfo =>
-@"CommunityToolkit.Mvvm (MIT)
-Hardcodet.NotifyIcon.Wpf (MIT)
-Microsoft.Toolkit.Uwp.Notifications (MIT)
-MailKit (MIT)
-WPF-UI (MIT)";
+        /// <summary>
+        /// 사용 중인 오픈 소스 라이브러리 목록
+        /// </summary>
+        public IReadOnlyList<OpenSourceLibrary> OpenSourceLibraries { get; } =
+        [
+            new("CommunityToolkit.Mvvm", "MIT", "https://github.com/CommunityToolkit/dotnet"),
+            new("Hardcodet.NotifyIcon.Wpf", "MIT", "https://github.com/hardcodet/wpf-notifyicon"),
+            new("Microsoft.Toolkit.Uwp.Notifications", "MIT", "https://github.com/CommunityToolkit/WindowsCommunityToolkit"),
+            new("MailKit", "MIT", "https://github.com/jstedfast/MailKit"),
+            new("WPF-UI", "MIT", "https://github.com/lepoco/wpfui"),
+        ];
+
+        /// <summary>
+        /// 오픈 소스 라이브러리 홈페이지 열기
+        /// </summary>
+        [RelayCommand]
+        private void OpenLicenseUrl(string url)
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
 
         public async Task InitializeAsync()
         {
             var collection = await _settingsService.LoadCollectionAsync();
             IsRefreshEnabled = collection.IsRefreshEnabled;
+            _selectedLanguageCode = collection.Language;
+            OnPropertyChanged(nameof(SelectedLanguageCode));
 
             Accounts.Clear();
             for (int i = 0; i < collection.Accounts.Count; i++)
             {
                 var accountVm = new MailAccountViewModel(collection.Accounts[i]);
-                // 첫 번째 계정만 펼쳐진 상태로 (이벤트 발생 없이)
-                accountVm.SetIsExpandedSilently(i == 0);
+                // 모든 계정을 접힌 상태로 초기화 (이벤트 발생 없이)
+                accountVm.SetIsExpandedSilently(false);
                 // 기존 계정은 편집 모드 종료 상태로
                 accountVm.EndEdit();
                 // IsEnabled 변경 이벤트 구독
@@ -249,7 +312,7 @@ WPF-UI (MIT)";
 
             // 계정 이름 중복 확인
             var nameValidationError = ValidateAccountName(account.AccountName, account);
-            if (nameValidationError != null && !nameValidationError.Contains("공백이 제거됩니다"))
+            if (nameValidationError != null && nameValidationError != Strings.AccountNameTrimmed)
             {
                 System.Windows.MessageBox.Show(
                     nameValidationError,
@@ -329,6 +392,25 @@ WPF-UI (MIT)";
             {
                 // 기존 계정인 경우 원래 값으로 복원
                 account.CancelEdit();
+            }
+        }
+
+        /// <summary>
+        /// 미저장 신규 계정 제거 (창 닫기 시 호출)
+        /// </summary>
+        public void RemoveUnsavedAccounts()
+        {
+            var unsaved = Accounts.Where(a => a.IsNewAccount).ToList();
+            foreach (var account in unsaved)
+            {
+                account.EnabledChanged -= OnAccountEnabledChanged;
+                account.ExpandedChanged -= OnAccountExpandedChanged;
+                Accounts.Remove(account);
+            }
+
+            if (unsaved.Count > 0)
+            {
+                OnPropertyChanged(nameof(AccountCountText));
             }
         }
 
@@ -698,6 +780,41 @@ WPF-UI (MIT)";
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// 언어 변경 처리 (설정 저장 + 문화 적용 + UI 갱신 요청)
+        /// </summary>
+        private async Task ChangeLanguageAsync(string languageCode)
+        {
+            _isChangingLanguage = true;
+            try
+            {
+                var collection = await _settingsService.LoadCollectionAsync();
+                collection.Language = languageCode;
+                await _settingsService.SaveCollectionAsync(collection);
+
+                ApplyLanguage(languageCode);
+                LanguageChanged?.Invoke();
+            }
+            finally
+            {
+                _isChangingLanguage = false;
+            }
+        }
+
+        /// <summary>
+        /// 언어 코드에 따른 CurrentUICulture 적용
+        /// </summary>
+        public static void ApplyLanguage(string languageCode)
+        {
+            var culture = string.IsNullOrEmpty(languageCode)
+                ? App.SystemDefaultCulture
+                : new CultureInfo(languageCode);
+
+            Thread.CurrentThread.CurrentUICulture = culture;
+            Thread.CurrentThread.CurrentCulture = culture;
+            Strings.Culture = culture;
         }
 
         /// <summary>
