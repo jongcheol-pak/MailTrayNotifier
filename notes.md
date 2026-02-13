@@ -19,6 +19,12 @@
 
 ## 최근 변경 요약
 
+### About 메뉴 아이콘 업데이트 가능 시 변경
+- 최신 버전이 있을 때 About 메뉴 아이콘을 `Info24`에서 `CloudArrowDown24`로 변경
+- `SettingsViewModel.IsUpdateAvailable` PropertyChanged 이벤트 구독
+- 변경 파일: MainWindow.xaml.cs
+- 검증: 빌드 성공
+
 ### AboutPage에 공식 웹 사이트 링크 추가
 - 최신 버전 카드 아래에 "자세한 내용은 공식 웹 사이트로 이동하세요." 문구 추가
 - "공식 웹 사이트" 클릭 시 `https://jongcheol-pak.github.io/projects/mailtraynotifier/` 이동

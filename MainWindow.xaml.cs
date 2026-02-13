@@ -28,6 +28,7 @@ namespace MailTrayNotifier
             ViewModel = new SettingsViewModel(app.SettingsService, app.MailPollingService, app.MailClientService, app.MailStateStore);
             ViewModel.CloseRequested += OnCloseRequested;
             ViewModel.LanguageChanged += OnLanguageChanged;
+            ViewModel.PropertyChanged += OnViewModelPropertyChanged;
             DataContext = ViewModel;
 
             Loaded += OnLoaded;
@@ -35,6 +36,30 @@ namespace MailTrayNotifier
         }
 
         private void OnCloseRequested() => Hide();
+
+        /// <summary>
+        /// ViewModel 속성 변경 시 About 아이콘 업데이트
+        /// </summary>
+        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(SettingsViewModel.IsUpdateAvailable))
+            {
+                UpdateAboutIcon();
+            }
+        }
+
+        /// <summary>
+        /// About 메뉴 아이콘 업데이트 (업데이트 가능 시 CloudArrowDown24, 아니면 Info24)
+        /// </summary>
+        private void UpdateAboutIcon()
+        {
+            var iconName = ViewModel.IsUpdateAvailable ? Wpf.Ui.Controls.SymbolRegular.CloudArrowDown24 : Wpf.Ui.Controls.SymbolRegular.Info24;
+
+            if (MenuAbout.Content is StackPanel stack && stack.Children[0] is Wpf.Ui.Controls.SymbolIcon icon)
+            {
+                icon.Symbol = iconName;
+            }
+        }
 
         private async void OnLoaded(object sender, RoutedEventArgs e)
         {
@@ -119,6 +144,7 @@ namespace MailTrayNotifier
             _forceClose = true;
             ViewModel.CloseRequested -= OnCloseRequested;
             ViewModel.LanguageChanged -= OnLanguageChanged;
+            ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             ViewModel.Dispose();
             Closing -= OnClosing;
             _pageCache.Clear();

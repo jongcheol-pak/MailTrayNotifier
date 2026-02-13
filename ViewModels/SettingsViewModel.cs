@@ -201,7 +201,7 @@ namespace MailTrayNotifier.ViewModels
         {
             get
             {
-                using var key = Registry.LocalMachine.OpenSubKey(VersionRegistryKeyPath);
+                using var key = Registry.CurrentUser.OpenSubKey(VersionRegistryKeyPath);
                 return key?.GetValue(VersionRegistryValueName) as string ?? string.Empty;
             }
         }

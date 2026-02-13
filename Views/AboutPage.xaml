@@ -27,13 +27,13 @@
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,4,0,0"
                                     Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <ui:TextBlock Text="{x:Static res:Strings.LatestVersionLabel}" FontTypography="Body"/>
-                            <ui:TextBlock Text="{Binding LatestVersion}" FontTypography="Body"/>
+                            <ui:TextBlock Text="{x:Static res:Strings.LatestVersionLabel}" FontTypography="Body" VerticalAlignment="Center" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+                            <ui:TextBlock Text="{Binding LatestVersion}" FontTypography="Body" VerticalAlignment="Center" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                             <ui:Button Content="{x:Static res:Strings.UpdateButton}"
                                        Appearance="Primary"
                                        Margin="12,0,0,0"
                                        Padding="12,4"
-                                       Command="{Binding OpenUpdatePageCommand}" />                           
+                                       Command="{Binding OpenUpdatePageCommand}" VerticalAlignment="Center" />                           
                         </StackPanel>
 
                         <ui:TextBlock Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" FontTypography="Body">
