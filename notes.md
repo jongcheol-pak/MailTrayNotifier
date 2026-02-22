@@ -19,6 +19,11 @@
 
 ## 최근 변경 요약
 
+### System.Drawing.Common 불필요한 PackageReference 제거
+- NU1510 경고 해소: net10.0-windows 플랫폼에 이미 포함된 패키지의 명시적 참조 제거
+- 변경 파일: MailTrayNotifier.csproj
+- 검증: 빌드 성공
+
 ### About 메뉴 아이콘 업데이트 가능 시 변경
 - 최신 버전이 있을 때 About 메뉴 아이콘을 `Info24`에서 `CloudArrowDown24`로 변경
 - `SettingsViewModel.IsUpdateAvailable` PropertyChanged 이벤트 구독
