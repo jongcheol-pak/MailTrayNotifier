@@ -130,7 +130,7 @@ namespace MailTrayNotifier.Services
                         .AddArgument(MailWebUrlKey, mailWebUrl ?? string.Empty)
                         .SetToastDuration(ToastDuration.Long)
                         .AddText(string.Format(Strings.NewMailSingle, Truncate(accountName, 20)))
-                        .AddText($"{Truncate(mail.SenderDisplay, MaxSenderLength)}")
+                        .AddText($"{Truncate(mail.SenderDisplay, MaxSenderLength)}({mail.Date.ToString("yy-MM-dd HH:mm")})")
                         .AddText($"{Truncate(mail.Subject, MaxSubjectLength)}");
 
                     // URL이 설정된 경우 버튼 추가
