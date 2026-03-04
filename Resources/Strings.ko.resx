@@ -156,4 +156,17 @@
   <data name="UpdateButton" xml:space="preserve"><value>업데이트</value></data>
   <data name="UpdateAvailableTitle" xml:space="preserve"><value>업데이트 가능</value></data>
   <data name="UpdateAvailableMessage" xml:space="preserve"><value>새 버전 {0}이(가) 있습니다. (현재: {1})</value></data>
+
+  <!-- Export/Import -->
+  <data name="ExportAccounts" xml:space="preserve"><value>내보내기</value></data>
+  <data name="ImportAccounts" xml:space="preserve"><value>가져오기</value></data>
+  <data name="ExportTitle" xml:space="preserve"><value>계정 내보내기</value></data>
+  <data name="ImportTitle" xml:space="preserve"><value>계정 가져오기</value></data>
+  <data name="JsonFileFilter" xml:space="preserve"><value>JSON 파일 (*.json)|*.json</value></data>
+  <data name="ExportSuccess" xml:space="preserve"><value>계정을 내보냈습니다.</value></data>
+  <data name="ImportInvalidFile" xml:space="preserve"><value>선택한 파일이 올바르지 않거나 손상되었습니다.</value></data>
+  <data name="ExportNoItems" xml:space="preserve"><value>내보낼 계정이 없습니다.</value></data>
+  <data name="ImportNoItems" xml:space="preserve"><value>가져올 계정이 없습니다.</value></data>
+  <data name="ImportMaxAccountsExceeded" xml:space="preserve"><value>파일에 {0}개의 계정이 있지만 최대 {1}개까지 가능합니다. 처음 {1}개만 가져옵니다.</value></data>
+  <data name="ImportConfirmReplace" xml:space="preserve"><value>기존 항목은 삭제되고 가져온 계정으로 추가됩니다. 계속하시겠습니까?</value></data>
 </root>

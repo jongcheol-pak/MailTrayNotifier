@@ -156,4 +156,17 @@
   <data name="UpdateButton" xml:space="preserve"><value>Update</value></data>
   <data name="UpdateAvailableTitle" xml:space="preserve"><value>Update Available</value></data>
   <data name="UpdateAvailableMessage" xml:space="preserve"><value>A new version {0} is available. (Current: {1})</value></data>
+
+  <!-- Export/Import -->
+  <data name="ExportAccounts" xml:space="preserve"><value>Export</value></data>
+  <data name="ImportAccounts" xml:space="preserve"><value>Import</value></data>
+  <data name="ExportTitle" xml:space="preserve"><value>Export Accounts</value></data>
+  <data name="ImportTitle" xml:space="preserve"><value>Import Accounts</value></data>
+  <data name="JsonFileFilter" xml:space="preserve"><value>JSON files (*.json)|*.json</value></data>
+  <data name="ExportSuccess" xml:space="preserve"><value>Accounts exported successfully.</value></data>
+  <data name="ImportInvalidFile" xml:space="preserve"><value>The selected file is invalid or corrupted.</value></data>
+  <data name="ExportNoItems" xml:space="preserve"><value>There are no accounts to export.</value></data>
+  <data name="ImportNoItems" xml:space="preserve"><value>There are no accounts to import.</value></data>
+  <data name="ImportMaxAccountsExceeded" xml:space="preserve"><value>The file contains {0} accounts, but the maximum is {1}. Only the first {1} accounts will be imported.</value></data>
+  <data name="ImportConfirmReplace" xml:space="preserve"><value>Existing accounts will be deleted and replaced with the imported accounts. Do you want to continue?</value></data>
 </root>

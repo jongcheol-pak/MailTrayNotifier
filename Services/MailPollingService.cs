@@ -241,6 +241,24 @@ namespace MailTrayNotifier.Services
         }
 
         /// <summary>
+        /// 절전 모드 복귀 시 폴링 재시작
+        /// </summary>
+        public void RestartAfterResume()
+        {
+            if (_disposed || _settingsCollection is null)
+            {
+                return;
+            }
+
+            // 새로고침이 활성화되어 있고 유효한 설정이 있는 경우에만 재시작
+            if (_settingsCollection.IsRefreshEnabled && _settingsCollection.ValidAccountCount() > 0)
+            {
+                System.Diagnostics.Debug.WriteLine("절전 모드 복귀 감지 - 폴링 재시작");
+                RestartAllAccountPolling();
+            }
+        }
+
+        /// <summary>
         /// 개별 계정 폴링 루프
         /// </summary>
         private async Task RunAccountPollingAsync(MailSettings account, CancellationTokenSource myCts)

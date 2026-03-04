@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
+using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MailTrayNotifier.Constants;
@@ -385,6 +387,182 @@ namespace MailTrayNotifier.ViewModels
                     }
                 }, TaskScheduler.Default);
             }
+        }
+
+        /// <summary>
+        /// 계정 목록을 JSON 파일로 내보내기 (패스워드 제외)
+        /// </summary>
+        public void ExportAccounts()
+        {
+            var savedAccounts = Accounts
+                .Where(a => !a.IsNewAccount && a.HasRequiredValues())
+                .ToList();
+
+            if (savedAccounts.Count == 0)
+            {
+                System.Windows.MessageBox.Show(
+                    Strings.ExportNoItems,
+                    Strings.ExportTitle,
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+                return;
+            }
+
+            var dialog = new SaveFileDialog
+            {
+                Title = Strings.ExportTitle,
+                Filter = Strings.JsonFileFilter,
+                FileName = "mail_accounts.json"
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            try
+            {
+                // 패스워드를 제외한 설정 목록 생성
+                var exportData = savedAccounts
+                    .Select(a =>
+                    {
+                        var settings = a.ToMailSettings();
+                        settings.Password = string.Empty;
+                        return settings;
+                    })
+                    .ToList();
+
+                var json = JsonSerializer.Serialize(exportData, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(dialog.FileName, json);
+
+                System.Windows.MessageBox.Show(
+                    Strings.ExportSuccess,
+                    Strings.ExportTitle,
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    ex.Message,
+                    Strings.ExportTitle,
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// JSON 파일에서 계정 목록 가져오기
+        /// </summary>
+        public async Task ImportAccountsAsync()
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = Strings.ImportTitle,
+                Filter = Strings.JsonFileFilter
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            List<MailSettings>? importedAccounts;
+            try
+            {
+                var json = await File.ReadAllTextAsync(dialog.FileName).ConfigureAwait(true);
+                importedAccounts = JsonSerializer.Deserialize<List<MailSettings>>(json);
+            }
+            catch (Exception)
+            {
+                System.Windows.MessageBox.Show(
+                    Strings.ImportInvalidFile,
+                    Strings.ImportTitle,
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+                return;
+            }
+
+            if (importedAccounts is null || importedAccounts.Count == 0)
+            {
+                System.Windows.MessageBox.Show(
+                    Strings.ImportNoItems,
+                    Strings.ImportTitle,
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+                return;
+            }
+
+            // MaxAccounts 초과 시 경고 후 잘라내기
+            if (importedAccounts.Count > MailConstants.MaxAccounts)
+            {
+                System.Windows.MessageBox.Show(
+                    string.Format(Strings.ImportMaxAccountsExceeded, importedAccounts.Count, MailConstants.MaxAccounts),
+                    Strings.ImportTitle,
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+                importedAccounts = importedAccounts.Take(MailConstants.MaxAccounts).ToList();
+            }
+
+            var result = System.Windows.MessageBox.Show(
+                Strings.ImportConfirmReplace,
+                Strings.ImportTitle,
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Question);
+
+            if (result != System.Windows.MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            // 기존 계정 이벤트 구독 해제 및 제거
+            foreach (var account in Accounts)
+            {
+                account.EnabledChanged -= OnAccountEnabledChanged;
+                account.ExpandedChanged -= OnAccountExpandedChanged;
+            }
+            Accounts.Clear();
+
+            // 가져온 계정 추가
+            foreach (var settings in importedAccounts)
+            {
+                var accountVm = new MailAccountViewModel(settings);
+                accountVm.SetIsExpandedSilently(false);
+                // 패스워드가 비어있으므로 편집 모드로 시작
+                if (string.IsNullOrEmpty(settings.Password))
+                {
+                    accountVm.BeginEdit();
+                }
+                else
+                {
+                    accountVm.EndEdit();
+                }
+                accountVm.EnabledChanged += OnAccountEnabledChanged;
+                accountVm.ExpandedChanged += OnAccountExpandedChanged;
+                Accounts.Add(accountVm);
+            }
+
+            OnPropertyChanged(nameof(AccountCountText));
+            await SaveImportedAccountsAsync();
+        }
+
+        /// <summary>
+        /// 가져온 계정을 settings.json에 저장 (패스워드 없는 계정도 포함)
+        /// </summary>
+        private async Task SaveImportedAccountsAsync()
+        {
+            var collection = new MailSettingsCollection
+            {
+                IsRefreshEnabled = IsRefreshEnabled,
+                Language = _selectedLanguageCode,
+                Theme = _selectedThemeCode,
+                Accounts = Accounts
+                    .Select(a => a.ToMailSettings())
+                    .ToList()
+            };
+
+            await _settingsService.SaveCollectionAsync(collection);
+            _mailPollingService.ApplySettings(collection);
         }
 
         /// <summary>

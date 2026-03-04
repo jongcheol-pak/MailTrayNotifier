@@ -156,4 +156,17 @@
   <data name="UpdateButton" xml:space="preserve"><value>アップデート</value></data>
   <data name="UpdateAvailableTitle" xml:space="preserve"><value>アップデートあり</value></data>
   <data name="UpdateAvailableMessage" xml:space="preserve"><value>新しいバージョン {0} があります。(現在: {1})</value></data>
+
+  <!-- Export/Import -->
+  <data name="ExportAccounts" xml:space="preserve"><value>エクスポート</value></data>
+  <data name="ImportAccounts" xml:space="preserve"><value>インポート</value></data>
+  <data name="ExportTitle" xml:space="preserve"><value>アカウントのエクスポート</value></data>
+  <data name="ImportTitle" xml:space="preserve"><value>アカウントのインポート</value></data>
+  <data name="JsonFileFilter" xml:space="preserve"><value>JSONファイル (*.json)|*.json</value></data>
+  <data name="ExportSuccess" xml:space="preserve"><value>アカウントをエクスポートしました。</value></data>
+  <data name="ImportInvalidFile" xml:space="preserve"><value>選択したファイルが無効または破損しています。</value></data>
+  <data name="ExportNoItems" xml:space="preserve"><value>エクスポートするアカウントがありません。</value></data>
+  <data name="ImportNoItems" xml:space="preserve"><value>インポートするアカウントがありません。</value></data>
+  <data name="ImportMaxAccountsExceeded" xml:space="preserve"><value>ファイルに{0}個のアカウントがありますが、最大{1}個までです。最初の{1}個のみインポートされます。</value></data>
+  <data name="ImportConfirmReplace" xml:space="preserve"><value>既存のアカウントは削除され、インポートしたアカウントに置き換えられます。続行しますか？</value></data>
 </root>

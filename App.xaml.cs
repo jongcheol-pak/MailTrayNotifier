@@ -9,6 +9,7 @@ using Hardcodet.Wpf.TaskbarNotification;
 using MailTrayNotifier.Services;
 using MailTrayNotifier.Resources;
 using MailTrayNotifier.ViewModels;
+using Microsoft.Win32;
 using Wpf.Ui.Appearance;
 
 namespace MailTrayNotifier
@@ -76,6 +77,8 @@ namespace MailTrayNotifier
             if (!isNewInstance)
             {
                 MessageBox.Show(Strings.AlreadyRunning, Strings.AlertTitle, MessageBoxButton.OK, MessageBoxImage.Information);
+                _mutex.Dispose();
+                _mutex = null;
                 Shutdown();
                 return;
             }
@@ -85,6 +88,9 @@ namespace MailTrayNotifier
             // 미처리 예외 핸들러 등록
             AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
             DispatcherUnhandledException += OnDispatcherUnhandledException;
+
+            // 절전 모드 복귀 감지
+            SystemEvents.PowerModeChanged += OnPowerModeChanged;
 
             InitializeTray();
             _window = new MainWindow();
@@ -124,6 +130,31 @@ namespace MailTrayNotifier
             Debug.WriteLine($"Dispatcher 미처리 예외: {e.Exception.GetType().Name}: {e.Exception.Message}");
             Debug.WriteLine($"StackTrace: {e.Exception.StackTrace}");
             e.Handled = true;
+        }
+
+        /// <summary>
+        /// 절전 모드 복귀 시 폴링 재시작
+        /// </summary>
+        private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
+        {
+            if (e.Mode != PowerModes.Resume)
+            {
+                return;
+            }
+
+            // 네트워크 안정화 대기 후 폴링 재시작
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(5));
+                    _mailPollingService.RestartAfterResume();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"절전 모드 복귀 후 폴링 재시작 실패: {ex.Message}");
+                }
+            });
         }
 
 
@@ -572,6 +603,8 @@ namespace MailTrayNotifier
         /// </summary>
         private void CleanupResources()
         {
+            SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+
             _updateCheckCts?.Cancel();
             _updateCheckCts?.Dispose();
             _updateCheckCts = null;

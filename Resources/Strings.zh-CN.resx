@@ -156,4 +156,17 @@
   <data name="UpdateButton" xml:space="preserve"><value>更新</value></data>
   <data name="UpdateAvailableTitle" xml:space="preserve"><value>有可用更新</value></data>
   <data name="UpdateAvailableMessage" xml:space="preserve"><value>新版本 {0} 已发布。(当前: {1})</value></data>
+
+  <!-- Export/Import -->
+  <data name="ExportAccounts" xml:space="preserve"><value>导出</value></data>
+  <data name="ImportAccounts" xml:space="preserve"><value>导入</value></data>
+  <data name="ExportTitle" xml:space="preserve"><value>导出账户</value></data>
+  <data name="ImportTitle" xml:space="preserve"><value>导入账户</value></data>
+  <data name="JsonFileFilter" xml:space="preserve"><value>JSON文件 (*.json)|*.json</value></data>
+  <data name="ExportSuccess" xml:space="preserve"><value>账户导出成功。</value></data>
+  <data name="ImportInvalidFile" xml:space="preserve"><value>所选文件无效或已损坏。</value></data>
+  <data name="ExportNoItems" xml:space="preserve"><value>没有可导出的账户。</value></data>
+  <data name="ImportNoItems" xml:space="preserve"><value>没有可导入的账户。</value></data>
+  <data name="ImportMaxAccountsExceeded" xml:space="preserve"><value>文件包含{0}个账户，但最多允许{1}个。仅导入前{1}个账户。</value></data>
+  <data name="ImportConfirmReplace" xml:space="preserve"><value>现有账户将被删除并替换为导入的账户。是否继续？</value></data>
 </root>

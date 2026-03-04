@@ -17,15 +17,46 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                
-                <!-- 계정 추가 버튼 -->
-                <ui:Button
-                    Grid.Column="0"
-                    Content="{x:Static res:Strings.AddAccount}"
-                    Command="{Binding AddAccountCommand}"
-                    Icon="Add24"
-                    Appearance="Secondary"
-                    HorizontalAlignment="Left" />
+
+                <StackPanel  Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- 계정 추가 버튼 -->
+                    <ui:Button
+      
+       Content="{x:Static res:Strings.AddAccount}"
+       Command="{Binding AddAccountCommand}"
+       Icon="Add24"
+       Appearance="Secondary"
+       HorizontalAlignment="Left" Margin="0,0,12,0"/>
+
+                    <ui:Button
+                        x:Name="ExportImportButton"
+                        Width="30" Height="30"
+                        Padding="0"
+                       
+                        Appearance="Secondary"
+                        HorizontalAlignment="Left" Margin="0,0,8,0"
+                        Click="ExportImportButton_Click">
+                        <ui:Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="{x:Static res:Strings.ExportAccounts}" Click="ExportAccounts_Click">
+                                    <MenuItem.Style>
+                                        <Style TargetType="MenuItem">
+                                            <Setter Property="IsEnabled" Value="True"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding PlacementTarget.DataContext.Accounts.Count, RelativeSource={RelativeSource AncestorType=ContextMenu}}" Value="0">
+                                                    <Setter Property="IsEnabled" Value="False"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </MenuItem.Style>
+                                </MenuItem>
+                                <MenuItem Header="{x:Static res:Strings.ImportAccounts}" Click="ImportAccounts_Click"/>
+                            </ContextMenu>
+                        </ui:Button.ContextMenu>
+                        <ui:SymbolIcon Symbol="Save24" FontSize="20" VerticalAlignment="Center"/>
+                    </ui:Button>
+                </StackPanel>
+             
                 
                 <!-- 계정 개수 표시 -->
                 <ui:TextBlock

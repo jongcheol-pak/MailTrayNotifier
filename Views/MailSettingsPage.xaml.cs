@@ -88,5 +88,39 @@ namespace MailTrayNotifier.Views
                 }
             }
         }
+
+        /// <summary>
+        /// 내보내기/가져오기 버튼 클릭 시 ContextMenu 표시
+        /// </summary>
+        private void ExportImportButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement button && button.ContextMenu != null)
+            {
+                button.ContextMenu.PlacementTarget = button;
+                button.ContextMenu.IsOpen = true;
+            }
+        }
+
+        /// <summary>
+        /// 계정 내보내기
+        /// </summary>
+        private void ExportAccounts_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is SettingsViewModel viewModel)
+            {
+                viewModel.ExportAccounts();
+            }
+        }
+
+        /// <summary>
+        /// 계정 가져오기
+        /// </summary>
+        private async void ImportAccounts_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is SettingsViewModel viewModel)
+            {
+                await viewModel.ImportAccountsAsync();
+            }
+        }
     }
 }

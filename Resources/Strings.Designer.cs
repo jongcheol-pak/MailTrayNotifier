@@ -150,5 +150,16 @@ namespace MailTrayNotifier.Resources {
         public static string UpdateButton => ResourceManager.GetString("UpdateButton", resourceCulture)!;
         public static string UpdateAvailableTitle => ResourceManager.GetString("UpdateAvailableTitle", resourceCulture)!;
         public static string UpdateAvailableMessage => ResourceManager.GetString("UpdateAvailableMessage", resourceCulture)!;
+        public static string ExportAccounts => ResourceManager.GetString("ExportAccounts", resourceCulture)!;
+        public static string ImportAccounts => ResourceManager.GetString("ImportAccounts", resourceCulture)!;
+        public static string ExportTitle => ResourceManager.GetString("ExportTitle", resourceCulture)!;
+        public static string ImportTitle => ResourceManager.GetString("ImportTitle", resourceCulture)!;
+        public static string JsonFileFilter => ResourceManager.GetString("JsonFileFilter", resourceCulture)!;
+        public static string ExportSuccess => ResourceManager.GetString("ExportSuccess", resourceCulture)!;
+        public static string ImportInvalidFile => ResourceManager.GetString("ImportInvalidFile", resourceCulture)!;
+        public static string ExportNoItems => ResourceManager.GetString("ExportNoItems", resourceCulture)!;
+        public static string ImportNoItems => ResourceManager.GetString("ImportNoItems", resourceCulture)!;
+        public static string ImportMaxAccountsExceeded => ResourceManager.GetString("ImportMaxAccountsExceeded", resourceCulture)!;
+        public static string ImportConfirmReplace => ResourceManager.GetString("ImportConfirmReplace", resourceCulture)!;
     }
 }
