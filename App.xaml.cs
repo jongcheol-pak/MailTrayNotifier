@@ -54,6 +54,7 @@ namespace MailTrayNotifier
         private bool _hasAccountError;
         private readonly UpdateCheckService _updateCheckService = new();
         private CancellationTokenSource? _updateCheckCts;
+        private DateTime _lastResumeTime;
 
         public App()
         {
@@ -142,13 +143,25 @@ namespace MailTrayNotifier
                 return;
             }
 
+            // 중복 Resume 이벤트 무시 (10초 이내)
+            var now = DateTime.UtcNow;
+            if ((now - _lastResumeTime).TotalSeconds < 10)
+            {
+                return;
+            }
+            _lastResumeTime = now;
+
             // 네트워크 안정화 대기 후 폴링 재시작
             _ = Task.Run(async () =>
             {
                 try
                 {
                     await Task.Delay(TimeSpan.FromSeconds(5));
-                    _mailPollingService.RestartAfterResume();
+                    _mailPollingService?.RestartAfterResume();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // 앱 종료 중 발생 가능 - 무시
                 }
                 catch (Exception ex)
                 {

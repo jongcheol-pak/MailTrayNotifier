@@ -291,10 +291,7 @@ namespace MailTrayNotifier.ViewModels
                 accountVm.SetIsExpandedSilently(false);
                 // 기존 계정은 편집 모드 종료 상태로
                 accountVm.EndEdit();
-                // IsEnabled 변경 이벤트 구독
-                accountVm.EnabledChanged += OnAccountEnabledChanged;
-                // Expander 확장 상태 변경 이벤트 구독
-                accountVm.ExpandedChanged += OnAccountExpandedChanged;
+                SubscribeAccountEvents(accountVm);
                 Accounts.Add(accountVm);
             }
 
@@ -327,10 +324,7 @@ namespace MailTrayNotifier.ViewModels
                 IsExpanded = true  // 새 계정은 펼쳐진 상태로
             };
 
-            // IsEnabled 변경 이벤트 구독
-            newAccount.EnabledChanged += OnAccountEnabledChanged;
-            // Expander 확장 상태 변경 이벤트 구독  
-            newAccount.ExpandedChanged += OnAccountExpandedChanged;
+            SubscribeAccountEvents(newAccount);
 
             // 다른 계정들은 모두 접기 (이벤트 발생 없이)
             foreach (var account in Accounts)
@@ -365,9 +359,7 @@ namespace MailTrayNotifier.ViewModels
                 return;
             }
 
-            // 이벤트 구독 해제
-            account.EnabledChanged -= OnAccountEnabledChanged;
-            account.ExpandedChanged -= OnAccountExpandedChanged;
+            UnsubscribeAccountEvents(account);
 
             Accounts.Remove(account);
             OnPropertyChanged(nameof(AccountCountText));
@@ -390,9 +382,27 @@ namespace MailTrayNotifier.ViewModels
         }
 
         /// <summary>
+        /// 계정 이벤트 구독
+        /// </summary>
+        private void SubscribeAccountEvents(MailAccountViewModel account)
+        {
+            account.EnabledChanged += OnAccountEnabledChanged;
+            account.ExpandedChanged += OnAccountExpandedChanged;
+        }
+
+        /// <summary>
+        /// 계정 이벤트 구독 해제
+        /// </summary>
+        private void UnsubscribeAccountEvents(MailAccountViewModel account)
+        {
+            account.EnabledChanged -= OnAccountEnabledChanged;
+            account.ExpandedChanged -= OnAccountExpandedChanged;
+        }
+
+        /// <summary>
         /// 계정 목록을 JSON 파일로 내보내기 (패스워드 제외)
         /// </summary>
-        public void ExportAccounts()
+        public async Task ExportAccountsAsync()
         {
             var savedAccounts = Accounts
                 .Where(a => !a.IsNewAccount && a.HasRequiredValues())
@@ -433,7 +443,7 @@ namespace MailTrayNotifier.ViewModels
                     .ToList();
 
                 var json = JsonSerializer.Serialize(exportData, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(dialog.FileName, json);
+                await File.WriteAllTextAsync(dialog.FileName, json).ConfigureAwait(true);
 
                 System.Windows.MessageBox.Show(
                     Strings.ExportSuccess,
@@ -518,8 +528,7 @@ namespace MailTrayNotifier.ViewModels
             // 기존 계정 이벤트 구독 해제 및 제거
             foreach (var account in Accounts)
             {
-                account.EnabledChanged -= OnAccountEnabledChanged;
-                account.ExpandedChanged -= OnAccountExpandedChanged;
+                UnsubscribeAccountEvents(account);
             }
             Accounts.Clear();
 
@@ -537,32 +546,12 @@ namespace MailTrayNotifier.ViewModels
                 {
                     accountVm.EndEdit();
                 }
-                accountVm.EnabledChanged += OnAccountEnabledChanged;
-                accountVm.ExpandedChanged += OnAccountExpandedChanged;
+                SubscribeAccountEvents(accountVm);
                 Accounts.Add(accountVm);
             }
 
             OnPropertyChanged(nameof(AccountCountText));
-            await SaveImportedAccountsAsync();
-        }
-
-        /// <summary>
-        /// 가져온 계정을 settings.json에 저장 (패스워드 없는 계정도 포함)
-        /// </summary>
-        private async Task SaveImportedAccountsAsync()
-        {
-            var collection = new MailSettingsCollection
-            {
-                IsRefreshEnabled = IsRefreshEnabled,
-                Language = _selectedLanguageCode,
-                Theme = _selectedThemeCode,
-                Accounts = Accounts
-                    .Select(a => a.ToMailSettings())
-                    .ToList()
-            };
-
-            await _settingsService.SaveCollectionAsync(collection);
-            _mailPollingService.ApplySettings(collection);
+            await SaveAllAccountsAsync(filterIncomplete: false);
         }
 
         /// <summary>
@@ -627,15 +616,18 @@ namespace MailTrayNotifier.ViewModels
         /// <summary>
         /// 모든 계정을 settings.json에 저장
         /// </summary>
-        private async Task SaveAllAccountsAsync()
+        private async Task SaveAllAccountsAsync(bool filterIncomplete = true)
         {
+            var accountsQuery = filterIncomplete
+                ? Accounts.Where(a => a.HasRequiredValues())
+                : Accounts.AsEnumerable();
+
             var collection = new MailSettingsCollection
             {
                 IsRefreshEnabled = IsRefreshEnabled,
                 Language = _selectedLanguageCode,
                 Theme = _selectedThemeCode,
-                Accounts = Accounts
-                    .Where(a => a.HasRequiredValues())
+                Accounts = accountsQuery
                     .Select(a => a.ToMailSettings())
                     .ToList()
             };
@@ -652,7 +644,7 @@ namespace MailTrayNotifier.ViewModels
             if (account.IsNewAccount)
             {
                 // 새 계정인 경우 목록에서 제거
-                account.EnabledChanged -= OnAccountEnabledChanged;
+                UnsubscribeAccountEvents(account);
                 Accounts.Remove(account);
                 OnPropertyChanged(nameof(AccountCountText));
             }
@@ -671,8 +663,7 @@ namespace MailTrayNotifier.ViewModels
             var unsaved = Accounts.Where(a => a.IsNewAccount).ToList();
             foreach (var account in unsaved)
             {
-                account.EnabledChanged -= OnAccountEnabledChanged;
-                account.ExpandedChanged -= OnAccountExpandedChanged;
+                UnsubscribeAccountEvents(account);
                 Accounts.Remove(account);
             }
 
@@ -1161,8 +1152,7 @@ namespace MailTrayNotifier.ViewModels
             // 계정 이벤트 구독 해제
             foreach (var account in Accounts)
             {
-                account.EnabledChanged -= OnAccountEnabledChanged;
-                account.ExpandedChanged -= OnAccountExpandedChanged;
+                UnsubscribeAccountEvents(account);
             }
 
             _updateCheckService.Dispose();

@@ -104,11 +104,11 @@ namespace MailTrayNotifier.Views
         /// <summary>
         /// 계정 내보내기
         /// </summary>
-        private void ExportAccounts_Click(object sender, RoutedEventArgs e)
+        private async void ExportAccounts_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is SettingsViewModel viewModel)
             {
-                viewModel.ExportAccounts();
+                await viewModel.ExportAccountsAsync();
             }
         }
 
