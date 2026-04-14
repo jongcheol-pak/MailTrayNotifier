@@ -100,27 +100,5 @@ namespace MailTrayNotifier.Views
                 button.ContextMenu.IsOpen = true;
             }
         }
-
-        /// <summary>
-        /// 계정 내보내기
-        /// </summary>
-        private async void ExportAccounts_Click(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is SettingsViewModel viewModel)
-            {
-                await viewModel.ExportAccountsAsync();
-            }
-        }
-
-        /// <summary>
-        /// 계정 가져오기
-        /// </summary>
-        private async void ImportAccounts_Click(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is SettingsViewModel viewModel)
-            {
-                await viewModel.ImportAccountsAsync();
-            }
-        }
     }
 }

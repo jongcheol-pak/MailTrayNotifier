@@ -16,6 +16,8 @@ namespace MailTrayNotifier.Services
         private readonly NotificationService _notificationService;
         private readonly ConcurrentDictionary<string, SemaphoreSlim> _accountLocks = new();
         private readonly ConcurrentDictionary<string, CancellationTokenSource> _accountPollingTasks = new();
+        private readonly ConcurrentDictionary<string, bool> _accountErrorStates = new();
+        private readonly object _stateLock = new();
         private MailSettingsCollection? _settingsCollection;
         private bool _disposed;
 
@@ -94,33 +96,43 @@ namespace MailTrayNotifier.Services
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
 
-            var wasValid = HasValidSettings;
-            var wasRefreshEnabled = IsRefreshEnabled;
+            bool fireValidity, fireRefresh, fireRunning;
+            bool newIsValid, newIsRefreshEnabled, newIsRunning;
 
-            _settingsCollection = collection;
-
-            var isValid = HasValidSettings;
-            var isRefreshEnabled = IsRefreshEnabled;
-
-            if (wasValid != isValid)
+            lock (_stateLock)
             {
-                SettingsValidityChanged?.Invoke(isValid);
+                var wasValid = HasValidSettings;
+                var wasRefreshEnabled = IsRefreshEnabled;
+                var wasRunning = IsRunning;
+
+                _settingsCollection = collection;
+
+                // 삭제/rename된 계정의 계정별 리소스(SemaphoreSlim, 오류 상태) 정리 (누수 방지)
+                PruneStaleAccountResources();
+
+                newIsValid = HasValidSettings;
+                newIsRefreshEnabled = IsRefreshEnabled;
+
+                // IsRefreshEnabled 값에 따라 폴링 시작/중지 (이벤트 raise는 lock 해제 후)
+                if (!newIsRefreshEnabled || !newIsValid)
+                {
+                    StopCoreLocked();
+                }
+                else
+                {
+                    RestartAllAccountPollingLocked();
+                }
+
+                newIsRunning = IsRunning;
+
+                fireValidity = wasValid != newIsValid;
+                fireRefresh = wasRefreshEnabled != newIsRefreshEnabled;
+                fireRunning = wasRunning != newIsRunning;
             }
 
-            if (wasRefreshEnabled != isRefreshEnabled)
-            {
-                RefreshEnabledChanged?.Invoke(isRefreshEnabled);
-            }
-
-            // IsRefreshEnabled 값에 따라 폴링 시작/중지
-            if (!isRefreshEnabled || !isValid)
-            {
-                Stop(); // 비활성화 또는 유효한 설정이 없으면 중지
-            }
-            else
-            {
-                RestartAllAccountPolling(); // 설정 변경을 반영하기 위해 재시작
-            }
+            if (fireValidity) SettingsValidityChanged?.Invoke(newIsValid);
+            if (fireRefresh) RefreshEnabledChanged?.Invoke(newIsRefreshEnabled);
+            if (fireRunning) RunningStateChanged?.Invoke(newIsRunning);
         }
 
         /// <summary>
@@ -130,14 +142,21 @@ namespace MailTrayNotifier.Services
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
 
-            if (IsRunning || _settingsCollection is null || _settingsCollection.ValidAccountCount() == 0 || !_settingsCollection.IsRefreshEnabled)
+            bool fireRunning = false;
+
+            lock (_stateLock)
             {
-                return;
+                if (IsRunning || _settingsCollection is null || _settingsCollection.ValidAccountCount() == 0 || !_settingsCollection.IsRefreshEnabled)
+                {
+                    return;
+                }
+
+                StartAllAccountPolling();
+                IsRunning = true;
+                fireRunning = true;
             }
 
-            StartAllAccountPolling();
-            IsRunning = true;
-            RunningStateChanged?.Invoke(true);
+            if (fireRunning) RunningStateChanged?.Invoke(true);
         }
 
         /// <summary>
@@ -145,14 +164,29 @@ namespace MailTrayNotifier.Services
         /// </summary>
         public void Stop()
         {
+            bool fireStopped;
+            lock (_stateLock)
+            {
+                fireStopped = StopCoreLocked();
+            }
+
+            if (fireStopped) RunningStateChanged?.Invoke(false);
+        }
+
+        /// <summary>
+        /// 폴링 중지 (lock 보유 상태에서 호출, 이벤트 raise 없음).
+        /// 상태가 실제로 변경된 경우 true 반환
+        /// </summary>
+        private bool StopCoreLocked()
+        {
             if (!IsRunning)
             {
-                return;
+                return false;
             }
 
             StopAllAccountPolling();
             IsRunning = false;
-            RunningStateChanged?.Invoke(false);
+            return true;
         }
 
         /// <summary>
@@ -179,37 +213,39 @@ namespace MailTrayNotifier.Services
                 }
 
                 var accountKey = account.GetAccountKey();
-                if (_accountPollingTasks.ContainsKey(accountKey))
-                {
-                    continue; // 이미 실행 중
-                }
-
                 var cts = new CancellationTokenSource();
-                _accountPollingTasks.TryAdd(accountKey, cts);
+                if (!_accountPollingTasks.TryAdd(accountKey, cts))
+                {
+                    // 같은 키가 이미 있으면 새 CTS는 즉시 해제 (leak 방지)
+                    cts.Dispose();
+                    continue;
+                }
                 _ = RunAccountPollingAsync(account, cts);
             }
         }
 
         /// <summary>
-        /// 모든 계정 폴링 중지
+        /// 모든 계정 폴링 중지.
+        /// CTS Dispose는 각 워커의 finally에서 수행 → Cancel 직후 Dispose race / 이중 Dispose 방지
         /// </summary>
         private void StopAllAccountPolling()
         {
             foreach (var kvp in _accountPollingTasks)
             {
-                kvp.Value.Cancel();
-                kvp.Value.Dispose();
-                // SemaphoreSlim은 여기서 해제하지 않음
-                // 비동기 태스크가 아직 락을 보유 중일 수 있으므로 Dispose()에서 정리
+                try { kvp.Value.Cancel(); }
+                catch (ObjectDisposedException) { }
             }
 
             _accountPollingTasks.Clear();
+
+            // 재시작 시 이전 오류 상태가 잘못된 이벤트 디듀프에 영향 주지 않도록 초기화
+            _accountErrorStates.Clear();
         }
 
         /// <summary>
-        /// 모든 계정 폴링 재시작
+        /// 모든 계정 폴링 재시작 (lock 보유 상태에서 호출, 이벤트 raise 없음)
         /// </summary>
-        private void RestartAllAccountPolling()
+        private void RestartAllAccountPollingLocked()
         {
             StopAllAccountPolling();
 
@@ -218,26 +254,14 @@ namespace MailTrayNotifier.Services
                 if (IsRunning)
                 {
                     IsRunning = false;
-                    RunningStateChanged?.Invoke(false);
                 }
                 return;
             }
 
             StartAllAccountPolling();
 
-            // 실제로 폴링 중인 계정이 있는지 확인
             var hasActivePolling = _accountPollingTasks.Count > 0;
-
-            if (hasActivePolling && !IsRunning)
-            {
-                IsRunning = true;
-                RunningStateChanged?.Invoke(true);
-            }
-            else if (!hasActivePolling && IsRunning)
-            {
-                IsRunning = false;
-                RunningStateChanged?.Invoke(false);
-            }
+            IsRunning = hasActivePolling;
         }
 
         /// <summary>
@@ -250,12 +274,23 @@ namespace MailTrayNotifier.Services
                 return;
             }
 
-            // 새로고침이 활성화되어 있고 유효한 설정이 있는 경우에만 재시작
-            if (_settingsCollection.IsRefreshEnabled && _settingsCollection.ValidAccountCount() > 0)
+            bool fireRunning = false;
+            bool newIsRunning = false;
+
+            lock (_stateLock)
             {
-                System.Diagnostics.Debug.WriteLine("절전 모드 복귀 감지 - 폴링 재시작");
-                RestartAllAccountPolling();
+                // 새로고침이 활성화되어 있고 유효한 설정이 있는 경우에만 재시작
+                if (_settingsCollection.IsRefreshEnabled && _settingsCollection.ValidAccountCount() > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("절전 모드 복귀 감지 - 폴링 재시작");
+                    var wasRunning = IsRunning;
+                    RestartAllAccountPollingLocked();
+                    newIsRunning = IsRunning;
+                    fireRunning = wasRunning != newIsRunning;
+                }
             }
+
+            if (fireRunning) RunningStateChanged?.Invoke(newIsRunning);
         }
 
         /// <summary>
@@ -318,11 +353,8 @@ namespace MailTrayNotifier.Services
                 // 영구적 오류는 해당 계정만 중지
                 _notificationService.ShowError(string.Format(Strings.AccountMailCheckError, $"{account.UserId}@{account.Pop3Server}", ex.Message));
 
-                // 해당 계정 폴링만 중지
-                if (_accountPollingTasks.TryRemove(accountKey, out var removedCts))
-                {
-                    removedCts.Dispose();
-                }
+                // 딕셔너리에서 제거 (CTS는 finally에서 본인이 Dispose)
+                _accountPollingTasks.TryRemove(accountKey, out _);
 
                 // 계정 관련 리소스 정리
                 CleanupAccountResources(accountKey);
@@ -332,6 +364,11 @@ namespace MailTrayNotifier.Services
                 {
                     StopDueToError();
                 }
+            }
+            finally
+            {
+                // 자신의 CTS는 워커 종료 시점에 Dispose → StopAllAccountPolling의 Cancel/Dispose race 방지
+                myCts.Dispose();
             }
         }
 
@@ -379,8 +416,11 @@ namespace MailTrayNotifier.Services
                 var mails = await _mailClientService.GetMailListAsync(account, cancellationToken).ConfigureAwait(false);
                 System.Diagnostics.Debug.WriteLine($"[{accountKey}] 서버에서 {mails.Count}개 메일 조회됨");
 
-                // 메일 확인 성공 시 오류 상태 해제
-                AccountErrorCleared?.Invoke(accountKey);
+                // 메일 확인 성공 시 오류 상태 해제 (이전에 오류였던 경우만 이벤트 발동)
+                if (_accountErrorStates.TryRemove(accountKey, out _))
+                {
+                    AccountErrorCleared?.Invoke(accountKey);
+                }
 
                 if (mails.Count == 0)
                 {
@@ -416,29 +456,36 @@ namespace MailTrayNotifier.Services
                     System.Diagnostics.Debug.WriteLine($"[{accountKey}] 새 메일 없음 (모두 이미 읽음 처리됨)");
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // 중지 토글 등 취소가 아래 AccountErrorOccurred로 잘못 발동되지 않도록 먼저 필터링
+                throw;
+            }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[{accountKey}] 메일 확인 오류: {ex.GetType().Name} - {ex.Message}");
-                // 메일 확인 실패 시 오류 상태 설정
-                AccountErrorOccurred?.Invoke(accountKey, ex.Message);
-                throw; // 기존 오류 처리 로직을 유지하기 위해 다시 throw
+                // 이전에 오류가 아니었던 경우만 이벤트 발동 (연속 폴링 실패 시 중복 UI 업데이트 방지)
+                if (_accountErrorStates.TryAdd(accountKey, true))
+                {
+                    AccountErrorOccurred?.Invoke(accountKey, ex.Message);
+                }
+                throw;
             }
         }
 
         /// <summary>
-        /// 오류로 인한 전체 중지 (내부용)
+        /// 오류로 인한 전체 중지 (내부용).
+        /// ErrorOccurred는 상태 변화 여부와 무관하게 항상 raise (UI가 오류 표시를 갱신해야 하므로)
         /// </summary>
         private void StopDueToError()
         {
-            StopAllAccountPolling();
-
-            if (IsRunning)
+            bool fireStopped;
+            lock (_stateLock)
             {
-                IsRunning = false;
-                RunningStateChanged?.Invoke(false);
+                fireStopped = StopCoreLocked();
             }
 
-            // 오류 발생 알림 (메뉴 비활성화용)
+            if (fireStopped) RunningStateChanged?.Invoke(false);
             ErrorOccurred?.Invoke();
         }
 
@@ -466,6 +513,38 @@ namespace MailTrayNotifier.Services
             if (_accountLocks.TryRemove(accountKey, out var semaphore))
             {
                 semaphore.Dispose();
+            }
+            _accountErrorStates.TryRemove(accountKey, out _);
+        }
+
+        /// <summary>
+        /// 현재 설정에 없는 계정의 리소스 제거 (rename/삭제로 인한 leak 방지, lock 보유 상태에서 호출)
+        /// </summary>
+        private void PruneStaleAccountResources()
+        {
+            if (_settingsCollection is null)
+            {
+                return;
+            }
+
+            var validKeys = new HashSet<string>(
+                _settingsCollection.Accounts.Select(a => a.GetAccountKey()),
+                StringComparer.Ordinal);
+
+            foreach (var key in _accountLocks.Keys)
+            {
+                if (!validKeys.Contains(key))
+                {
+                    CleanupAccountResources(key);
+                }
+            }
+
+            foreach (var key in _accountErrorStates.Keys)
+            {
+                if (!validKeys.Contains(key))
+                {
+                    _accountErrorStates.TryRemove(key, out _);
+                }
             }
         }
 
@@ -539,7 +618,14 @@ namespace MailTrayNotifier.Services
             }
 
             _disposed = true;
-            Stop();
+
+            bool fireStopped;
+            lock (_stateLock)
+            {
+                fireStopped = StopCoreLocked();
+            }
+
+            if (fireStopped) RunningStateChanged?.Invoke(false);
 
             // 모든 계정별 락 해제
             foreach (var lockItem in _accountLocks.Values)

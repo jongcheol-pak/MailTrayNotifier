@@ -25,7 +25,7 @@ namespace MailTrayNotifier
             InitializeComponent();
 
             var app = App.Instance ?? (App)Application.Current;
-            ViewModel = new SettingsViewModel(app.SettingsService, app.MailPollingService, app.MailClientService, app.MailStateStore);
+            ViewModel = new SettingsViewModel(app.SettingsService, app.MailPollingService, app.MailClientService, app.MailStateStore, app.UpdateCheckService);
             ViewModel.CloseRequested += OnCloseRequested;
             ViewModel.LanguageChanged += OnLanguageChanged;
             ViewModel.PropertyChanged += OnViewModelPropertyChanged;

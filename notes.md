@@ -19,6 +19,82 @@
 
 ## 최근 변경 요약
 
+### 메모리 누수/정합성 후속 수정 (2026-04-14)
+- **MailPollingService.StartAllAccountPolling**: `ContainsKey` 선조회 제거 + `TryAdd` 실패 시 새 CTS 즉시 Dispose (leak 방지 + 경쟁 조건 축소)
+- **MailPollingService.StopAllAccountPolling**: 중지 시 `_accountErrorStates.Clear()` 추가 — Stop→Start 사이클에서 이전 오류 상태가 남아 새 워커의 `AccountErrorCleared` 이벤트가 잘못 디듀프되는 문제 방지
+- **MailPollingService.ApplySettings**: `PruneStaleAccountResources()` 호출 추가 — 계정 rename/삭제 시 `_accountLocks`(SemaphoreSlim) / `_accountErrorStates`가 누적되지 않도록 현재 유효 계정 외 키를 정리 (장시간 상주 앱 누수 방지)
+- **App.OnPollingStateChanged**: 재시작(`isRunning=true`) 시 `_hasError = false` 리셋 — `StopDueToError` 이후 `AccountErrorCleared` 이벤트가 오지 않아 warning 아이콘이 영구 잔존하던 버그 해소
+- **MailClientService.SafeDisconnectAsync**: 빈 catch에 `Debug.WriteLine` 추가하여 디버깅 경로 복구
+- **MailClientService.GetMailListAsync**: 헤더 조회 catch 블록의 WHAT 설명 주석 3개(`// POP3 프로토콜 오류는 건너뛰기` 등) 제거 — 예외 타입 이름과 동일한 반복
+- 스킵: `MailStateStore` 원자적 쓰기 적용 (별도 구조 변경, 스코프 밖) / `SettingsService.Clear()` async 전환 (호출자 영향) / `_accountErrorStates` 타입 변경 (실이득 없음)
+- 검증: 빌드 성공 (경고 0, 오류 0)
+
+### 동시성/정확성 강화 (2026-04-14)
+- **App.xaml.cs**: `_hasAccountError` → `_hasError`로 rename (전역 폴링 오류와 계정 오류가 동일 트레이 warning 경로를 사용하는 의미 통합)
+- **SettingsService.cs**: `Clear()`가 `s_saveLock` 경유하도록 변경 + `File.Exists` TOCTOU 제거 + `.tmp` 잔여 파일 함께 정리
+- **SettingsService.cs**: `ReadFileGuardedAsync`/`ReadFileGuardedSync` 헬퍼 추가 — `LoadAsync`/`LoadCollectionAsync`/`LoadStartupSettingsSync`가 저장 락 경유로 파일 읽어 쓰기 중 `File.Move` 충돌 방지. 레거시 마이그레이션 저장은 읽기 락 해제 후 수행하여 데드락 회피
+- **MailClientService.cs**: `SafeDisconnectAsync` 헬퍼 추가 — `DisconnectAsync`에 3초 타임아웃 CTS 적용하여 응답 없는 서버에서 hang 방지. `MailConstants.DisconnectTimeoutSeconds` 추가
+- **MailPollingService.cs**: `_accountErrorStates` 딕셔너리 추가 → `AccountErrorOccurred`/`AccountErrorCleared` 이벤트를 상태 전이 시에만 발동 (연속 폴링 실패 시 매 주기마다 이벤트 중복 발동 방지). `CleanupAccountResources`에서 함께 정리
+- **MailPollingService.cs**: `StopAllAccountPolling`에서 `CancellationTokenSource.Dispose()` 제거 → 각 워커의 `finally`에서 자기 CTS를 Dispose하도록 변경하여 Cancel 직후 Dispose race / 이중 Dispose 방지. 예외 경로의 중복 Dispose 제거
+- 스킵 (재평가): `GetMessageUidsAsync` → 개별 `GetMessageUid(i)` 변환은 MaxMailsToFetch=100 기준 네트워크 라운드트립 증가로 오히려 악화 가능 → 현행 유지
+- 검증: 빌드 성공 (경고 0, 오류 0)
+
+### 코드 리뷰 후속 정리 (2026-04-14)
+- **MailClientService.TestConnectionAsync**: `GetMailListAsync`와 동일하게 `ConnectAsync` 이후를 try/finally로 감싸 인증 실패 시에도 `DisconnectAsync`(QUIT) 전송 보장
+- **MailPollingService.StopDueToError**: 내부 중지 로직을 `StopCoreLocked()` 호출로 대체하여 중복 제거 (ErrorOccurred는 상태 변화 여부와 무관하게 항상 raise되는 점 주석으로 명시)
+- **MailPollingService.CheckAccountAsync**: OCE catch 주석을 WHY 중심으로 재표현 ("아래 AccountErrorOccurred로 잘못 발동되지 않도록 먼저 필터링"), 일반 catch의 중복 주석 정리
+- 검증: 빌드 성공 (경고 0, 오류 0)
+
+### 동기화 간격 입력 컨트롤 ComboBox 변경 (2026-04-14)
+- `MailSettingsPage.xaml`: 동기화 간격 TextBox → ComboBox로 변경 (1~60분 선택, 기본값 5)
+- `MailAccountViewModel.cs`: `AvailableRefreshMinutes` 정적 속성 추가 (1~60 정수 목록), `CancelEdit`에 `RefreshMinutes` 알림 추가
+- 검증: 빌드 성공
+
+### 중지 후 시작 시 계정 오류 오표시 수정 (2026-04-14)
+- **원인**: `MailPollingService.CheckAccountAsync`의 catch가 `OperationCanceledException`을 필터링하지 않아, 중지 토글로 취소된 워커가 `AccountErrorOccurred` 이벤트를 잘못 발동 → 트레이 warning 아이콘/계정 오류 표시가 잔존
+- **수정**: `CheckAccountAsync`에 `catch (OperationCanceledException) { throw; }` 블록을 일반 catch보다 먼저 배치하여 취소 시 이벤트 발동 차단 (`MailClientService` 패턴과 일관)
+- 변경 파일: `Services/MailPollingService.cs`
+- 검증: 빌드 성공 (경고 0, 오류 0)
+
+### 코드 리뷰 리팩토링 (2026-04-14)
+- **MailAccountViewModel.cs**: 포트/주기 검증 setter 3곳(`Pop3PortText`, `SmtpPortText`, `RefreshMinutesText`)의 4-분기 복붙 로직을 `ParseIntOrDefault` + `IsValidPort` 헬퍼로 공통화 (약 70줄 감소), `ToMailSettings()` 매직넘버 5 → `MailConstants.DefaultRefreshMinutes`
+- **MailSettings.cs**: `BuildAccountKey(server, userId)` static 빌더 추가하여 VM/Model의 키 생성 규칙 단일화
+- **MailAccountViewModel.cs**: `GetAccountKey()`가 `MailSettings.BuildAccountKey` 호출하도록 변경
+- **SettingsService.cs**: `SaveAsync`/`SaveCollectionAsync`의 원자적 쓰기 로직(Serialize→tmp→Move)을 `WriteJsonAtomicAsync<T>` 헬퍼로 추출
+- **SettingsService.cs**: `s_saveLock` (SemaphoreSlim) 추가하여 동시 저장 직렬화 — `File.Move` sharing violation 방지
+- **MailPollingService.cs**: 상태 전이 lock 내에서 이벤트 raise 제거 → 상태 변화 캡처 후 lock 밖에서 raise (`ApplySettings`/`Start`/`Stop`/`RestartAfterResume`/`StopDueToError`/`Dispose`). 향후 핸들러 추가 시 재진입 데드락 위험 차단. `StopCore`→`StopCoreLocked`(bool 반환), `RestartAllAccountPolling`→`RestartAllAccountPollingLocked`로 리네임
+- 검증: 빌드 성공 (경고 0, 오류 0)
+
+### 코드 리뷰 전체 수정 (2026-07-17)
+- **MailConstants.cs**: `DefaultSmtpPort` 465→587 (`MailSettings.SmtpPort` 기본값 587과 일치)
+- **MailSettings.cs**: `IsRefreshEnabled` 레거시 호환 주석 추가, `Password` 주석 DPAPI 암호화 정확히 기술
+- **SettingsService.cs**: `LoadLanguageSync`+`LoadThemeSync`→`LoadStartupSettingsSync` 통합(파일 읽기 1회), `SaveAsync`/`SaveCollectionAsync`에 원자적 파일 쓰기(tmp+Move) 적용
+- **MailPollingService.cs**: `_stateLock` 추가, 상태 전이 메서드(`ApplySettings`/`Start`/`Stop`/`RestartAfterResume`/`StopDueToError`/`Dispose`) 동기화, `Stop`→`StopCore` 분리로 lock 내부 재입 방지
+- **MailClientService.cs**: 인증 후 예외 시에도 `DisconnectAsync` 보장 (try/finally + `CancellationToken.None`)
+- **MailAccountViewModel.cs**: 포트/주기 기본값 `MailConstants` 상수 사용(9곳), `GetAccountKey()` 메서드 추가, `CancelEdit` 중복 XML summary 제거
+- **SettingsViewModel.cs**: `UpdateCheckService` 생성자 주입(new() 제거, Dispose 미담당), `FindAccountByKey`/`SaveAsync`/`RemoveAccount`에서 `GetAccountKey()` 직접 호출, 생성자 접근 수준 `internal`로 변경
+- **MainWindow.xaml.cs**: `SettingsViewModel` 생성 시 `app.UpdateCheckService` 전달
+- **App.xaml.cs**: `UpdateCheckService` 프로퍼티 노출, `ApplyStartupSettings` 통합, 6개 이벤트 핸들러 `Dispatcher.Invoke`→`BeginInvoke`(데드락 방지), `CleanupResources`에서 `_updateCheckService.Dispose()`를 `_window.ForceClose()` 이후로 이동
+- 변경 파일: 9개 / 검증: 빌드 성공
+
+### 트레이 메뉴 "메일 알림 중지/시작" 토글 항상 표시 (2026-07-17)
+- 기존: IsRefreshEnabled가 false이면 토글 메뉴가 숨겨져 다시 시작할 수 없었음
+- 변경: 유효한 설정이 있으면 IsRefreshEnabled 여부와 무관하게 토글 메뉴 항상 표시
+- 변경 파일: App.xaml.cs (`UpdateTrayUI` 메서드)
+
+### 오류 중지 후 "메일 알림 시작" 메뉴 활성화 수정 (2026-07-17)
+- 기존: `OnPollingErrorOccurred`에서 `IsEnabled = false`를 직접 설정하여 메뉴 비활성화 고정
+- 변경: `UpdateTrayUI()`를 호출하도록 통일하여 유효한 설정이 있으면 메뉴 활성화 유지
+- 변경 파일: App.xaml.cs (`OnPollingErrorOccurred` 메서드)
+- 검증: 빌드 성공
+
+### 코드 리뷰 이슈 수정 (2026-04-06)
+- App.xaml.cs: `_lastResumeTime` 스레드 안전성 확보 (lock), Resume Task에 CancellationToken 추가
+- SettingsViewModel.cs: Export/Import를 `[RelayCommand]`로 전환, JsonSerializerOptions 정적 캐싱, 파라미터명 개선 (`filterIncomplete` → `includeIncomplete`)
+- SettingsService.cs: JsonSerializerOptions 정적 캐싱
+- MailSettingsPage.xaml: XAML 들여쓰기 정리, MenuItem Click → Command 바인딩
+- MailSettingsPage.xaml.cs: async void 이벤트 핸들러 제거
+
 ### System.Drawing.Common 불필요한 PackageReference 제거
 - NU1510 경고 해소: net10.0-windows 플랫폼에 이미 포함된 패키지의 명시적 참조 제거
 - 변경 파일: MailTrayNotifier.csproj

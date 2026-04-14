@@ -36,6 +36,11 @@ namespace MailTrayNotifier.ViewModels
         private bool _isNewAccount;
 
         /// <summary>
+        /// 동기화 간격 선택 목록 (1~60분)
+        /// </summary>
+        public static IReadOnlyList<int> AvailableRefreshMinutes { get; } = Enumerable.Range(1, 60).ToArray();
+
+        /// <summary>
         /// 기본 생성자 (새 계정 생성용)
         /// </summary>
         public MailAccountViewModel()
@@ -88,38 +93,14 @@ namespace MailTrayNotifier.ViewModels
         }
 
         /// <summary>
-        /// POP3 포트 텍스트 (TextBox 바인딩용)
+        /// POP3 포트 텍스트 (TextBox 바인딩용, LostFocus 시 최종 검증)
         /// </summary>
         public string Pop3PortText
         {
             get => _pop3Port.ToString();
             set
             {
-                // LostFocus 시에만 호출되므로 최종 검증 수행
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    // 빈 값이면 기본값 995로 설정 (SSL POP3)
-                    Pop3Port = 995;
-                }
-                else if (int.TryParse(value, out var port))
-                {
-                    if (port > 0 && port <= 65535)
-                    {
-                        Pop3Port = port;
-                    }
-                    else
-                    {
-                        // 포트 범위를 벗어나면 기본값 995로 설정
-                        Pop3Port = 995;
-                    }
-                }
-                else
-                {
-                    // 숫자가 아닌 값이면 기본값 995로 설정
-                    Pop3Port = 995;
-                }
-                
-                // UI 업데이트를 위해 PropertyChanged 이벤트 발생
+                Pop3Port = ParseIntOrDefault(value, MailConstants.DefaultPop3Port, IsValidPort);
                 OnPropertyChanged();
             }
         }
@@ -143,38 +124,14 @@ namespace MailTrayNotifier.ViewModels
         }
 
         /// <summary>
-        /// SMTP 포트 텍스트 (TextBox 바인딩용)
+        /// SMTP 포트 텍스트 (TextBox 바인딩용, LostFocus 시 최종 검증)
         /// </summary>
         public string SmtpPortText
         {
             get => _smtpPort.ToString();
             set
             {
-                // LostFocus 시에만 호출되므로 최종 검증 수행
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    // 빈 값이면 기본값 587로 설정 (TLS SMTP)
-                    SmtpPort = 587;
-                }
-                else if (int.TryParse(value, out var port))
-                {
-                    if (port > 0 && port <= 65535)
-                    {
-                        SmtpPort = port;
-                    }
-                    else
-                    {
-                        // 포트 범위를 벗어나면 기본값 587로 설정
-                        SmtpPort = 587;
-                    }
-                }
-                else
-                {
-                    // 숫자가 아닌 값이면 기본값 587로 설정
-                    SmtpPort = 587;
-                }
-                
-                // UI 업데이트를 위해 PropertyChanged 이벤트 발생
+                SmtpPort = ParseIntOrDefault(value, MailConstants.DefaultSmtpPort, IsValidPort);
                 OnPropertyChanged();
             }
         }
@@ -222,38 +179,14 @@ namespace MailTrayNotifier.ViewModels
         }
 
         /// <summary>
-        /// 새로고침 간격 텍스트 (TextBox 바인딩용)
+        /// 새로고침 간격 텍스트 (TextBox 바인딩용, LostFocus 시 최종 검증)
         /// </summary>
         public string RefreshMinutesText
         {
             get => _refreshMinutes.ToString();
             set
             {
-                // LostFocus 시에만 호출되므로 최종 검증 수행
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    // 빈 값이면 기본값 5분으로 설정
-                    RefreshMinutes = 5;
-                }
-                else if (int.TryParse(value, out var minutes))
-                {
-                    if (minutes > 0)
-                    {
-                        RefreshMinutes = minutes;
-                    }
-                    else
-                    {
-                        // 0 이하의 값이면 기본값 5분으로 설정
-                        RefreshMinutes = 5;
-                    }
-                }
-                else
-                {
-                    // 숫자가 아닌 값이면 기본값 5분으로 설정
-                    RefreshMinutes = 5;
-                }
-                
-                // UI 업데이트를 위해 PropertyChanged 이벤트 발생
+                RefreshMinutes = ParseIntOrDefault(value, MailConstants.DefaultRefreshMinutes, static m => m > 0);
                 OnPropertyChanged();
             }
         }
@@ -407,9 +340,6 @@ namespace MailTrayNotifier.ViewModels
         /// <summary>
         /// 편집 모드 취소 (백업된 값으로 복원)
         /// </summary>
-        /// <summary>
-        /// 편집 모드 취소 (백업된 값으로 복원)
-        /// </summary>
         public void CancelEdit()
         {
             if (_backup != null)
@@ -424,6 +354,7 @@ namespace MailTrayNotifier.ViewModels
                 OnPropertyChanged(nameof(UseSsl));
                 OnPropertyChanged(nameof(UserId));
                 OnPropertyChanged(nameof(Password));
+                OnPropertyChanged(nameof(RefreshMinutes));
                 OnPropertyChanged(nameof(RefreshMinutesText));
                 OnPropertyChanged(nameof(MailWebUrl));
                 OnPropertyChanged(nameof(IsEnabled));
@@ -511,6 +442,14 @@ namespace MailTrayNotifier.ViewModels
         }
 
         /// <summary>
+        /// 계정 구분 키 (ToMailSettings 결과와 동일한 키 — Trim 적용)
+        /// </summary>
+        public string GetAccountKey()
+        {
+            return MailSettings.BuildAccountKey(Pop3Server.Trim(), UserId.Trim());
+        }
+
+        /// <summary>
         /// MailSettings로 변환
         /// </summary>
         public MailSettings ToMailSettings()
@@ -524,11 +463,31 @@ namespace MailTrayNotifier.ViewModels
                 UseSsl = UseSsl,
                 UserId = UserId.Trim(),
                 Password = Password,
-                RefreshMinutes = RefreshMinutes > 0 ? RefreshMinutes : 5,
+                RefreshMinutes = RefreshMinutes > 0 ? RefreshMinutes : MailConstants.DefaultRefreshMinutes,
                 MailWebUrl = MailWebUrl.Trim(),
                 IsEnabled = IsEnabled,
                 AccountName = AccountName?.Trim() ?? string.Empty
             };
         }
+
+        /// <summary>
+        /// 포트/숫자 텍스트를 파싱. 공백이거나 유효하지 않으면 기본값 반환
+        /// </summary>
+        private static int ParseIntOrDefault(string value, int defaultValue, Func<int, bool> isValid)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return defaultValue;
+            }
+
+            return int.TryParse(value, out var parsed) && isValid(parsed)
+                ? parsed
+                : defaultValue;
+        }
+
+        /// <summary>
+        /// TCP 포트 유효 범위 검증 (1~65535)
+        /// </summary>
+        private static bool IsValidPort(int port) => port > 0 && port <= 65535;
     }
 }

@@ -19,11 +19,13 @@ namespace MailTrayNotifier.ViewModels
     /// </summary>
     public partial class SettingsViewModel : ObservableObject, IDisposable
     {
+        private static readonly JsonSerializerOptions s_jsonWriteOptions = new() { WriteIndented = true };
+
         private readonly SettingsService _settingsService;
         private readonly MailPollingService _mailPollingService;
         private readonly MailClientService _mailClientService;
         private readonly MailStateStore _mailStateStore;
-        private readonly UpdateCheckService _updateCheckService = new();
+        private readonly UpdateCheckService _updateCheckService;
         private const string RegistryKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
         private const string AppName = "MailTrayNotifier";
 
@@ -116,16 +118,18 @@ namespace MailTrayNotifier.ViewModels
             }
         }
 
-        public SettingsViewModel(
+        internal SettingsViewModel(
             SettingsService settingsService,
             MailPollingService mailPollingService,
             MailClientService mailClientService,
-            MailStateStore mailStateStore)
+            MailStateStore mailStateStore,
+            UpdateCheckService updateCheckService)
         {
             _settingsService = settingsService;
             _mailPollingService = mailPollingService;
             _mailClientService = mailClientService;
             _mailStateStore = mailStateStore;
+            _updateCheckService = updateCheckService;
 
             // 메일 폴링 서비스의 계정별 오류 이벤트 구독
             _mailPollingService.AccountErrorOccurred += OnAccountErrorOccurred;
@@ -368,7 +372,7 @@ namespace MailTrayNotifier.ViewModels
             if (!account.IsNewAccount)
             {
                 // 해당 계정의 메일 상태도 삭제
-                var accountKey = account.ToMailSettings().GetAccountKey();
+                var accountKey = account.GetAccountKey();
                 _mailStateStore.ClearAccount(accountKey);
 
                 _ = SaveAllAccountsAsync().ContinueWith(t =>
@@ -402,7 +406,8 @@ namespace MailTrayNotifier.ViewModels
         /// <summary>
         /// 계정 목록을 JSON 파일로 내보내기 (패스워드 제외)
         /// </summary>
-        public async Task ExportAccountsAsync()
+        [RelayCommand]
+        private async Task ExportAccountsAsync()
         {
             var savedAccounts = Accounts
                 .Where(a => !a.IsNewAccount && a.HasRequiredValues())
@@ -442,7 +447,7 @@ namespace MailTrayNotifier.ViewModels
                     })
                     .ToList();
 
-                var json = JsonSerializer.Serialize(exportData, new JsonSerializerOptions { WriteIndented = true });
+                var json = JsonSerializer.Serialize(exportData, s_jsonWriteOptions);
                 await File.WriteAllTextAsync(dialog.FileName, json).ConfigureAwait(true);
 
                 System.Windows.MessageBox.Show(
@@ -464,7 +469,8 @@ namespace MailTrayNotifier.ViewModels
         /// <summary>
         /// JSON 파일에서 계정 목록 가져오기
         /// </summary>
-        public async Task ImportAccountsAsync()
+        [RelayCommand]
+        private async Task ImportAccountsAsync()
         {
             var dialog = new OpenFileDialog
             {
@@ -551,7 +557,7 @@ namespace MailTrayNotifier.ViewModels
             }
 
             OnPropertyChanged(nameof(AccountCountText));
-            await SaveAllAccountsAsync(filterIncomplete: false);
+            await SaveAllAccountsAsync(includeIncomplete: true);
         }
 
         /// <summary>
@@ -616,11 +622,11 @@ namespace MailTrayNotifier.ViewModels
         /// <summary>
         /// 모든 계정을 settings.json에 저장
         /// </summary>
-        private async Task SaveAllAccountsAsync(bool filterIncomplete = true)
+        private async Task SaveAllAccountsAsync(bool includeIncomplete = false)
         {
-            var accountsQuery = filterIncomplete
-                ? Accounts.Where(a => a.HasRequiredValues())
-                : Accounts.AsEnumerable();
+            var accountsQuery = includeIncomplete
+                ? Accounts.AsEnumerable()
+                : Accounts.Where(a => a.HasRequiredValues());
 
             var collection = new MailSettingsCollection
             {
@@ -822,7 +828,7 @@ namespace MailTrayNotifier.ViewModels
 
                 foreach (var account in collection.Accounts)
                 {
-                    var accountViewModel = Accounts.FirstOrDefault(a => a.ToMailSettings().GetAccountKey() == account.GetAccountKey());
+                    var accountViewModel = Accounts.FirstOrDefault(a => a.GetAccountKey() == account.GetAccountKey());
 
                     try
                     {
@@ -1005,7 +1011,7 @@ namespace MailTrayNotifier.ViewModels
         /// </summary>
         private MailAccountViewModel? FindAccountByKey(string accountKey)
         {
-            return Accounts.FirstOrDefault(a => a.ToMailSettings().GetAccountKey() == accountKey);
+            return Accounts.FirstOrDefault(a => a.GetAccountKey() == accountKey);
         }
 
         /// <summary>
@@ -1154,8 +1160,6 @@ namespace MailTrayNotifier.ViewModels
             {
                 UnsubscribeAccountEvents(account);
             }
-
-            _updateCheckService.Dispose();
         }
     }
 }

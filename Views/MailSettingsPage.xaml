@@ -5,6 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:res="clr-namespace:MailTrayNotifier.Resources"
+    xmlns:vm="clr-namespace:MailTrayNotifier.ViewModels"
     mc:Ignorable="d" d:DesignHeight="450" d:DesignWidth="800" Title="MailSettingsPage">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -18,46 +19,46 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel  Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <!-- 계정 추가 버튼 -->
                     <ui:Button
-      
-       Content="{x:Static res:Strings.AddAccount}"
-       Command="{Binding AddAccountCommand}"
-       Icon="Add24"
-       Appearance="Secondary"
-       HorizontalAlignment="Left" Margin="0,0,12,0"/>
+                        Content="{x:Static res:Strings.AddAccount}"
+                        Command="{Binding AddAccountCommand}"
+                        Icon="Add24"
+                        Appearance="Secondary"
+                        HorizontalAlignment="Left"
+                        Margin="0,0,12,0"/>
 
                     <ui:Button
                         x:Name="ExportImportButton"
                         Width="30" Height="30"
                         Padding="0"
-                       
                         Appearance="Secondary"
-                        HorizontalAlignment="Left" Margin="0,0,8,0"
+                        HorizontalAlignment="Left"
+                        Margin="0,0,8,0"
                         Click="ExportImportButton_Click">
                         <ui:Button.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Header="{x:Static res:Strings.ExportAccounts}" Click="ExportAccounts_Click">
+                            <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                <MenuItem Header="{x:Static res:Strings.ExportAccounts}" Command="{Binding ExportAccountsCommand}">
                                     <MenuItem.Style>
                                         <Style TargetType="MenuItem">
                                             <Setter Property="IsEnabled" Value="True"/>
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding PlacementTarget.DataContext.Accounts.Count, RelativeSource={RelativeSource AncestorType=ContextMenu}}" Value="0">
+                                                <DataTrigger Binding="{Binding Accounts.Count}" Value="0">
                                                     <Setter Property="IsEnabled" Value="False"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </MenuItem.Style>
                                 </MenuItem>
-                                <MenuItem Header="{x:Static res:Strings.ImportAccounts}" Click="ImportAccounts_Click"/>
+                                <MenuItem Header="{x:Static res:Strings.ImportAccounts}" Command="{Binding ImportAccountsCommand}"/>
                             </ContextMenu>
                         </ui:Button.ContextMenu>
                         <ui:SymbolIcon Symbol="Save24" FontSize="20" VerticalAlignment="Center"/>
                     </ui:Button>
                 </StackPanel>
-             
-                
+
+
                 <!-- 계정 개수 표시 -->
                 <ui:TextBlock
                     Grid.Column="2"
@@ -217,12 +218,11 @@
                                     <ui:PasswordBox Margin="0,0,0,16" IsEnabled="{Binding IsEditMode}" Password="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                                     <ui:TextBlock Text="{x:Static res:Strings.SyncInterval}" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" Margin="0,0,0,4" FontTypography="Body" />
-                                    <ui:TextBox 
+                                    <ComboBox 
                                         Margin="0,0,0,16" 
                                         IsEnabled="{Binding IsEditMode}" 
-                                        Text="{Binding RefreshMinutesText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                        PreviewTextInput="NumericTextBox_PreviewTextInput"
-                                        DataObject.Pasting="NumericTextBox_Pasting" />
+                                        ItemsSource="{x:Static vm:MailAccountViewModel.AvailableRefreshMinutes}"
+                                        SelectedItem="{Binding RefreshMinutes, Mode=TwoWay}" />
 
                                     <ui:TextBlock Text="{x:Static res:Strings.MailWebsite}" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" Margin="0,0,0,4" FontTypography="Body" />
                                     <ui:TextBox Margin="0,0,0,16" IsEnabled="{Binding IsEditMode}" Text="{Binding MailWebUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="https://mail.example.com" />

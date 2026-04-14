@@ -16,6 +16,11 @@ namespace MailTrayNotifier.Services
 
         private static readonly string SettingsFile = Path.Combine(SettingsFolder, "settings.json");
 
+        private static readonly JsonSerializerOptions s_jsonWriteOptions = new() { WriteIndented = true };
+
+        // 동시 저장 직렬화 (sharing violation 방지)
+        private static readonly SemaphoreSlim s_saveLock = new(1, 1);
+
         // DPAPI 엔트로피 (추가 보안)
         private static readonly byte[] Entropy = "MailTrayNotifier_v1"u8.ToArray();
 
@@ -24,14 +29,9 @@ namespace MailTrayNotifier.Services
         /// </summary>
         public async Task<MailSettings> LoadAsync()
         {
-            if (!File.Exists(SettingsFile))
-            {
-                return new MailSettings();
-            }
-
             try
             {
-                var json = await File.ReadAllTextAsync(SettingsFile).ConfigureAwait(false);
+                var json = await ReadFileGuardedAsync().ConfigureAwait(false);
                 if (string.IsNullOrWhiteSpace(json))
                 {
                     return new MailSettings();
@@ -58,19 +58,23 @@ namespace MailTrayNotifier.Services
         /// </summary>
         public async Task<MailSettingsCollection> LoadCollectionAsync()
         {
-            if (!File.Exists(SettingsFile))
+            string? json;
+            try
+            {
+                json = await ReadFileGuardedAsync().ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                return new MailSettingsCollection();
+            }
+
+            if (string.IsNullOrWhiteSpace(json))
             {
                 return new MailSettingsCollection();
             }
 
             try
             {
-                var json = await File.ReadAllTextAsync(SettingsFile).ConfigureAwait(false);
-                if (string.IsNullOrWhiteSpace(json))
-                {
-                    return new MailSettingsCollection();
-                }
-
                 // 신규 형식 (Accounts 배열) 시도
                 try
                 {
@@ -104,7 +108,7 @@ namespace MailTrayNotifier.Services
 
                     var migratedCollection = MigrateLegacySettings(legacySettings);
 
-                    // 자동으로 새 형식으로 저장
+                    // 저장은 읽기 락 해제 후 수행 (데드락 회피)
                     await SaveCollectionAsync(migratedCollection).ConfigureAwait(false);
 
                     return migratedCollection;
@@ -154,8 +158,7 @@ namespace MailTrayNotifier.Services
                 AccountName = settings.AccountName
             };
 
-            var json = JsonSerializer.Serialize(settingsToSave, new JsonSerializerOptions { WriteIndented = true });
-            await File.WriteAllTextAsync(SettingsFile, json).ConfigureAwait(false);
+            await WriteJsonAtomicAsync(settingsToSave).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -187,8 +190,27 @@ namespace MailTrayNotifier.Services
                 }).ToList()
             };
 
-            var json = JsonSerializer.Serialize(collectionToSave, new JsonSerializerOptions { WriteIndented = true });
-            await File.WriteAllTextAsync(SettingsFile, json).ConfigureAwait(false);
+            await WriteJsonAtomicAsync(collectionToSave).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// 원자적 JSON 파일 쓰기 (임시 파일에 쓴 뒤 Move, 동시 저장 직렬화)
+        /// </summary>
+        private static async Task WriteJsonAtomicAsync<T>(T obj)
+        {
+            var json = JsonSerializer.Serialize(obj, s_jsonWriteOptions);
+            var tempFile = SettingsFile + ".tmp";
+
+            await s_saveLock.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                await File.WriteAllTextAsync(tempFile, json).ConfigureAwait(false);
+                File.Move(tempFile, SettingsFile, overwrite: true);
+            }
+            finally
+            {
+                s_saveLock.Release();
+            }
         }
 
         /// <summary>
@@ -226,57 +248,81 @@ namespace MailTrayNotifier.Services
         }
 
         /// <summary>
-        /// 설정 파일 삭제
+        /// 설정 파일 삭제 (저장 락 경유, tmp 잔여 파일도 함께 정리)
         /// </summary>
         public void Clear()
         {
-            if (File.Exists(SettingsFile))
+            s_saveLock.Wait();
+            try
             {
-                File.Delete(SettingsFile);
+                try { File.Delete(SettingsFile); }
+                catch (FileNotFoundException) { }
+
+                try { File.Delete(SettingsFile + ".tmp"); }
+                catch (FileNotFoundException) { }
+            }
+            finally
+            {
+                s_saveLock.Release();
             }
         }
 
         /// <summary>
-        /// 저장된 언어 코드를 동기적으로 로드 (앱 시작 시 UI 생성 전 호출)
+        /// 저장된 언어/테마 코드를 동기적으로 로드 (앱 시작 시 UI 생성 전 호출)
         /// </summary>
-        public static string LoadLanguageSync()
+        public static (string Language, string Theme) LoadStartupSettingsSync()
         {
-            if (!File.Exists(SettingsFile))
-            {
-                return string.Empty;
-            }
-
             try
             {
-                var json = File.ReadAllText(SettingsFile);
+                var json = ReadFileGuardedSync();
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    return (string.Empty, string.Empty);
+                }
+
                 var node = JsonNode.Parse(json);
-                return node?["Language"]?.GetValue<string>() ?? string.Empty;
+                var language = node?["Language"]?.GetValue<string>() ?? string.Empty;
+                var theme = node?["Theme"]?.GetValue<string>() ?? string.Empty;
+                return (language, theme);
             }
             catch
             {
-                return string.Empty;
+                return (string.Empty, string.Empty);
             }
         }
 
         /// <summary>
-        /// 저장된 테마 코드를 동기적으로 로드 (앱 시작 시 UI 생성 전 호출)
+        /// 설정 파일을 저장 락 경유로 읽기 (동시 Write 중 Move 충돌 방지).
+        /// 파일이 없으면 null 반환
         /// </summary>
-        public static string LoadThemeSync()
+        private static async Task<string?> ReadFileGuardedAsync()
         {
-            if (!File.Exists(SettingsFile))
-            {
-                return string.Empty;
-            }
-
+            await s_saveLock.WaitAsync().ConfigureAwait(false);
             try
             {
-                var json = File.ReadAllText(SettingsFile);
-                var node = JsonNode.Parse(json);
-                return node?["Theme"]?.GetValue<string>() ?? string.Empty;
+                try { return await File.ReadAllTextAsync(SettingsFile).ConfigureAwait(false); }
+                catch (FileNotFoundException) { return null; }
             }
-            catch
+            finally
             {
-                return string.Empty;
+                s_saveLock.Release();
+            }
+        }
+
+        /// <summary>
+        /// 설정 파일을 저장 락 경유로 동기 읽기 (시작 시 UI 생성 전 호출용)
+        /// </summary>
+        private static string? ReadFileGuardedSync()
+        {
+            s_saveLock.Wait();
+            try
+            {
+                try { return File.ReadAllText(SettingsFile); }
+                catch (FileNotFoundException) { return null; }
+            }
+            finally
+            {
+                s_saveLock.Release();
             }
         }
     }

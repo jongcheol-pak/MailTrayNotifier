@@ -11,9 +11,9 @@ namespace MailTrayNotifier.Constants
         public const int DefaultPop3Port = 995;
 
         /// <summary>
-        /// 기본 SMTP 포트 (SSL)
+        /// 기본 SMTP 포트 (STARTTLS)
         /// </summary>
-        public const int DefaultSmtpPort = 465;
+        public const int DefaultSmtpPort = 587;
 
         /// <summary>
         /// 메일 확인 기간 (일)
@@ -49,5 +49,10 @@ namespace MailTrayNotifier.Constants
         /// 계정별 락 대기 시간 (초)
         /// </summary>
         public const int AccountLockTimeoutSeconds = 30;
+
+        /// <summary>
+        /// 연결 해제(QUIT) 타임아웃 (초)
+        /// </summary>
+        public const int DisconnectTimeoutSeconds = 3;
     }
 }

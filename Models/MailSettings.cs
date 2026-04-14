@@ -7,6 +7,7 @@ namespace MailTrayNotifier.Models
     {
         /// <summary>
         /// 새로고침 기능 사용 여부 (기본값: true)
+        /// 레거시 단일 계정 마이그레이션용으로 유지. 실제 사용 위치: MailSettingsCollection.IsRefreshEnabled
         /// </summary>
         public bool IsRefreshEnabled { get; set; } = true;
 
@@ -41,7 +42,7 @@ namespace MailTrayNotifier.Models
         public string UserId { get; set; } = string.Empty;
 
         /// <summary>
-        /// 비밀번호 (로컬 설정에 평문 저장됨)
+        /// 비밀번호 (저장 시 DPAPI로 암호화, 메모리에서는 복호화된 상태)
         /// </summary>
         public string Password { get; set; } = string.Empty;
 
@@ -81,7 +82,15 @@ namespace MailTrayNotifier.Models
         /// </summary>
         public string GetAccountKey()
         {
-            return $"{Pop3Server}|{UserId}";
+            return BuildAccountKey(Pop3Server, UserId);
+        }
+
+        /// <summary>
+        /// 계정 구분 키 생성 (단일 포맷 규칙)
+        /// </summary>
+        public static string BuildAccountKey(string server, string userId)
+        {
+            return $"{server}|{userId}";
         }
     }
 }

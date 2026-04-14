@@ -39,6 +39,7 @@ namespace MailTrayNotifier
         public MailPollingService MailPollingService => _mailPollingService;
         public MailClientService MailClientService => _mailClientService;
         public MailStateStore MailStateStore => _mailStateStore;
+        internal UpdateCheckService UpdateCheckService => _updateCheckService;
 
 
         private TaskbarIcon? _trayIcon;
@@ -51,9 +52,11 @@ namespace MailTrayNotifier
         private Icon? _startIcon;
         private Icon? _stopIcon;
         private Icon? _warningIcon;
-        private bool _hasAccountError;
+        private bool _hasError;
         private readonly UpdateCheckService _updateCheckService = new();
         private CancellationTokenSource? _updateCheckCts;
+        private readonly object _resumeLock = new();
+        private CancellationTokenSource? _resumeCts;
         private DateTime _lastResumeTime;
 
         public App()
@@ -67,11 +70,8 @@ namespace MailTrayNotifier
             // 한국어 레거시 인코딩 지원 (EUC-KR, ISO-2022-KR 등)
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-            // 저장된 언어 설정 적용 (UI 생성 전)
-            ApplyStartupLanguage();
-
-            // 저장된 테마 설정 적용 (UI 생성 전)
-            ApplyStartupTheme();
+            // 저장된 언어/테마 설정 적용 (UI 생성 전, 파일 1회 읽기)
+            ApplyStartupSettings();
 
             // 중복 실행 방지
             _mutex = new Mutex(true, MutexName, out var isNewInstance);
@@ -133,9 +133,6 @@ namespace MailTrayNotifier
             e.Handled = true;
         }
 
-        /// <summary>
-        /// 절전 모드 복귀 시 폴링 재시작
-        /// </summary>
         private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
         {
             if (e.Mode != PowerModes.Resume)
@@ -143,31 +140,45 @@ namespace MailTrayNotifier
                 return;
             }
 
-            // 중복 Resume 이벤트 무시 (10초 이내)
-            var now = DateTime.UtcNow;
-            if ((now - _lastResumeTime).TotalSeconds < 10)
+            // 중복 Resume 이벤트 무시 (10초 이내, 스레드 안전)
+            lock (_resumeLock)
             {
-                return;
+                var now = DateTime.UtcNow;
+                if ((now - _lastResumeTime).TotalSeconds < 10)
+                {
+                    return;
+                }
+                _lastResumeTime = now;
+
+                // 이전 Resume 작업이 있으면 취소
+                _resumeCts?.Cancel();
+                _resumeCts?.Dispose();
+                _resumeCts = new CancellationTokenSource();
             }
-            _lastResumeTime = now;
+
+            var ct = _resumeCts!.Token;
 
             // 네트워크 안정화 대기 후 폴링 재시작
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(5));
+                    await Task.Delay(TimeSpan.FromSeconds(5), ct);
                     _mailPollingService?.RestartAfterResume();
+                }
+                catch (OperationCanceledException)
+                {
+                    // 앱 종료 또는 새 Resume 이벤트로 취소
                 }
                 catch (ObjectDisposedException)
                 {
-                    // 앱 종료 중 발생 가능 - 무시
+                    // 앱 종료 중 발생 가능
                 }
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"절전 모드 복귀 후 폴링 재시작 실패: {ex.Message}");
                 }
-            });
+            }, ct);
         }
 
 
@@ -287,8 +298,13 @@ namespace MailTrayNotifier
         /// </summary>
         private void OnPollingStateChanged(bool isRunning)
         {
-            Dispatcher.Invoke(() =>
+            Dispatcher.BeginInvoke(() =>
             {
+                // 재시작 시 이전 오류 표시 초기화 (StopDueToError 이후 AccountErrorCleared가 오지 않아 영구 잔존하는 문제 해소)
+                if (isRunning)
+                {
+                    _hasError = false;
+                }
                 UpdateTrayUI();
             });
         }
@@ -298,7 +314,7 @@ namespace MailTrayNotifier
         /// </summary>
         private void OnSettingsValidityChanged(bool isValid)
         {
-            Dispatcher.Invoke(() =>
+            Dispatcher.BeginInvoke(() =>
             {
                 UpdateTrayUI();
             });
@@ -309,7 +325,7 @@ namespace MailTrayNotifier
         /// </summary>
         private void OnRefreshEnabledChanged(bool isEnabled)
         {
-            Dispatcher.Invoke(() =>
+            Dispatcher.BeginInvoke(() =>
             {
                 UpdateTrayUI();
             });
@@ -324,18 +340,18 @@ namespace MailTrayNotifier
             var isRunning = _mailPollingService.IsRunning;
             var hasValidSettings = _mailPollingService.HasValidSettings;
 
-            // 메뉴 항목 업데이트
+            // 메뉴 항목 업데이트 (유효한 설정이 있으면 항상 표시)
             if (_toggleMenuItem is not null)
             {
-                var menuVisibility = isRefreshEnabled ? Visibility.Visible : Visibility.Collapsed;
+                var menuVisibility = hasValidSettings ? Visibility.Visible : Visibility.Collapsed;
                 _toggleMenuItem.Visibility = menuVisibility;
                 _toggleMenuItem.Header = isRunning ? Strings.TrayStopPolling : Strings.TrayStartPolling;
-                _toggleMenuItem.IsEnabled = isRefreshEnabled && (isRunning || hasValidSettings);
+                _toggleMenuItem.IsEnabled = hasValidSettings;
             }
 
             if (_toggleMenuSeparator is not null)
             {
-                _toggleMenuSeparator.Visibility = isRefreshEnabled ? Visibility.Visible : Visibility.Collapsed;
+                _toggleMenuSeparator.Visibility = hasValidSettings ? Visibility.Visible : Visibility.Collapsed;
             }
 
             // 트레이 아이콘 및 툴팁 업데이트 (IsRefreshEnabled 상태 반영)
@@ -350,7 +366,7 @@ namespace MailTrayNotifier
                 {
                     icon = _stopIcon ?? SystemIcons.Application;
                 }
-                else if (_hasAccountError)
+                else if (_hasError)
                 {
                     icon = _warningIcon ?? SystemIcons.Warning;
                 }
@@ -360,7 +376,7 @@ namespace MailTrayNotifier
                 }
 
                 _trayIcon.Icon = icon;
-                _trayIcon.ToolTipText = GetToolTipText(isRefreshEnabled, isRunning, hasValidSettings, _hasAccountError);
+                _trayIcon.ToolTipText = GetToolTipText(isRefreshEnabled, isRunning, hasValidSettings, _hasError);
             }
         }
 
@@ -387,19 +403,10 @@ namespace MailTrayNotifier
         /// </summary>
         private void OnPollingErrorOccurred()
         {
-            Dispatcher.Invoke(() =>
+            Dispatcher.BeginInvoke(() =>
             {
-                if (_toggleMenuItem is not null)
-                {
-                    _toggleMenuItem.Header = Strings.TrayStartPolling;
-                    _toggleMenuItem.IsEnabled = false;
-                }
-
-                if (_trayIcon is not null)
-                {
-                    _trayIcon.Icon = _stopIcon ?? SystemIcons.Application;
-                    _trayIcon.ToolTipText = Strings.TrayTooltipError;
-                }
+                _hasError = true;
+                UpdateTrayUI();
             });
         }
 
@@ -408,9 +415,9 @@ namespace MailTrayNotifier
         /// </summary>
         private void OnAccountErrorOccurred(string accountKey, string errorMessage)
         {
-            Dispatcher.Invoke(() =>
+            Dispatcher.BeginInvoke(() =>
             {
-                _hasAccountError = true;
+                _hasError = true;
                 UpdateTrayUI();
             });
         }
@@ -420,10 +427,9 @@ namespace MailTrayNotifier
         /// </summary>
         private void OnAccountErrorCleared(string accountKey)
         {
-            Dispatcher.Invoke(() =>
+            Dispatcher.BeginInvoke(() =>
             {
-                // 모든 계정의 오류 상태를 확인하여 _hasAccountError 갱신
-                _hasAccountError = CheckAnyAccountHasError();
+                _hasError = CheckAnyAccountHasError();
                 UpdateTrayUI();
             });
         }
@@ -442,11 +448,12 @@ namespace MailTrayNotifier
         }
 
         /// <summary>
-        /// 앱 시작 시 저장된 언어 설정 적용 (UI 생성 전 호출)
+        /// 앱 시작 시 저장된 언어/테마 설정 적용 (UI 생성 전, 파일 1회 읽기)
         /// </summary>
-        private static void ApplyStartupLanguage()
+        private static void ApplyStartupSettings()
         {
-            var languageCode = SettingsService.LoadLanguageSync();
+            var (languageCode, themeCode) = SettingsService.LoadStartupSettingsSync();
+
             if (!string.IsNullOrEmpty(languageCode))
             {
                 try
@@ -461,14 +468,7 @@ namespace MailTrayNotifier
                     // 잘못된 언어 코드 무시
                 }
             }
-        }
 
-        /// <summary>
-        /// 앱 시작 시 저장된 테마 설정 적용 (UI 생성 전 호출)
-        /// </summary>
-        private static void ApplyStartupTheme()
-        {
-            var themeCode = SettingsService.LoadThemeSync();
             SettingsViewModel.ApplyTheme(themeCode);
         }
 
@@ -618,10 +618,13 @@ namespace MailTrayNotifier
         {
             SystemEvents.PowerModeChanged -= OnPowerModeChanged;
 
+            _resumeCts?.Cancel();
+            _resumeCts?.Dispose();
+            _resumeCts = null;
+
             _updateCheckCts?.Cancel();
             _updateCheckCts?.Dispose();
             _updateCheckCts = null;
-            _updateCheckService.Dispose();
 
             _mailPollingService.RunningStateChanged -= OnPollingStateChanged;
             _mailPollingService.SettingsValidityChanged -= OnSettingsValidityChanged;
@@ -646,6 +649,9 @@ namespace MailTrayNotifier
                 _window.ForceClose();
                 _window = null;
             }
+
+            // UpdateCheckService는 창 종료 후 해제 (SettingsViewModel이 참조 중일 수 있으므로)
+            _updateCheckService.Dispose();
 
             Instance = null;
         }
