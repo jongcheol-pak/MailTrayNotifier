@@ -107,8 +107,3 @@ dotnet build -c Release
 [MIT License](LICENSE) 하에 배포됩니다.
 
 Copyright © 2026 JongCheol Pak ([@jongcheol-pak](https://github.com/jongcheol-pak))
-
-## 링크
-
-- 공식 소개 페이지: <https://jongcheol-pak.github.io/projects/mailtraynotifier/>
-- 이슈 및 제안: [GitHub Issues](https://github.com/jongcheol-pak/MailTrayNotifier/issues)
