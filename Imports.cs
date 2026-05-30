@@ -1,2 +1,4 @@
-global using System.Windows;
-global using System.Windows.Controls;
+global using MailTrayNotifier.WinUI.Views;
+
+global using Microsoft.UI.Xaml;
+global using Microsoft.UI.Xaml.Controls;

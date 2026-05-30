@@ -37,6 +37,12 @@ namespace MailTrayNotifier.Services
         public bool HasValidSettings => _settingsCollection is not null && _settingsCollection.ValidAccountCount() > 0;
 
         /// <summary>
+        /// 폴링 중인 계정 중 현재 오류 상태인 계정이 있는지 여부.
+        /// 창 활성화 여부와 무관하게 동작하도록 권위 상태(_accountErrorStates)로 판정한다.
+        /// </summary>
+        public bool HasAnyAccountError => !_accountErrorStates.IsEmpty;
+
+        /// <summary>
         /// 상태 변경 이벤트
         /// </summary>
         public event Action<bool>? RunningStateChanged;
@@ -114,6 +120,7 @@ namespace MailTrayNotifier.Services
                 newIsRefreshEnabled = IsRefreshEnabled;
 
                 // IsRefreshEnabled 값에 따라 폴링 시작/중지 (이벤트 raise는 lock 해제 후)
+                bool didRestart = false;
                 if (!newIsRefreshEnabled || !newIsValid)
                 {
                     StopCoreLocked();
@@ -121,13 +128,18 @@ namespace MailTrayNotifier.Services
                 else
                 {
                     RestartAllAccountPollingLocked();
+                    didRestart = true;
                 }
 
                 newIsRunning = IsRunning;
 
                 fireValidity = wasValid != newIsValid;
                 fireRefresh = wasRefreshEnabled != newIsRefreshEnabled;
-                fireRunning = wasRunning != newIsRunning;
+                // 재시작 분기는 계정별 오류 디듀프 상태(_accountErrorStates)를 초기화하므로, 복구 성공 시
+                // AccountErrorCleared가 발동되지 못한다. 실행 중이면 상태 변화 여부와 무관하게
+                // RunningStateChanged를 알려, 구독자(App)가 잔여 오류 표시를 초기화하고 이후 폴링 결과로
+                // 다시 판정하도록 한다. (RestartAfterResume과 동일 처리)
+                fireRunning = (didRestart && newIsRunning) || (wasRunning != newIsRunning);
             }
 
             if (fireValidity) SettingsValidityChanged?.Invoke(newIsValid);
@@ -286,7 +298,13 @@ namespace MailTrayNotifier.Services
                     var wasRunning = IsRunning;
                     RestartAllAccountPollingLocked();
                     newIsRunning = IsRunning;
-                    fireRunning = wasRunning != newIsRunning;
+                    // 재시작은 계정별 오류 디듀프 상태(_accountErrorStates)를 초기화하므로, 복구 성공 시
+                    // AccountErrorCleared가 발동되지 못한다. 또한 일시적 네트워크 오류는 폴링 루프를 멈추지
+                    // 않아 IsRunning이 true→true로 유지되어 RunningStateChanged도 발동되지 않는다. 이 때문에
+                    // 구독자(App)의 오류 표시가 풀리지 않는다. 따라서 재시작 후 실행 중이면 상태 변화 여부와
+                    // 무관하게 RunningStateChanged를 알려, 잔여 오류 표시를 초기화하고 이후 폴링 결과로 다시
+                    // 판정하도록 한다.
+                    fireRunning = newIsRunning || (wasRunning != newIsRunning);
                 }
             }
 
@@ -294,19 +312,29 @@ namespace MailTrayNotifier.Services
         }
 
         /// <summary>
-        /// 개별 계정 폴링 루프
+        /// 개별 계정 폴링 루프.
+        /// 일시적 네트워크 오류는 제한 없이 다음 폴링 주기마다 재시도한다.
+        /// 영구 오류는 폴링 주기마다 최대 MailConstants.MaxPermanentErrorAttempts회까지 재시도한 뒤
+        /// 해당 계정을 중지한다. 재시도 카운터는 이 워커의 지역 변수이므로, 재시작/계정 토글로
+        /// 새 워커가 생성되면 0부터 다시 시작한다(off→on, 트레이 중지→시작, 복구 재시작 시 초기화).
         /// </summary>
         private async Task RunAccountPollingAsync(MailSettings account, CancellationTokenSource myCts)
         {
             var cancellationToken = myCts.Token;
             var accountKey = account.GetAccountKey();
 
-            try
+            // 영구 오류 연속 시도 횟수 (성공 시 0으로 초기화)
+            var permanentErrorCount = 0;
+
+            // 1회 메일 확인 수행. 계속 폴링하면 true, 영구 오류 한도 초과로 중지되면 false 반환.
+            async Task<bool> TryCheckOnceAsync()
             {
-                // 앱 시작 시 즉시 메일 확인 (일시적 오류 시에도 폴링 루프 진입)
                 try
                 {
                     await CheckAccountWithLockAsync(account, cancellationToken).ConfigureAwait(false);
+                    // 성공 시 영구 오류 카운터 초기화
+                    permanentErrorCount = 0;
+                    return true;
                 }
                 catch (OperationCanceledException)
                 {
@@ -314,7 +342,33 @@ namespace MailTrayNotifier.Services
                 }
                 catch (Exception ex) when (IsTransientNetworkError(ex))
                 {
-                    System.Diagnostics.Debug.WriteLine($"[{accountKey}] 초기 확인 시 일시적 네트워크 오류, 다음 폴링까지 대기: {ex.Message}");
+                    // 일시적 네트워크 오류: 제한 없이 다음 폴링까지 대기 (카운터 증가 안 함)
+                    System.Diagnostics.Debug.WriteLine($"[{accountKey}] 일시적 네트워크 오류, 다음 폴링까지 대기: {ex.Message}");
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    // 영구 오류: 폴링 주기마다 최대 횟수까지 재시도, 초과 시 계정 중지 (즉시 재시도하지 않음)
+                    permanentErrorCount++;
+                    System.Diagnostics.Debug.WriteLine($"[{accountKey}] 영구 오류 {permanentErrorCount}/{MailConstants.MaxPermanentErrorAttempts}회: {ex.Message}");
+
+                    if (permanentErrorCount >= MailConstants.MaxPermanentErrorAttempts)
+                    {
+                        StopAccountDueToPermanentError(account, accountKey, ex, myCts);
+                        return false;
+                    }
+
+                    // 한도 미만이면 즉시 재시도하지 않고 다음 폴링 주기에 다시 확인
+                    return true;
+                }
+            }
+
+            try
+            {
+                // 앱 시작 시 즉시 메일 확인 (오류 시에도 폴링 루프 진입하여 다음 주기에 재시도)
+                if (!await TryCheckOnceAsync().ConfigureAwait(false))
+                {
+                    return;
                 }
 
                 // 이후 주기적으로 확인 (계정별 독립 주기)
@@ -322,18 +376,9 @@ namespace MailTrayNotifier.Services
                 while (!cancellationToken.IsCancellationRequested &&
                        await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
                 {
-                    try
+                    if (!await TryCheckOnceAsync().ConfigureAwait(false))
                     {
-                        await CheckAccountWithLockAsync(account, cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        throw;
-                    }
-                    catch (Exception ex) when (IsTransientNetworkError(ex))
-                    {
-                        // 일시적 오류는 로그만 남기고 다음 폴링까지 대기
-                        System.Diagnostics.Debug.WriteLine($"[{accountKey}] 일시적 네트워크 오류, 다음 폴링까지 대기: {ex.Message}");
+                        return;
                     }
                 }
             }
@@ -343,32 +388,41 @@ namespace MailTrayNotifier.Services
             }
             catch (Exception ex)
             {
-                // 이미 중지되었거나 새 폴링이 시작된 경우 무시
-                // (StopAllAccountPolling 호출 후 발생한 부수 예외)
-                if (!_accountPollingTasks.TryGetValue(accountKey, out var currentCts) || currentCts != myCts)
-                {
-                    return;
-                }
-
-                // 영구적 오류는 해당 계정만 중지
-                _notificationService.ShowError(string.Format(Strings.AccountMailCheckError, $"{account.UserId}@{account.Pop3Server}", ex.Message));
-
-                // 딕셔너리에서 제거 (CTS는 finally에서 본인이 Dispose)
-                _accountPollingTasks.TryRemove(accountKey, out _);
-
-                // 계정 관련 리소스 정리
-                CleanupAccountResources(accountKey);
-
-                // 모든 계정이 실패하면 전체 중지
-                if (_accountPollingTasks.IsEmpty)
-                {
-                    StopDueToError();
-                }
+                // 폴링 루프 자체의 예기치 못한 예외: 안전하게 계정 정리
+                StopAccountDueToPermanentError(account, accountKey, ex, myCts);
             }
             finally
             {
                 // 자신의 CTS는 워커 종료 시점에 Dispose → StopAllAccountPolling의 Cancel/Dispose race 방지
                 myCts.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// 영구 오류로 해당 계정 폴링을 중지한다 (오류 알림 + 리소스 정리 + 전체 실패 시 전체 중지).
+        /// 이미 중지되었거나 새 폴링이 시작된 워커의 부수 호출은 무시한다.
+        /// </summary>
+        private void StopAccountDueToPermanentError(MailSettings account, string accountKey, Exception ex, CancellationTokenSource myCts)
+        {
+            // 이미 중지되었거나 새 폴링이 시작된 경우 무시 (StopAllAccountPolling 호출 후 발생한 부수 호출)
+            if (!_accountPollingTasks.TryGetValue(accountKey, out var currentCts) || currentCts != myCts)
+            {
+                return;
+            }
+
+            // 영구적 오류는 해당 계정만 중지
+            _notificationService.ShowError(string.Format(Strings.AccountMailCheckError, $"{account.UserId}@{account.Pop3Server}", ex.Message));
+
+            // 딕셔너리에서 제거 (CTS는 워커 finally에서 본인이 Dispose)
+            _accountPollingTasks.TryRemove(accountKey, out _);
+
+            // 계정 관련 리소스 정리
+            CleanupAccountResources(accountKey);
+
+            // 모든 계정이 실패하면 전체 중지
+            if (_accountPollingTasks.IsEmpty)
+            {
+                StopDueToError();
             }
         }
 

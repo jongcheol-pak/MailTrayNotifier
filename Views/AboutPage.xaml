@@ -1,70 +1,62 @@
-<Page x:Class="MailTrayNotifier.Views.AboutPage"
-      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-      xmlns:res="clr-namespace:MailTrayNotifier.Resources"
-      mc:Ignorable="d" 
-      d:DesignHeight="450" d:DesignWidth="800"
-      Title="AboutPage">
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="MailTrayNotifier.WinUI.Views.AboutPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    mc:Ignorable="d"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
 
-    <Page.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-    </Page.Resources>
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="6">
 
-    <Grid>
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="24" VerticalAlignment="Top">
-                <ui:TextBlock Text="{x:Static res:Strings.About}" FontTypography="Subtitle" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" HorizontalAlignment="Left" Margin="0,0,0,24" />
+            <TextBlock x:Uid="AbTitle" Style="{StaticResource TitleTextBlockStyle}" />
+            <TextBlock x:Uid="AbSubtitle" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,0,0,8" />
 
-                <ui:Card Margin="0,0,0,24">
-                    <StackPanel>
-                        <ui:TextBlock Text="{x:Static res:Strings.AppName}" FontTypography="BodyStrong" Margin="0,0,0,4"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
-                            <ui:TextBlock Text="{x:Static res:Strings.VersionLabel}" FontTypography="Body"/>
-                            <ui:TextBlock Text="{Binding AppVersion}" FontTypography="Body"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0"
-                                    Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <ui:TextBlock Text="{x:Static res:Strings.LatestVersionLabel}" FontTypography="Body" VerticalAlignment="Center" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
-                            <ui:TextBlock Text="{Binding LatestVersion}" FontTypography="Body" VerticalAlignment="Center" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
-                            <ui:Button Content="{x:Static res:Strings.UpdateButton}"
-                                       Appearance="Primary"
-                                       Margin="12,0,0,0"
-                                       Padding="12,4"
-                                       Command="{Binding OpenUpdatePageCommand}" VerticalAlignment="Center" />                           
-                        </StackPanel>
+            <!-- 앱 정보 카드 -->
+            <controls:SettingsCard Header="{Binding AppDisplayName}" Description="{Binding AppVersionText}">
+                <!-- SettingsCard 기본 헤더 아이콘 최대 크기(20px) 제한을 64px로 확대 -->
+                <controls:SettingsCard.Resources>
+                    <x:Double x:Key="SettingsCardHeaderIconMaxSize">64</x:Double>
+                </controls:SettingsCard.Resources>
+                <controls:SettingsCard.HeaderIcon>
+                    <ImageIcon Width="64" Height="64" Source="ms-appx:///Assets/appicon.png" />
+                </controls:SettingsCard.HeaderIcon>
+                <HyperlinkButton x:Uid="AbOfficialSite" Tag="{Binding OfficialWebsiteUrl}" Click="OnLinkClick" />
+            </controls:SettingsCard>
 
-                        <ui:TextBlock Margin="0,12,0,0" TextWrapping="Wrap" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" FontTypography="Body">
-<Run Text="{x:Static res:Strings.AboutWebsitePrefix}"/><Hyperlink Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Command="{Binding OpenLicenseUrlCommand}" CommandParameter="https://jongcheol-pak.github.io/projects/mailtraynotifier/"><Run Text="{x:Static res:Strings.AboutWebsiteLink}"/></Hyperlink><Run Text="{x:Static res:Strings.AboutWebsiteSuffix}"/>
-                        </ui:TextBlock>
+            <!-- 데이터 저장 안내 카드 -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1" CornerRadius="4" Padding="16,14">
+                <Grid ColumnSpacing="20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <FontIcon Grid.Column="0" Glyph="&#xE72E;" VerticalAlignment="Top" Margin="0,2,0,0" />
+                    <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock x:Uid="AbDataTitle" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock x:Uid="AbDataDesc"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="Wrap" />
                     </StackPanel>
-                </ui:Card>
+                </Grid>
+            </Border>
 
-              
+            <!-- 오픈소스 라이선스 -->
+            <TextBlock x:Uid="AbOpenSourceTitle" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,12,0,4" />
+            <ItemsControl ItemsSource="{Binding OpenSourceLibraries}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <controls:SettingsCard Header="{Binding Name}" Description="{Binding License}"
+                                               IsClickEnabled="True" Tag="{Binding Url}"
+                                               Click="OnLicenseCardClick" Margin="0,0,0,4" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
 
-                <ui:TextBlock Text="{x:Static res:Strings.OpenSourceLicenses}" FontTypography="BodyStrong" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" Margin="0,0,0,8" />
-                <ItemsControl ItemsSource="{Binding OpenSourceLibraries}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <ui:Button Margin="0,0,0,4"
-                                       HorizontalAlignment="Stretch"
-                                       HorizontalContentAlignment="Left"
-                                       Command="{Binding DataContext.OpenLicenseUrlCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                       CommandParameter="{Binding Url}"
-                                       Appearance="Secondary">
-                                <StackPanel Orientation="Horizontal">
-                                    <ui:TextBlock Text="{Binding Name}" FontTypography="Body" />
-                                    <ui:TextBlock Text=" (" FontTypography="Caption" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
-                                    <ui:TextBlock Text="{Binding License}" FontTypography="Caption" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
-                                    <ui:TextBlock Text=")" FontTypography="Caption" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
-                                </StackPanel>
-                            </ui:Button>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </StackPanel>
-        </ScrollViewer>
-    </Grid>
+        </StackPanel>
+    </ScrollViewer>
 </Page>

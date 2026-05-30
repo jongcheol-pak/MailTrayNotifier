@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="GsAutoStart.Header" xml:space="preserve">
+    <value>자동 실행</value>
+  </data>
+  <data name="GsAutoStart.Description" xml:space="preserve">
+    <value>Windows에 로그인할 때 자동으로 시작합니다.</value>
+  </data>
+  <data name="GsNotification.Header" xml:space="preserve">
+    <value>알림</value>
+  </data>
+  <data name="GsNotification.Description" xml:space="preserve">
+    <value>설정된 메일 알림을 사용 하도록 설정합니다. Off로 설정된 경우 모든 메일 알림을 받을 수 없습니다.</value>
+  </data>
+  <data name="GsLanguage.Header" xml:space="preserve">
+    <value>언어</value>
+  </data>
+  <data name="GsLanguage.Description" xml:space="preserve">
+    <value>앱의 표시 언어를 선택합니다. 변경 사항은 앱을 다시 시작한 후 적용됩니다.</value>
+  </data>
+  <data name="GsTheme.Header" xml:space="preserve">
+    <value>테마</value>
+  </data>
+  <data name="GsTheme.Description" xml:space="preserve">
+    <value>앱의 표시 테마를 선택합니다.</value>
+  </data>
+  <data name="AbTitle.Text" xml:space="preserve">
+    <value>정보</value>
+  </data>
+  <data name="AbAppName.Text" xml:space="preserve">
+    <value>메일 알림</value>
+  </data>
+  <data name="AbVersionLabel.Text" xml:space="preserve">
+    <value>버전: </value>
+  </data>
+  <data name="AbLatestLabel.Text" xml:space="preserve">
+    <value>최신 버전: </value>
+  </data>
+  <data name="AbUpdateButton.Content" xml:space="preserve">
+    <value>업데이트</value>
+  </data>
+  <data name="AbWebPrefix.Text" xml:space="preserve">
+    <value>자세한 내용은 </value>
+  </data>
+  <data name="AbWebLink.Content" xml:space="preserve">
+    <value>공식 웹 사이트</value>
+  </data>
+  <data name="AbWebSuffix.Text" xml:space="preserve">
+    <value>로 이동하세요.</value>
+  </data>
+  <data name="AbOpenSourceTitle.Text" xml:space="preserve">
+    <value>오픈 소스 라이선스</value>
+  </data>
+  <data name="MsAddAccount.Content" xml:space="preserve">
+    <value>계정 추가</value>
+  </data>
+  <data name="MsExport.Text" xml:space="preserve">
+    <value>내보내기</value>
+  </data>
+  <data name="MsImport.Text" xml:space="preserve">
+    <value>가져오기</value>
+  </data>
+  <data name="MsNotifyWarn.Text" xml:space="preserve">
+    <value>설정에서 알림이 OFF로 되어 있어 알림을 받을 수 없습니다. 설정에서 알림을 ON으로 설정 후 알림을 받으세요.</value>
+  </data>
+  <data name="AbSubtitle.Text" xml:space="preserve">
+    <value>앱 버전과 사용 중인 오픈소스 라이선스를 확인합니다.</value>
+  </data>
+  <data name="AbOfficialSite.Content" xml:space="preserve">
+    <value>공식 홈페이지</value>
+  </data>
+  <data name="AbDataTitle.Text" xml:space="preserve">
+    <value>데이터 저장</value>
+  </data>
+  <data name="AbDataDesc.Text" xml:space="preserve">
+    <value>설정·계정·메일 상태는 사용자 PC에만 저장되며 외부 서버로 전송되지 않습니다.</value>
+  </data>
+  <data name="AbDataLocation.Text" xml:space="preserve">
+    <value>저장 위치: </value>
+  </data>
+  <data name="GsResetAccounts.Header" xml:space="preserve">
+    <value>계정 초기화</value>
+  </data>
+  <data name="GsResetAccounts.Description" xml:space="preserve">
+    <value>등록된 모든 계정과 알림 메일 정보를 삭제합니다.</value>
+  </data>
+  <data name="GsResetAccountsButton.Content" xml:space="preserve">
+    <value>초기화</value>
+  </data>
+  <data name="GsClearMailStates.Header" xml:space="preserve">
+    <value>알림 메일 초기화</value>
+  </data>
+  <data name="GsClearMailStates.Description" xml:space="preserve">
+    <value>계정은 유지하고 모든 알림 메일 정보를 삭제합니다. 이후 서버에 남은 메일이 다시 알림될 수 있습니다.</value>
+  </data>
+  <data name="GsClearMailStatesButton.Content" xml:space="preserve">
+    <value>초기화</value>
+  </data>
+</root>

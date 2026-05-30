@@ -54,5 +54,11 @@ namespace MailTrayNotifier.Constants
         /// 연결 해제(QUIT) 타임아웃 (초)
         /// </summary>
         public const int DisconnectTimeoutSeconds = 3;
+
+        /// <summary>
+        /// 영구 오류 시 최대 시도 횟수. 이 횟수만큼 폴링 주기마다 재시도한 뒤 해당 계정을 중지한다.
+        /// 일시적 네트워크 오류는 이 제한에 포함되지 않고 제한 없이 재시도한다.
+        /// </summary>
+        public const int MaxPermanentErrorAttempts = 3;
     }
 }

@@ -34,7 +34,7 @@ namespace MailTrayNotifier.Resources {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("MailTrayNotifier.Resources.Strings", typeof(Strings).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("MailTrayNotifier.WinUI.Resources.Strings", typeof(Strings).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -117,6 +117,9 @@ namespace MailTrayNotifier.Resources {
         public static string ResetConfirmMessage => ResourceManager.GetString("ResetConfirmMessage", resourceCulture)!;
         public static string ResetConfirmTitle => ResourceManager.GetString("ResetConfirmTitle", resourceCulture)!;
         public static string ResetCompleted => ResourceManager.GetString("ResetCompleted", resourceCulture)!;
+        public static string ClearMailStatesConfirmMessage => ResourceManager.GetString("ClearMailStatesConfirmMessage", resourceCulture)!;
+        public static string ClearMailStatesConfirmTitle => ResourceManager.GetString("ClearMailStatesConfirmTitle", resourceCulture)!;
+        public static string ClearMailStatesCompleted => ResourceManager.GetString("ClearMailStatesCompleted", resourceCulture)!;
         public static string EnterAccountName => ResourceManager.GetString("EnterAccountName", resourceCulture)!;
         public static string AccountNameTrimmed => ResourceManager.GetString("AccountNameTrimmed", resourceCulture)!;
         public static string AccountNameDuplicate => ResourceManager.GetString("AccountNameDuplicate", resourceCulture)!;
@@ -150,16 +153,5 @@ namespace MailTrayNotifier.Resources {
         public static string UpdateButton => ResourceManager.GetString("UpdateButton", resourceCulture)!;
         public static string UpdateAvailableTitle => ResourceManager.GetString("UpdateAvailableTitle", resourceCulture)!;
         public static string UpdateAvailableMessage => ResourceManager.GetString("UpdateAvailableMessage", resourceCulture)!;
-        public static string ExportAccounts => ResourceManager.GetString("ExportAccounts", resourceCulture)!;
-        public static string ImportAccounts => ResourceManager.GetString("ImportAccounts", resourceCulture)!;
-        public static string ExportTitle => ResourceManager.GetString("ExportTitle", resourceCulture)!;
-        public static string ImportTitle => ResourceManager.GetString("ImportTitle", resourceCulture)!;
-        public static string JsonFileFilter => ResourceManager.GetString("JsonFileFilter", resourceCulture)!;
-        public static string ExportSuccess => ResourceManager.GetString("ExportSuccess", resourceCulture)!;
-        public static string ImportInvalidFile => ResourceManager.GetString("ImportInvalidFile", resourceCulture)!;
-        public static string ExportNoItems => ResourceManager.GetString("ExportNoItems", resourceCulture)!;
-        public static string ImportNoItems => ResourceManager.GetString("ImportNoItems", resourceCulture)!;
-        public static string ImportMaxAccountsExceeded => ResourceManager.GetString("ImportMaxAccountsExceeded", resourceCulture)!;
-        public static string ImportConfirmReplace => ResourceManager.GetString("ImportConfirmReplace", resourceCulture)!;
     }
 }

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="GsAutoStart.Header" xml:space="preserve">
+    <value>自動起動</value>
+  </data>
+  <data name="GsAutoStart.Description" xml:space="preserve">
+    <value>Windowsにログインすると自動的に起動します。</value>
+  </data>
+  <data name="GsNotification.Header" xml:space="preserve">
+    <value>通知</value>
+  </data>
+  <data name="GsNotification.Description" xml:space="preserve">
+    <value>メール通知を有効にします。OFFに設定するとすべてのメール通知を受信できません。</value>
+  </data>
+  <data name="GsLanguage.Header" xml:space="preserve">
+    <value>言語</value>
+  </data>
+  <data name="GsLanguage.Description" xml:space="preserve">
+    <value>アプリの表示言語を選択します。変更はアプリを再起動した後に適用されます。</value>
+  </data>
+  <data name="GsTheme.Header" xml:space="preserve">
+    <value>テーマ</value>
+  </data>
+  <data name="GsTheme.Description" xml:space="preserve">
+    <value>アプリの表示テーマを選択します。</value>
+  </data>
+  <data name="AbTitle.Text" xml:space="preserve">
+    <value>情報</value>
+  </data>
+  <data name="AbAppName.Text" xml:space="preserve">
+    <value>メール通知</value>
+  </data>
+  <data name="AbVersionLabel.Text" xml:space="preserve">
+    <value>バージョン: </value>
+  </data>
+  <data name="AbLatestLabel.Text" xml:space="preserve">
+    <value>最新バージョン: </value>
+  </data>
+  <data name="AbUpdateButton.Content" xml:space="preserve">
+    <value>アップデート</value>
+  </data>
+  <data name="AbWebPrefix.Text" xml:space="preserve">
+    <value>詳細は</value>
+  </data>
+  <data name="AbWebLink.Content" xml:space="preserve">
+    <value>公式サイト</value>
+  </data>
+  <data name="AbWebSuffix.Text" xml:space="preserve">
+    <value>をご覧ください。</value>
+  </data>
+  <data name="AbOpenSourceTitle.Text" xml:space="preserve">
+    <value>オープンソースライセンス</value>
+  </data>
+  <data name="MsAddAccount.Content" xml:space="preserve">
+    <value>アカウント追加</value>
+  </data>
+  <data name="MsExport.Text" xml:space="preserve">
+    <value>エクスポート</value>
+  </data>
+  <data name="MsImport.Text" xml:space="preserve">
+    <value>インポート</value>
+  </data>
+  <data name="MsNotifyWarn.Text" xml:space="preserve">
+    <value>設定で通知がOFFになっているため、通知を受信できません。設定で通知をONにしてください。</value>
+  </data>
+  <data name="AbSubtitle.Text" xml:space="preserve">
+    <value>アプリのバージョンと使用中のオープンソースライセンスを確認します。</value>
+  </data>
+  <data name="AbOfficialSite.Content" xml:space="preserve">
+    <value>公式サイト</value>
+  </data>
+  <data name="AbDataTitle.Text" xml:space="preserve">
+    <value>データ保存</value>
+  </data>
+  <data name="AbDataDesc.Text" xml:space="preserve">
+    <value>設定・アカウント・メール状態はお使いのPCにのみ保存され、外部サーバーには送信されません。</value>
+  </data>
+  <data name="AbDataLocation.Text" xml:space="preserve">
+    <value>保存場所: </value>
+  </data>
+  <data name="GsResetAccounts.Header" xml:space="preserve">
+    <value>アカウント初期化</value>
+  </data>
+  <data name="GsResetAccounts.Description" xml:space="preserve">
+    <value>登録されたすべてのアカウントと通知メール情報を削除します。</value>
+  </data>
+  <data name="GsResetAccountsButton.Content" xml:space="preserve">
+    <value>初期化</value>
+  </data>
+  <data name="GsClearMailStates.Header" xml:space="preserve">
+    <value>通知メール初期化</value>
+  </data>
+  <data name="GsClearMailStates.Description" xml:space="preserve">
+    <value>アカウントは保持し、すべての通知メール情報を削除します。その後、サーバーに残っているメールが再度通知される場合があります。</value>
+  </data>
+  <data name="GsClearMailStatesButton.Content" xml:space="preserve">
+    <value>初期化</value>
+  </data>
+</root>

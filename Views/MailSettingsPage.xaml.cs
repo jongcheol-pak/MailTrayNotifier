@@ -1,64 +1,39 @@
-using System.Text.RegularExpressions;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
+using System.Linq;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using MailTrayNotifier.ViewModels;
 
-namespace MailTrayNotifier.Views
+namespace MailTrayNotifier.WinUI.Views
 {
-    public partial class MailSettingsPage : Page
+    /// <summary>
+    /// 메일 계정 설정 페이지
+    /// </summary>
+    public sealed partial class MailSettingsPage : Page
     {
-        private static readonly Regex NumericRegex = new("^[0-9]+$", RegexOptions.Compiled);
-
         public MailSettingsPage()
         {
             InitializeComponent();
         }
 
         /// <summary>
-        /// 숫자만 입력 허용
+        /// 포트 입력란: 숫자만 허용
         /// </summary>
-        private void NumericTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        private void Port_BeforeTextChanging(TextBox sender, TextBoxBeforeTextChangingEventArgs args)
         {
-            e.Handled = !NumericRegex.IsMatch(e.Text);
+            args.Cancel = !args.NewText.All(char.IsDigit);
         }
 
-        /// <summary>
-        /// 붙여넣기 시 숫자만 허용
-        /// </summary>
-        private void NumericTextBox_Pasting(object sender, DataObjectPastingEventArgs e)
-        {
-            if (e.DataObject.GetDataPresent(typeof(string)))
-            {
-                var text = (string)e.DataObject.GetData(typeof(string));
-                if (!NumericRegex.IsMatch(text ?? string.Empty))
-                {
-                    e.CancelCommand();
-                }
-            }
-            else
-            {
-                e.CancelCommand();
-            }
-        }
-
-        /// <summary>
-        /// 계정 편집 시작
-        /// </summary>
         private void EditAccount_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is MailAccountViewModel account)
+            if (sender is Button { Tag: MailAccountViewModel account })
             {
                 account.BeginEdit();
             }
         }
 
-        /// <summary>
-        /// 계정 편집 취소
-        /// </summary>
         private void CancelEdit_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is MailAccountViewModel account)
+            if (sender is Button { Tag: MailAccountViewModel account })
             {
                 if (DataContext is SettingsViewModel viewModel)
                 {
@@ -71,33 +46,22 @@ namespace MailTrayNotifier.Views
             }
         }
 
-        /// <summary>
-        /// 계정 편집 저장
-        /// </summary>
         private async void SaveEdit_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is MailAccountViewModel account)
+            if (sender is Button { Tag: MailAccountViewModel account } &&
+                DataContext is SettingsViewModel viewModel)
             {
-                if (DataContext is SettingsViewModel viewModel)
-                {
-                    await viewModel.SaveAccountAsync(account);
-                }
-                else
-                {
-                    account.EndEdit();
-                }
+                await viewModel.SaveAccountAsync(account);
             }
         }
 
-        /// <summary>
-        /// 내보내기/가져오기 버튼 클릭 시 ContextMenu 표시
-        /// </summary>
-        private void ExportImportButton_Click(object sender, RoutedEventArgs e)
+        private void DeleteAccount_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement button && button.ContextMenu != null)
+            if (sender is Button { Tag: MailAccountViewModel account } &&
+                DataContext is SettingsViewModel viewModel &&
+                viewModel.RemoveAccountCommand.CanExecute(account))
             {
-                button.ContextMenu.PlacementTarget = button;
-                button.ContextMenu.IsOpen = true;
+                viewModel.RemoveAccountCommand.Execute(account);
             }
         }
     }

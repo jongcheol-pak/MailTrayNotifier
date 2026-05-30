@@ -12,7 +12,15 @@ namespace MailTrayNotifier.Services
     /// </summary>
     public sealed class SettingsService
     {
-        private static readonly string SettingsFolder = AppContext.BaseDirectory;
+        // 저장 위치: 패키지 앱은 패키지 로컬 데이터 폴더(LocalState),
+        // 비패키지(개발) 실행은 공용 %LocalAppData%\MailTrayNotifier.
+        private static readonly string SettingsFolder = ResolveDataFolder();
+
+        // 레거시(WPF) 저장 위치에서 데이터 1회 마이그레이션
+        static SettingsService() => MigrateLegacyDataFolder();
+
+        /// <summary>데이터 저장 폴더 경로 (정보 화면 표시/열기용)</summary>
+        public static string DataFolder => SettingsFolder;
 
         private static readonly string SettingsFile = Path.Combine(SettingsFolder, "settings.json");
 
@@ -23,6 +31,73 @@ namespace MailTrayNotifier.Services
 
         // DPAPI 엔트로피 (추가 보안)
         private static readonly byte[] Entropy = "MailTrayNotifier_v1"u8.ToArray();
+
+        /// <summary>
+        /// 데이터 저장 폴더를 결정한다. 패키지 앱은 패키지 로컬 데이터 폴더(LocalState)를 사용하고,
+        /// 패키지 ID가 없는 비패키지(개발) 실행에서는 ApplicationData.Current가 예외를 던지므로
+        /// 공용 %LocalAppData%\MailTrayNotifier로 폴백한다.
+        /// </summary>
+        private static string ResolveDataFolder()
+        {
+            try
+            {
+                return Windows.Storage.ApplicationData.Current.LocalFolder.Path;
+            }
+            catch
+            {
+                return Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MailTrayNotifier");
+            }
+        }
+
+        /// <summary>
+        /// 레거시(WPF) 저장 위치(exe 옆 AppContext.BaseDirectory)에 있던 settings.json과 mail 폴더를
+        /// 신규 데이터 폴더로 1회 복사한다. 신규 폴더에 이미 settings.json이 있으면 건너뛴다.
+        /// 레거시 위치와 신규 위치가 같거나(동일 경로) 레거시 파일이 없으면 아무 동작도 하지 않는다.
+        /// </summary>
+        private static void MigrateLegacyDataFolder()
+        {
+            try
+            {
+                var legacyFolder = AppContext.BaseDirectory;
+
+                // 동일 경로면 마이그레이션 불필요
+                if (string.Equals(
+                        Path.GetFullPath(legacyFolder).TrimEnd(Path.DirectorySeparatorChar),
+                        Path.GetFullPath(SettingsFolder).TrimEnd(Path.DirectorySeparatorChar),
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+
+                var legacySettings = Path.Combine(legacyFolder, "settings.json");
+
+                // 신규 위치에 이미 설정이 있거나 레거시 설정이 없으면 건너뛴다
+                if (File.Exists(SettingsFile) || !File.Exists(legacySettings))
+                {
+                    return;
+                }
+
+                Directory.CreateDirectory(SettingsFolder);
+                File.Copy(legacySettings, SettingsFile, overwrite: false);
+
+                // 읽음 상태(mail) 폴더도 함께 복사
+                var legacyMail = Path.Combine(legacyFolder, "mail");
+                var newMail = Path.Combine(SettingsFolder, "mail");
+                if (Directory.Exists(legacyMail) && !Directory.Exists(newMail))
+                {
+                    Directory.CreateDirectory(newMail);
+                    foreach (var file in Directory.GetFiles(legacyMail))
+                    {
+                        File.Copy(file, Path.Combine(newMail, Path.GetFileName(file)), overwrite: false);
+                    }
+                }
+            }
+            catch
+            {
+                // 마이그레이션 실패는 무시 (신규 설치처럼 빈 상태로 시작)
+            }
+        }
 
         /// <summary>
         /// 레거시 단일 계정 설정 로드 (마이그레이션용)
@@ -204,11 +279,16 @@ namespace MailTrayNotifier.Services
             await s_saveLock.WaitAsync().ConfigureAwait(false);
             try
             {
+                Directory.CreateDirectory(SettingsFolder);
                 await File.WriteAllTextAsync(tempFile, json).ConfigureAwait(false);
                 File.Move(tempFile, SettingsFile, overwrite: true);
             }
             finally
             {
+                // File.Move 실패(대상 잠김 등) 시 임시 파일이 남으므로 정리한다.
+                // Move 성공 시에는 이미 이동되어 존재하지 않으므로 영향 없음.
+                try { if (File.Exists(tempFile)) File.Delete(tempFile); }
+                catch { /* 정리 실패는 무시 */ }
                 s_saveLock.Release();
             }
         }

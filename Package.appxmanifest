@@ -8,15 +8,15 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="f461c473-fa98-4cd4-80b5-5ce94999942c"
+    Name="efd13704-993a-4267-a418-8c7fed68947f"
     Publisher="CN=User Name"
-    Version="1.0.0.0" />
+    Version="1.7.0.0" />
 
-  <mp:PhoneIdentity PhoneProductId="f461c473-fa98-4cd4-80b5-5ce94999942c" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="efd13704-993a-4267-a418-8c7fed68947f" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>MailTrayNotifier</DisplayName>
-    <PublisherDisplayName>User Name</PublisherDisplayName>
+    <PublisherDisplayName>JongCheol Pak</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -34,12 +34,12 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="MailTrayNotifier"
-        Description="MailTrayNotifier"
+        DisplayName="메일 알림"
+        Description="POP3 메일 수신을 트레이에서 알려주는 알림 앱"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png"  Square71x71Logo="Assets\SmallTile.png" Square310x310Logo="Assets\LargeTile.png"/>
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
     </Application>

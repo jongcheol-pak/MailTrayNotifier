@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="Assets/appicon.png" alt="MailTrayNotifier 앱 아이콘" width="160" />
+  <img src="Assets/icon.png" alt="MailTrayNotifier 앱 아이콘" width="160" />
 </p>
 
 <h1 align="center">MailTrayNotifier</h1>
 
 <p align="center">
 POP3 메일 서버를 주기적으로 확인하고 새 메일이 도착하면 Windows 토스트 알림으로 알려주는 트레이 상주 앱입니다.<br/>
-WPF · .NET 10 · MVVM(CommunityToolkit.Mvvm) · WPF-UI 기반으로 만들어졌습니다.
+WinUI 3 (Windows App SDK) · .NET 10 · MVVM(CommunityToolkit.Mvvm) 기반으로 만들어졌습니다.
 </p>
 
 ## 주요 기능
@@ -18,8 +18,8 @@ WPF · .NET 10 · MVVM(CommunityToolkit.Mvvm) · WPF-UI 기반으로 만들어�
 - 트레이 메뉴에서 메일 알림 시작/중지 토글
 - 다국어 UI: English / 한국어 / 日本語 / 简体中文 / 繁體中文 (시스템 기본 자동 선택 가능)
 - 테마 변경: 시스템 기본 / 다크 / 라이트 (즉시 적용)
+- 계정 초기화 / 알림 메일 초기화 (확인 팝업 후 삭제)
 - GitHub Releases 기반 자동 업데이트 확인 및 알림
-- 계정 설정 내보내기 / 가져오기
 - 비밀번호는 Windows DPAPI로 암호화 저장
 
 ## 시스템 요구 사항
@@ -39,10 +39,10 @@ WPF · .NET 10 · MVVM(CommunityToolkit.Mvvm) · WPF-UI 기반으로 만들어�
 ```powershell
 git clone https://github.com/jongcheol-pak/MailTrayNotifier.git
 cd MailTrayNotifier
-dotnet build -c Release
+dotnet build -c Release -p:Platform=x64
 ```
 
-빌드 결과물은 `bin/Release/net10.0-windows10.0.26100.0/` 아래에 생성됩니다.
+빌드 결과물은 `bin/x64/Release/net10.0-windows10.0.19041.0/win-x64/` 아래에 생성됩니다.
 
 ## 사용 방법
 
@@ -70,16 +70,16 @@ dotnet build -c Release
 
 ### 일반 설정
 
-좌측 메뉴 `설정`에서 자동 실행, 알림 사용 여부, 언어, 테마를 변경할 수 있으며 변경 즉시 적용됩니다.
+좌측 메뉴 `설정`에서 자동 실행, 알림 사용 여부, 언어, 테마를 변경하고 계정 및 알림 메일을 초기화할 수 있습니다. 언어를 제외한 항목은 변경 즉시 적용되며, 언어는 앱을 다시 시작한 후 적용됩니다.
 
 <img src="docs/screenshots/general-settings.png" alt="일반 설정 화면" width="500" />
 
-- **자동 실행**: Windows 로그인 시 자동으로 시작
+- **자동 실행**: Windows 로그인 시 자동으로 시작 (최초 설치 시 기본 켜짐)
 - **알림**: 메일 알림 토스트 사용 여부
-- **언어**: 시스템 기본 / English / 한국어 / 日本語 / 简体中文 / 繁體中文
+- **언어**: 시스템 기본 / English / 한국어 / 日本語 / 简体中文 / 繁體中文 (변경 후 앱을 다시 시작하면 적용)
 - **테마**: 시스템 기본 / 다크 / 라이트
-- **계정 내보내기 / 가져오기**: 다른 PC로 설정을 옮기거나 백업할 때 사용합니다 (비밀번호는 DPAPI 특성상 동일 사용자 계정에서만 복호화됩니다).
-- **초기화**: 모든 설정과 메일 상태를 삭제합니다.
+- **계정 초기화**: 등록된 모든 계정과 알림 메일 정보를 삭제합니다 (테마/언어 설정은 유지).
+- **알림 메일 초기화**: 계정은 유지하고 모든 알림 메일 정보를 삭제합니다. 이후 서버에 남은 메일이 다시 알림될 수 있습니다.
 
 ## 설정 파일 위치
 
@@ -90,11 +90,11 @@ dotnet build -c Release
 
 ## 주요 의존성
 
+- [Windows App SDK (WinUI 3)](https://github.com/microsoft/WindowsAppSDK) — UI 프레임워크 및 앱 런타임
 - [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) — MVVM 프레임워크
-- [WPF-UI](https://github.com/lepoco/wpfui) — Fluent 디자인 컨트롤
-- [Hardcodet.NotifyIcon.Wpf](https://github.com/hardcodet/wpf-notifyicon) — 트레이 아이콘
+- [CommunityToolkit.WinUI Controls](https://github.com/CommunityToolkit/Windows) — SettingsCard 등 설정 UI 컨트롤
+- [WinUIEx](https://github.com/dotMorten/WinUIEx) — 창/백드롭 확장
 - [MailKit](https://github.com/jstedfast/MailKit) — POP3 클라이언트
-- [Microsoft.Toolkit.Uwp.Notifications](https://learn.microsoft.com/windows/apps/design/shell/tiles-and-notifications/) — Windows 토스트 알림
 
 ## 알려진 제한 사항
 

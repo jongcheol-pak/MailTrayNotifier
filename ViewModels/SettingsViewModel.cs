@@ -1,8 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
-using System.IO;
-using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MailTrayNotifier.Constants;
@@ -10,7 +8,10 @@ using MailTrayNotifier.Models;
 using MailTrayNotifier.Services;
 using MailTrayNotifier.Resources;
 using Microsoft.Win32;
-using Wpf.Ui.Appearance;
+using Microsoft.UI.Dispatching;
+using MailTrayNotifier.WinUI;
+using MailTrayNotifier.WinUI.Dialogs;
+using MailTrayNotifier.WinUI.Theming;
 
 namespace MailTrayNotifier.ViewModels
 {
@@ -19,25 +20,24 @@ namespace MailTrayNotifier.ViewModels
     /// </summary>
     public partial class SettingsViewModel : ObservableObject, IDisposable
     {
-        private static readonly JsonSerializerOptions s_jsonWriteOptions = new() { WriteIndented = true };
-
         private readonly SettingsService _settingsService;
         private readonly MailPollingService _mailPollingService;
         private readonly MailClientService _mailClientService;
         private readonly MailStateStore _mailStateStore;
         private readonly UpdateCheckService _updateCheckService;
+        // UI 스레드 마샬링 (생성자가 UI 스레드에서 호출됨)
+        private readonly DispatcherQueue _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
         private const string RegistryKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
         private const string AppName = "MailTrayNotifier";
+
+        // 자동 실행 최초 1회 기본 등록 여부 마커 (앱 전용 레지스트리 키)
+        private const string AppSettingsKeyPath = @"Software\MailTrayNotifier";
+        private const string AutoStartInitializedValue = "AutoStartInitialized";
 
         /// <summary>
         /// 저장 성공 시 창 닫기 요청 이벤트
         /// </summary>
         public event Action? CloseRequested;
-
-        /// <summary>
-        /// 언어 변경 시 UI 갱신 요청 이벤트
-        /// </summary>
-        public event Action? LanguageChanged;
 
         private bool _isInitialized;
         private string _selectedLanguageCode = string.Empty;
@@ -146,9 +146,18 @@ namespace MailTrayNotifier.ViewModels
             get => _isRefreshEnabled;
             set
             {
-                if (SetProperty(ref _isRefreshEnabled, value) && _isInitialized)
+                if (SetProperty(ref _isRefreshEnabled, value))
                 {
-                    _ = SaveIsRefreshEnabledAsync(value);
+                    // 각 계정 아이콘 표시 조건에 반영
+                    foreach (var account in Accounts)
+                    {
+                        account.IsRefreshEnabled = value;
+                    }
+
+                    if (_isInitialized)
+                    {
+                        _ = SaveIsRefreshEnabledAsync(value);
+                    }
                 }
             }
         }
@@ -200,23 +209,78 @@ namespace MailTrayNotifier.ViewModels
             }
         }
 
-        private const string VersionRegistryKeyPath = @"SOFTWARE\PJC\MailTrayNotifier";
-        private const string VersionRegistryValueName = "Version";
+        /// <summary>
+        /// 최초 실행 시 1회 자동 실행을 기본 등록한다.
+        /// 초기화 마커가 이미 있으면(이후 사용자가 끈 상태 포함) 아무 동작도 하지 않는다.
+        /// </summary>
+        public static void EnsureFirstRunAutoStartRegistration()
+        {
+            using var appKey = Registry.CurrentUser.CreateSubKey(AppSettingsKeyPath);
+            // 마커가 이미 있으면 사용자의 현재 설정을 존중하여 건너뛴다.
+            if (appKey is null || appKey.GetValue(AutoStartInitializedValue) != null)
+            {
+                return;
+            }
+
+            // 실행 경로 미확인 시 등록/마커 모두 건너뛰어 다음 실행에서 재시도한다.
+            var exePath = Environment.ProcessPath;
+            if (exePath is null)
+            {
+                return;
+            }
+
+            // 최초 1회: 자동 실행 등록
+            using (var runKey = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true))
+            {
+                runKey?.SetValue(AppName, exePath);
+            }
+
+            // 초기화 완료 마커 기록 (이후 사용자가 끈 상태를 존중)
+            appKey.SetValue(AutoStartInitializedValue, 1, RegistryValueKind.DWord);
+        }
 
         public string AppVersion
         {
             get
             {
-                using var key = Registry.CurrentUser.OpenSubKey(VersionRegistryKeyPath);
-                return key?.GetValue(VersionRegistryValueName) as string ?? string.Empty;
+                try
+                {
+                    // MSIX 패키지 버전 (Package.appxmanifest의 Version)
+                    var v = Windows.ApplicationModel.Package.Current.Id.Version;
+                    return $"{v.Major}.{v.Minor}.{v.Build}";
+                }
+                catch
+                {
+                    // 비패키지 실행 시 어셈블리 버전으로 대체
+                    var asm = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+                    return asm is null ? string.Empty : $"{asm.Major}.{asm.Minor}.{asm.Build}";
+                }
             }
         }
 
-        [ObservableProperty]
-        private string _latestVersion = string.Empty;
+        /// <summary>정보 화면 버전 표시 텍스트 (예: "버전: 1.7.0")</summary>
+        public string AppVersionText => $"{Strings.VersionLabel}{AppVersion}";
 
-        [ObservableProperty]
+        /// <summary>앱 공식 홈페이지 URL</summary>
+        public string OfficialWebsiteUrl => "https://jongcheol-pak.github.io/MailTrayNotifier/";
+
+        /// <summary>앱 이름 (정보 화면 표시용)</summary>
+        public string AppDisplayName => Strings.AppName;
+
+        // WinUI 3(WinRT)에서는 [ObservableProperty] 필드가 AOT 비호환(MVVMTK0045)이라 수동 프로퍼티 사용
+        private string _latestVersion = string.Empty;
+        public string LatestVersion
+        {
+            get => _latestVersion;
+            set => SetProperty(ref _latestVersion, value);
+        }
+
         private bool _isUpdateAvailable;
+        public bool IsUpdateAvailable
+        {
+            get => _isUpdateAvailable;
+            set => SetProperty(ref _isUpdateAvailable, value);
+        }
 
         private string _latestDownloadUrl = string.Empty;
 
@@ -262,11 +326,11 @@ namespace MailTrayNotifier.ViewModels
         /// </summary>
         public IReadOnlyList<OpenSourceLibrary> OpenSourceLibraries { get; } =
         [
-            new("CommunityToolkit.Mvvm", "MIT", "https://github.com/CommunityToolkit/dotnet"),
-            new("Hardcodet.NotifyIcon.Wpf", "MIT", "https://github.com/hardcodet/wpf-notifyicon"),
-            new("Microsoft.Toolkit.Uwp.Notifications", "MIT", "https://github.com/CommunityToolkit/WindowsCommunityToolkit"),
-            new("MailKit", "MIT", "https://github.com/jstedfast/MailKit"),
-            new("WPF-UI", "MIT", "https://github.com/lepoco/wpfui"),
+            new("Windows App SDK", "MIT License", "https://github.com/microsoft/WindowsAppSDK"),
+            new("WinUIEx", "MIT License", "https://github.com/dotMorten/WinUIEx"),
+            new("CommunityToolkit.Mvvm", "MIT License", "https://github.com/CommunityToolkit/dotnet"),
+            new("CommunityToolkit.WinUI Controls", "MIT License", "https://github.com/CommunityToolkit/Windows"),
+            new("MailKit", "MIT License", "https://github.com/jstedfast/MailKit"),
         ];
 
         /// <summary>
@@ -291,6 +355,7 @@ namespace MailTrayNotifier.ViewModels
             for (int i = 0; i < collection.Accounts.Count; i++)
             {
                 var accountVm = new MailAccountViewModel(collection.Accounts[i]);
+                accountVm.IsRefreshEnabled = IsRefreshEnabled;
                 // 모든 계정을 접힌 상태로 초기화 (이벤트 발생 없이)
                 accountVm.SetIsExpandedSilently(false);
                 // 기존 계정은 편집 모드 종료 상태로
@@ -315,17 +380,18 @@ namespace MailTrayNotifier.ViewModels
         {
             if (Accounts.Count >= MailConstants.MaxAccounts)
             {
-                System.Windows.MessageBox.Show(
+                MessageBox.Show(
                     string.Format(Strings.MaxAccountsReached, MailConstants.MaxAccounts),
                     Strings.MaxAccountsTitle,
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
                 return;
             }
 
             var newAccount = new MailAccountViewModel
             {
-                IsExpanded = true  // 새 계정은 펼쳐진 상태로
+                IsExpanded = true,  // 새 계정은 펼쳐진 상태로
+                IsRefreshEnabled = IsRefreshEnabled
             };
 
             SubscribeAccountEvents(newAccount);
@@ -352,13 +418,13 @@ namespace MailTrayNotifier.ViewModels
                 return;
             }
 
-            var result = System.Windows.MessageBox.Show(
+            var result = MessageBox.Show(
                 string.Format(Strings.DeleteAccountConfirm, account.DisplayName),
                 Strings.DeleteAccountTitle,
-                System.Windows.MessageBoxButton.YesNo,
-                System.Windows.MessageBoxImage.Question);
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
 
-            if (result != System.Windows.MessageBoxResult.Yes)
+            if (result != MessageBoxResult.Yes)
             {
                 return;
             }
@@ -404,163 +470,6 @@ namespace MailTrayNotifier.ViewModels
         }
 
         /// <summary>
-        /// 계정 목록을 JSON 파일로 내보내기 (패스워드 제외)
-        /// </summary>
-        [RelayCommand]
-        private async Task ExportAccountsAsync()
-        {
-            var savedAccounts = Accounts
-                .Where(a => !a.IsNewAccount && a.HasRequiredValues())
-                .ToList();
-
-            if (savedAccounts.Count == 0)
-            {
-                System.Windows.MessageBox.Show(
-                    Strings.ExportNoItems,
-                    Strings.ExportTitle,
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
-                return;
-            }
-
-            var dialog = new SaveFileDialog
-            {
-                Title = Strings.ExportTitle,
-                Filter = Strings.JsonFileFilter,
-                FileName = "mail_accounts.json"
-            };
-
-            if (dialog.ShowDialog() != true)
-            {
-                return;
-            }
-
-            try
-            {
-                // 패스워드를 제외한 설정 목록 생성
-                var exportData = savedAccounts
-                    .Select(a =>
-                    {
-                        var settings = a.ToMailSettings();
-                        settings.Password = string.Empty;
-                        return settings;
-                    })
-                    .ToList();
-
-                var json = JsonSerializer.Serialize(exportData, s_jsonWriteOptions);
-                await File.WriteAllTextAsync(dialog.FileName, json).ConfigureAwait(true);
-
-                System.Windows.MessageBox.Show(
-                    Strings.ExportSuccess,
-                    Strings.ExportTitle,
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show(
-                    ex.Message,
-                    Strings.ExportTitle,
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Error);
-            }
-        }
-
-        /// <summary>
-        /// JSON 파일에서 계정 목록 가져오기
-        /// </summary>
-        [RelayCommand]
-        private async Task ImportAccountsAsync()
-        {
-            var dialog = new OpenFileDialog
-            {
-                Title = Strings.ImportTitle,
-                Filter = Strings.JsonFileFilter
-            };
-
-            if (dialog.ShowDialog() != true)
-            {
-                return;
-            }
-
-            List<MailSettings>? importedAccounts;
-            try
-            {
-                var json = await File.ReadAllTextAsync(dialog.FileName).ConfigureAwait(true);
-                importedAccounts = JsonSerializer.Deserialize<List<MailSettings>>(json);
-            }
-            catch (Exception)
-            {
-                System.Windows.MessageBox.Show(
-                    Strings.ImportInvalidFile,
-                    Strings.ImportTitle,
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Error);
-                return;
-            }
-
-            if (importedAccounts is null || importedAccounts.Count == 0)
-            {
-                System.Windows.MessageBox.Show(
-                    Strings.ImportNoItems,
-                    Strings.ImportTitle,
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
-                return;
-            }
-
-            // MaxAccounts 초과 시 경고 후 잘라내기
-            if (importedAccounts.Count > MailConstants.MaxAccounts)
-            {
-                System.Windows.MessageBox.Show(
-                    string.Format(Strings.ImportMaxAccountsExceeded, importedAccounts.Count, MailConstants.MaxAccounts),
-                    Strings.ImportTitle,
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Warning);
-                importedAccounts = importedAccounts.Take(MailConstants.MaxAccounts).ToList();
-            }
-
-            var result = System.Windows.MessageBox.Show(
-                Strings.ImportConfirmReplace,
-                Strings.ImportTitle,
-                System.Windows.MessageBoxButton.YesNo,
-                System.Windows.MessageBoxImage.Question);
-
-            if (result != System.Windows.MessageBoxResult.Yes)
-            {
-                return;
-            }
-
-            // 기존 계정 이벤트 구독 해제 및 제거
-            foreach (var account in Accounts)
-            {
-                UnsubscribeAccountEvents(account);
-            }
-            Accounts.Clear();
-
-            // 가져온 계정 추가
-            foreach (var settings in importedAccounts)
-            {
-                var accountVm = new MailAccountViewModel(settings);
-                accountVm.SetIsExpandedSilently(false);
-                // 패스워드가 비어있으므로 편집 모드로 시작
-                if (string.IsNullOrEmpty(settings.Password))
-                {
-                    accountVm.BeginEdit();
-                }
-                else
-                {
-                    accountVm.EndEdit();
-                }
-                SubscribeAccountEvents(accountVm);
-                Accounts.Add(accountVm);
-            }
-
-            OnPropertyChanged(nameof(AccountCountText));
-            await SaveAllAccountsAsync(includeIncomplete: true);
-        }
-
-        /// <summary>
         /// 개별 계정 저장 (검증 후)
         /// </summary>
         public async Task<bool> SaveAccountAsync(MailAccountViewModel account)
@@ -575,11 +484,11 @@ namespace MailTrayNotifier.ViewModels
             var nameValidationError = ValidateAccountName(account.AccountName, account);
             if (nameValidationError != null && nameValidationError != Strings.AccountNameTrimmed)
             {
-                System.Windows.MessageBox.Show(
+                MessageBox.Show(
                     nameValidationError,
                     Strings.AccountNameError,
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Warning);
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 return false;
             }
 
@@ -587,11 +496,11 @@ namespace MailTrayNotifier.ViewModels
             var missingFields = account.GetMissingRequiredFields();
             if (missingFields.Count > 0)
             {
-                System.Windows.MessageBox.Show(
+                MessageBox.Show(
                     $"{Strings.MissingFieldsMessage}\n\n• {string.Join("\n• ", missingFields)}",
                     Strings.InputError,
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Warning);
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 return false;
             }
 
@@ -601,11 +510,11 @@ namespace MailTrayNotifier.ViewModels
                 if (!Uri.TryCreate(account.MailWebUrl, UriKind.Absolute, out var uri) ||
                     (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
                 {
-                    System.Windows.MessageBox.Show(
+                    MessageBox.Show(
                         Strings.InvalidMailWebUrl,
                         Strings.InputError,
-                        System.Windows.MessageBoxButton.OK,
-                        System.Windows.MessageBoxImage.Warning);
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
                     return false;
                 }
             }
@@ -802,11 +711,11 @@ namespace MailTrayNotifier.ViewModels
             var validationError = ValidateRequiredFields();
             if (validationError is not null)
             {
-                System.Windows.MessageBox.Show(
+                MessageBox.Show(
                     validationError,
                     Strings.InputError,
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Warning);
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 return;
             }
 
@@ -846,14 +755,14 @@ namespace MailTrayNotifier.ViewModels
 
                 if (testResults.Count > 0)
                 {
-                    var result = System.Windows.MessageBox.Show(
+                    var result = MessageBox.Show(
                         string.Format(Strings.ConnectionErrorMessage, string.Join("\n", testResults)),
                         Strings.ConnectionErrorTitle,
-                        System.Windows.MessageBoxButton.YesNo,
-                        System.Windows.MessageBoxImage.Warning);
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning);
 
                     // 사용자가 아니요를 선택하면 저장 중단
-                    if (result == System.Windows.MessageBoxResult.No)
+                    if (result == MessageBoxResult.No)
                     {
                         return;
                     }
@@ -873,16 +782,19 @@ namespace MailTrayNotifier.ViewModels
             CloseRequested?.Invoke();
         }
 
+        /// <summary>
+        /// 계정 초기화: 등록된 모든 계정과 알림 메일 정보 삭제 (테마/언어 설정은 유지)
+        /// </summary>
         [RelayCommand]
-        private void Reset()
+        private void ResetAccounts()
         {
-            var result = System.Windows.MessageBox.Show(
+            var result = MessageBox.Show(
                 Strings.ResetConfirmMessage,
                 Strings.ResetConfirmTitle,
-                System.Windows.MessageBoxButton.YesNo,
-                System.Windows.MessageBoxImage.Warning);
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
 
-            if (result != System.Windows.MessageBoxResult.Yes)
+            if (result != MessageBoxResult.Yes)
             {
                 return;
             }
@@ -890,37 +802,56 @@ namespace MailTrayNotifier.ViewModels
             // 폴링 중지
             _mailPollingService.Stop();
 
-            // 설정 파일 삭제
+            // 설정 파일 삭제 (계정 정보)
             _settingsService.Clear();
 
-            // 메일 상태 파일 삭제
+            // 메일 상태 파일 삭제 (알림 메일 정보)
             _mailStateStore.Clear();
 
-            // 화면 설정값 초기화
+            // 화면 계정 목록 초기화 (테마/언어는 유지)
             _isInitialized = false;
             IsRefreshEnabled = true;
             Accounts.Clear();
-
-            // 테마를 시스템 기본으로 초기화
-            _selectedThemeCode = string.Empty;
-            OnPropertyChanged(nameof(SelectedThemeCode));
-            ApplyTheme(string.Empty);
-
-            // 언어를 시스템 기본으로 초기화
-            _selectedLanguageCode = string.Empty;
-            OnPropertyChanged(nameof(SelectedLanguageCode));
-            ApplyLanguage(string.Empty);
-
             _isInitialized = true;
 
-            System.Windows.MessageBox.Show(
+            OnPropertyChanged(nameof(AccountCountText));
+
+            MessageBox.Show(
                 Strings.ResetCompleted,
                 Strings.AlertTitle,
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Information);
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
 
-            // 언어가 변경되었을 수 있으므로 UI 갱신 요청
-            LanguageChanged?.Invoke();
+        /// <summary>
+        /// 알림 메일 초기화: 계정은 유지하고 모든 계정의 알림 메일 정보만 삭제.
+        /// 폴링을 중지하고 상태를 비운 뒤, 조건(유효 계정·알림 ON) 충족 시 폴링을 재시작한다.
+        /// 초기화 후에는 서버에 남은 메일이 다시 알림될 수 있다.
+        /// </summary>
+        [RelayCommand]
+        private void ClearAllMailStates()
+        {
+            var result = MessageBox.Show(
+                Strings.ClearMailStatesConfirmMessage,
+                Strings.ClearMailStatesConfirmTitle,
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (result != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            // 폴링 중지 → 알림 메일 상태 전체 삭제 → 재시작(Start 내부 조건 충족 시에만 동작)
+            _mailPollingService.Stop();
+            _mailStateStore.Clear();
+            _mailPollingService.Start();
+
+            MessageBox.Show(
+                Strings.ClearMailStatesCompleted,
+                Strings.AlertTitle,
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
 
         /// <summary>
@@ -1020,13 +951,7 @@ namespace MailTrayNotifier.ViewModels
         private void OnAccountErrorOccurred(string accountKey, string errorMessage)
         {
             // UI 스레드에서 실행
-            if (System.Windows.Application.Current?.Dispatcher != null)
-            {
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                {
-                    SetAccountError(accountKey, errorMessage);
-                });
-            }
+            _dispatcherQueue.TryEnqueue(() => SetAccountError(accountKey, errorMessage));
         }
 
         /// <summary>
@@ -1035,13 +960,7 @@ namespace MailTrayNotifier.ViewModels
         private void OnAccountErrorCleared(string accountKey)
         {
             // UI 스레드에서 실행
-            if (System.Windows.Application.Current?.Dispatcher != null)
-            {
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                {
-                    ClearAccountError(accountKey);
-                });
-            }
+            _dispatcherQueue.TryEnqueue(() => ClearAccountError(accountKey));
         }
 
         /// <summary>
@@ -1064,7 +983,7 @@ namespace MailTrayNotifier.ViewModels
         }
 
         /// <summary>
-        /// 언어 변경 처리 (설정 저장 + 문화 적용 + UI 갱신 요청)
+        /// 언어 변경 처리 (설정 저장만 — 실제 적용은 앱 재시작 시 ApplyStartupSettings에서 수행)
         /// </summary>
         private async Task ChangeLanguageAsync(string languageCode)
         {
@@ -1074,9 +993,6 @@ namespace MailTrayNotifier.ViewModels
                 var collection = await _settingsService.LoadCollectionAsync();
                 collection.Language = languageCode;
                 await _settingsService.SaveCollectionAsync(collection);
-
-                ApplyLanguage(languageCode);
-                LanguageChanged?.Invoke();
             }
             finally
             {
@@ -1085,8 +1001,12 @@ namespace MailTrayNotifier.ViewModels
         }
 
         /// <summary>
-        /// 언어 코드에 따른 CurrentUICulture 적용
+        /// 언어 코드에 따른 CurrentUICulture 적용 (앱 시작 시 1회 호출, 코드 문자열 .resx 담당)
         /// </summary>
+        /// <remarks>
+        /// .resw(x:Uid) 리소스용 PrimaryLanguageOverride는 XAML 로드 전에 설정해야 하므로
+        /// Program.Main에서 처리한다(여기서 설정하면 ResourceContext 고정 후라 한 박자 늦게 적용됨).
+        /// </remarks>
         public static void ApplyLanguage(string languageCode)
         {
             var culture = string.IsNullOrEmpty(languageCode)
@@ -1111,10 +1031,7 @@ namespace MailTrayNotifier.ViewModels
                 await _settingsService.SaveCollectionAsync(collection);
 
                 // UI 스레드에서 테마 적용
-                if (System.Windows.Application.Current?.Dispatcher is { } dispatcher)
-                {
-                    dispatcher.Invoke(() => ApplyTheme(themeCode));
-                }
+                _dispatcherQueue.TryEnqueue(() => ApplyTheme(themeCode));
             }
             finally
             {
@@ -1123,27 +1040,11 @@ namespace MailTrayNotifier.ViewModels
         }
 
         /// <summary>
-        /// 테마 코드에 따른 WPF-UI 테마 적용
+        /// 테마 코드("dark"/"light"/그 외=시스템)에 따라 WinUI 테마 적용
         /// </summary>
         public static void ApplyTheme(string themeCode)
         {
-            if (themeCode is "dark")
-            {
-                ApplicationThemeManager.Apply(ApplicationTheme.Dark);
-            }
-            else if (themeCode is "light")
-            {
-                ApplicationThemeManager.Apply(ApplicationTheme.Light);
-            }
-            else
-            {
-                // 시스템 기본 테마 적용
-                var systemTheme = ApplicationThemeManager.GetSystemTheme();
-                ApplicationThemeManager.Apply(
-                    systemTheme is SystemTheme.Light or SystemTheme.HC1 or SystemTheme.HC2
-                        ? ApplicationTheme.Light
-                        : ApplicationTheme.Dark);
-            }
+            ThemeHelper.Apply(themeCode);
         }
 
         /// <summary>

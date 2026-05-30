@@ -1,74 +1,77 @@
-<Page x:Class="MailTrayNotifier.Views.GeneralSettingsPage"
-      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-      xmlns:res="clr-namespace:MailTrayNotifier.Resources"
-      mc:Ignorable="d" 
-      d:DesignHeight="450" d:DesignWidth="800"
-      Title="GeneralSettingsPage">
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="MailTrayNotifier.WinUI.Views.GeneralSettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    mc:Ignorable="d"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
 
-    <Grid>
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="24" VerticalAlignment="Top" >
-           
-                <ui:CardControl Icon="PlayCircle24">
-                    <ui:CardControl.Header>
-                        <StackPanel>
-                            <ui:TextBlock Text="{x:Static res:Strings.AutoStartTitle}" FontTypography="Body" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
-                            <ui:TextBlock Text="{x:Static res:Strings.AutoStartDescription}" FontTypography="Caption" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
-                        </StackPanel>
-                    </ui:CardControl.Header>
-                    <ui:ToggleSwitch IsChecked="{Binding RunAtStartup, Mode=TwoWay}" OnContent="{x:Static res:Strings.ToggleOn}" OffContent="{x:Static res:Strings.ToggleOff}"/>
-                </ui:CardControl>
+    <ScrollViewer>
+        <StackPanel Margin="24" Spacing="8">
 
-                <!-- 전체 알림 설정 -->
-                <ui:CardControl Icon="PlayCircle24" Margin="0,16,0,0">
-                    <ui:CardControl.Header>
-                        <StackPanel >
-                            <ui:TextBlock Text="{x:Static res:Strings.NotificationTitle}" FontTypography="Body" />
-                            <ui:TextBlock Text="{x:Static res:Strings.NotificationDescription}" FontTypography="Caption" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
-                        </StackPanel>
-                    </ui:CardControl.Header>
-                    <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding IsRefreshEnabled, Mode=TwoWay}" VerticalAlignment="Center" OnContent="{x:Static res:Strings.ToggleOn}" OffContent="{x:Static res:Strings.ToggleOff}"/>
-                </ui:CardControl>
+            <!-- 자동 실행 -->
+            <controls:SettingsCard x:Uid="GsAutoStart">
+                <controls:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE768;" />
+                </controls:SettingsCard.HeaderIcon>
+                <ToggleSwitch IsOn="{Binding RunAtStartup, Mode=TwoWay}" />
+            </controls:SettingsCard>
 
-                <!-- 언어 설정 -->
-                <ui:CardControl Icon="LocalLanguage24" Margin="0,16,0,0">
-                    <ui:CardControl.Header>
-                        <StackPanel>
-                            <ui:TextBlock Text="{x:Static res:Strings.LanguageTitle}" FontTypography="Body" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
-                            <ui:TextBlock Text="{x:Static res:Strings.LanguageDescription}" FontTypography="Caption" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
-                        </StackPanel>
-                    </ui:CardControl.Header>
-                    <ComboBox
-                        ItemsSource="{Binding AvailableLanguages}"
-                        DisplayMemberPath="DisplayName"
-                        SelectedValuePath="Code"
-                        SelectedValue="{Binding SelectedLanguageCode, Mode=TwoWay}"
-                        MinWidth="140"
-                        VerticalAlignment="Center" />
-                </ui:CardControl>
+            <!-- 전체 알림 -->
+            <controls:SettingsCard x:Uid="GsNotification">
+                <controls:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xEA8F;" />
+                </controls:SettingsCard.HeaderIcon>
+                <ToggleSwitch IsOn="{Binding IsRefreshEnabled, Mode=TwoWay}" />
+            </controls:SettingsCard>
 
-                <!-- 테마 설정 -->
-                <ui:CardControl Icon="DarkTheme24" Margin="0,16,0,0">
-                    <ui:CardControl.Header>
-                        <StackPanel>
-                            <ui:TextBlock Text="{x:Static res:Strings.ThemeTitle}" FontTypography="Body" Foreground="{ui:ThemeResource TextFillColorPrimaryBrush}" />
-                            <ui:TextBlock Text="{x:Static res:Strings.ThemeDescription}" FontTypography="Caption" Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}" />
-                        </StackPanel>
-                    </ui:CardControl.Header>
-                    <ComboBox
-                        ItemsSource="{Binding AvailableThemes}"
-                        DisplayMemberPath="DisplayName"
-                        SelectedValuePath="Code"
-                        SelectedValue="{Binding SelectedThemeCode, Mode=TwoWay}"
-                        MinWidth="140"
-                        VerticalAlignment="Center" />
-                </ui:CardControl>
+            <!-- 언어 -->
+            <controls:SettingsCard x:Uid="GsLanguage">
+                <controls:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE775;" />
+                </controls:SettingsCard.HeaderIcon>
+                <ComboBox
+                    ItemsSource="{Binding AvailableLanguages}"
+                    DisplayMemberPath="DisplayName"
+                    SelectedValuePath="Code"
+                    SelectedValue="{Binding SelectedLanguageCode, Mode=TwoWay}"
+                    MinWidth="160" />
+            </controls:SettingsCard>
 
-            </StackPanel>
-        </ScrollViewer>
-    </Grid>
+            <!-- 테마 -->
+            <controls:SettingsCard x:Uid="GsTheme">
+                <controls:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE771;" />
+                </controls:SettingsCard.HeaderIcon>
+                <ComboBox
+                    ItemsSource="{Binding AvailableThemes}"
+                    DisplayMemberPath="DisplayName"
+                    SelectedValuePath="Code"
+                    SelectedValue="{Binding SelectedThemeCode, Mode=TwoWay}"
+                    MinWidth="160" />
+            </controls:SettingsCard>
+
+            <!-- 계정 초기화 -->
+            <controls:SettingsCard x:Uid="GsResetAccounts">
+                <controls:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE74D;" />
+                </controls:SettingsCard.HeaderIcon>
+                <Button x:Uid="GsResetAccountsButton"
+                        Command="{Binding ResetAccountsCommand}"
+                        Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+            </controls:SettingsCard>
+
+            <!-- 알림 메일 초기화 -->
+            <controls:SettingsCard x:Uid="GsClearMailStates">
+                <controls:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE894;" />
+                </controls:SettingsCard.HeaderIcon>
+                <Button x:Uid="GsClearMailStatesButton"
+                        Command="{Binding ClearAllMailStatesCommand}" />
+            </controls:SettingsCard>
+
+        </StackPanel>
+    </ScrollViewer>
 </Page>

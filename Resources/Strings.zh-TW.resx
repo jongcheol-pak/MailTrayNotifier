@@ -101,9 +101,12 @@
   <data name="InvalidMailWebUrl" xml:space="preserve"><value>郵件網站地址無效。\n範例: https://mail.example.com</value></data>
   <data name="ConnectionErrorMessage" xml:space="preserve"><value>以下帳戶的郵件伺服器連線失敗:\n\n{0}\n\n是否繼續？</value></data>
   <data name="ConnectionErrorTitle" xml:space="preserve"><value>連線錯誤</value></data>
-  <data name="ResetConfirmMessage" xml:space="preserve"><value>確定要重設所有設定和郵件狀態嗎？\n\n・所有設定將被刪除。\n・已讀郵件資訊將被刪除。</value></data>
-  <data name="ResetConfirmTitle" xml:space="preserve"><value>重設確認</value></data>
+  <data name="ResetConfirmMessage" xml:space="preserve"><value>確定要刪除所有帳戶和通知郵件資訊嗎？\n\n・所有已註冊的帳戶將被刪除。\n・通知郵件資訊將被刪除。</value></data>
+  <data name="ResetConfirmTitle" xml:space="preserve"><value>重置帳戶</value></data>
   <data name="ResetCompleted" xml:space="preserve"><value>重設完成</value></data>
+  <data name="ClearMailStatesConfirmMessage" xml:space="preserve"><value>確定要重置所有帳戶的通知郵件資訊嗎？\n\n・帳戶資訊將被保留。\n・之後伺服器上保留的郵件可能會再次通知。</value></data>
+  <data name="ClearMailStatesConfirmTitle" xml:space="preserve"><value>重置通知郵件</value></data>
+  <data name="ClearMailStatesCompleted" xml:space="preserve"><value>通知郵件重置完成</value></data>
   <data name="EnterAccountName" xml:space="preserve"><value>請輸入帳戶名稱。</value></data>
   <data name="AccountNameTrimmed" xml:space="preserve"><value>帳戶名稱前後的空格將被刪除。</value></data>
   <data name="AccountNameDuplicate" xml:space="preserve"><value>此帳戶名稱已被使用。</value></data>
@@ -156,17 +159,4 @@
   <data name="UpdateButton" xml:space="preserve"><value>更新</value></data>
   <data name="UpdateAvailableTitle" xml:space="preserve"><value>有可用更新</value></data>
   <data name="UpdateAvailableMessage" xml:space="preserve"><value>新版本 {0} 已發佈。(目前: {1})</value></data>
-
-  <!-- Export/Import -->
-  <data name="ExportAccounts" xml:space="preserve"><value>匯出</value></data>
-  <data name="ImportAccounts" xml:space="preserve"><value>匯入</value></data>
-  <data name="ExportTitle" xml:space="preserve"><value>匯出帳戶</value></data>
-  <data name="ImportTitle" xml:space="preserve"><value>匯入帳戶</value></data>
-  <data name="JsonFileFilter" xml:space="preserve"><value>JSON檔案 (*.json)|*.json</value></data>
-  <data name="ExportSuccess" xml:space="preserve"><value>帳戶匯出成功。</value></data>
-  <data name="ImportInvalidFile" xml:space="preserve"><value>所選檔案無效或已損毀。</value></data>
-  <data name="ExportNoItems" xml:space="preserve"><value>沒有可匯出的帳戶。</value></data>
-  <data name="ImportNoItems" xml:space="preserve"><value>沒有可匯入的帳戶。</value></data>
-  <data name="ImportMaxAccountsExceeded" xml:space="preserve"><value>檔案包含{0}個帳戶，但最多允許{1}個。僅匯入前{1}個帳戶。</value></data>
-  <data name="ImportConfirmReplace" xml:space="preserve"><value>現有帳戶將被刪除並替換為匯入的帳戶。是否繼續？</value></data>
 </root>

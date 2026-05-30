@@ -24,6 +24,7 @@ namespace MailTrayNotifier.ViewModels
         private string _accountName = string.Empty;
         private bool _isEditMode;
         private bool _hasError;
+        private bool _isRefreshEnabled;
         private string _errorMessage = string.Empty;
         private bool _suppressExpandedEvent; // 이벤트 발생 억제 플래그
 
@@ -39,6 +40,22 @@ namespace MailTrayNotifier.ViewModels
         /// 동기화 간격 선택 목록 (1~60분)
         /// </summary>
         public static IReadOnlyList<int> AvailableRefreshMinutes { get; } = Enumerable.Range(1, 60).ToArray();
+
+        // DataTemplate 내부 레이블 (x:Uid 미적용이므로 정적 프로퍼티로 노출. 언어 전환은 페이지 재로드로 반영)
+        public static string AccountNameLabel => Strings.AccountName;
+        public static string Pop3ServerLabel => Strings.Pop3Server;
+        public static string SmtpServerLabel => Strings.SmtpServer;
+        public static string UseSslContent => Strings.UseSslLabel;
+        public static string UserIdLabel => Strings.UserId;
+        public static string PasswordLabel => Strings.Password;
+        public static string SyncIntervalLabel => Strings.SyncInterval;
+        public static string MailWebsiteLabel => Strings.MailWebsite;
+        public static string EditContent => Strings.Edit;
+        public static string DeleteContent => Strings.DeleteAccount;
+        public static string CancelContent => Strings.Cancel;
+        public static string SaveContent => Strings.Save;
+        public static string ErrorLabelText => Strings.ErrorLabel;
+        public static string PortPlaceholderText => Strings.PortPlaceholder;
 
         /// <summary>
         /// 기본 생성자 (새 계정 생성용)
@@ -247,6 +264,7 @@ namespace MailTrayNotifier.ViewModels
             {
                 if (SetProperty(ref _isEnabled, value))
                 {
+                    OnPropertyChanged(nameof(ShowSyncIcon));
                     // IsEnabled 변경 시 즉시 저장 요청
                     EnabledChanged?.Invoke(this);
                 }
@@ -311,8 +329,41 @@ namespace MailTrayNotifier.ViewModels
         public bool HasError
         {
             get => _hasError;
-            set => SetProperty(ref _hasError, value);
+            set
+            {
+                if (SetProperty(ref _hasError, value))
+                {
+                    OnPropertyChanged(nameof(ShowErrorIcon));
+                    OnPropertyChanged(nameof(ShowSyncIcon));
+                }
+            }
         }
+
+        /// <summary>
+        /// 전체 새로고침 활성화 여부 (컬렉션 설정 미러링 — 아이콘 표시 조건에 사용)
+        /// </summary>
+        public bool IsRefreshEnabled
+        {
+            get => _isRefreshEnabled;
+            set
+            {
+                if (SetProperty(ref _isRefreshEnabled, value))
+                {
+                    OnPropertyChanged(nameof(ShowErrorIcon));
+                    OnPropertyChanged(nameof(ShowSyncIcon));
+                }
+            }
+        }
+
+        /// <summary>
+        /// 오류 아이콘 표시 여부 (오류 상태 + 새로고침 활성 시)
+        /// </summary>
+        public bool ShowErrorIcon => _hasError && _isRefreshEnabled;
+
+        /// <summary>
+        /// 정상 동기화 아이콘 표시 여부 (계정 활성 + 무오류 + 새로고침 활성 시)
+        /// </summary>
+        public bool ShowSyncIcon => _isEnabled && !_hasError && _isRefreshEnabled;
 
         /// <summary>
         /// 오류 메시지

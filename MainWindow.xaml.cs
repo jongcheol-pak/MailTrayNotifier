@@ -1,22 +1,32 @@
 using System.ComponentModel;
-using System.Windows;
-using System.Windows.Controls;
+using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using MailTrayNotifier.Resources;
 using MailTrayNotifier.ViewModels;
-using MailTrayNotifier.Views;
-using Wpf.Ui.Controls;
+using MailTrayNotifier.WinUI.Views;
+using WinUIEx;
+using Windows.Graphics;
 
-namespace MailTrayNotifier
+namespace MailTrayNotifier.WinUI
 {
     /// <summary>
-    /// 앱 메인 창 (설정 화면)
+    /// 앱 메인 창 (설정 화면). 닫기 시 숨겨 트레이 상주를 유지한다.
     /// </summary>
-    public partial class MainWindow : FluentWindow
+    public sealed partial class MainWindow : WindowEx
     {
+        // 네비게이션 태그 → 페이지 매핑
+        private static readonly Dictionary<string, Type> PageMap = new()
+        {
+            ["mail"] = typeof(MailSettingsPage),
+            ["settings"] = typeof(GeneralSettingsPage),
+            ["about"] = typeof(AboutPage),
+        };
+
         // 페이지 캐시 (매번 새로 생성하지 않음)
         private readonly Dictionary<Type, Page> _pageCache = new();
         private bool _forceClose;
-        private Type? _currentPageType;
+        private bool _initialized;
 
         public SettingsViewModel ViewModel { get; }
 
@@ -24,78 +34,83 @@ namespace MailTrayNotifier
         {
             InitializeComponent();
 
-            var app = App.Instance ?? (App)Application.Current;
-            ViewModel = new SettingsViewModel(app.SettingsService, app.MailPollingService, app.MailClientService, app.MailStateStore, app.UpdateCheckService);
+            // 작업 표시줄/창 미리보기(썸네일)에 표시될 창 아이콘 설정
+            AppWindow.SetIcon("Assets/appicon.ico");
+
+            ExtendsContentIntoTitleBar = true;
+            SetTitleBar(AppTitleBar);
+
+            // 네비/타이틀 텍스트를 현재 언어로 설정 (언어는 앱 시작 시 ApplyStartupSettings에서 적용됨)
+            Title = Strings.AppTitle;
+            TitleTextBlock.Text = Strings.AppTitle;
+            MailItem.Content = Strings.NavMail;
+            SettingsItem.Content = Strings.NavSettings;
+            AboutItem.Content = Strings.About;
+
+            var app = App.Instance!;
+            ViewModel = new SettingsViewModel(
+                app.SettingsService, app.MailPollingService, app.MailClientService,
+                app.MailStateStore, app.UpdateCheckService);
             ViewModel.CloseRequested += OnCloseRequested;
-            ViewModel.LanguageChanged += OnLanguageChanged;
             ViewModel.PropertyChanged += OnViewModelPropertyChanged;
-            DataContext = ViewModel;
 
-            Loaded += OnLoaded;
-            Closing += OnClosing;
+            // 첫 페이지 선택 (SelectionChanged에서 네비게이션 수행)
+            NavView.SelectedItem = MailItem;
+
+            Activated += OnActivated;
+            AppWindow.Closing += OnClosing;
         }
 
-        private void OnCloseRequested() => Hide();
+        private void OnCloseRequested() => this.Hide();
 
         /// <summary>
-        /// ViewModel 속성 변경 시 About 아이콘 업데이트
+        /// 최초 활성화 시 우하단 배치 + ViewModel 초기화 (1회)
         /// </summary>
-        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        private async void OnActivated(object sender, WindowActivatedEventArgs e)
         {
-            if (e.PropertyName == nameof(SettingsViewModel.IsUpdateAvailable))
+            // 비활성화(Deactivated) 전이에서는 초기화하지 않는다 (활성화 시점 1회 보장)
+            if (_initialized || e.WindowActivationState == WindowActivationState.Deactivated)
             {
-                UpdateAboutIcon();
+                return;
+            }
+            _initialized = true;
+
+            try
+            {
+                PositionBottomRight();
+                await ViewModel.InitializeAsync();
+            }
+            catch (Exception ex)
+            {
+                // 초기화 실패 시 재활성화 때 다시 시도하도록 플래그 복구
+                _initialized = false;
+                System.Diagnostics.Debug.WriteLine($"창 초기화 실패: {ex.Message}");
             }
         }
 
-        /// <summary>
-        /// About 메뉴 아이콘 업데이트 (업데이트 가능 시 CloudArrowDown24, 아니면 Info24)
-        /// </summary>
-        private void UpdateAboutIcon()
+        private void PositionBottomRight()
         {
-            var iconName = ViewModel.IsUpdateAvailable ? Wpf.Ui.Controls.SymbolRegular.CloudArrowDown24 : Wpf.Ui.Controls.SymbolRegular.Info24;
-
-            if (MenuAbout.Content is StackPanel stack && stack.Children[0] is Wpf.Ui.Controls.SymbolIcon icon)
-            {
-                icon.Symbol = iconName;
-            }
-        }
-
-        private async void OnLoaded(object sender, RoutedEventArgs e)
-        {
-            Loaded -= OnLoaded;
-
-            // 오른쪽 하단 작업 표시줄 위쪽에 표시 (오른쪽 20px, 아래쪽 20px 여백)
+            var area = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
+            var work = area.WorkArea;
+            var size = AppWindow.Size;
             const int margin = 20;
-            var workArea = SystemParameters.WorkArea;
-            Left = workArea.Right - Width - margin;
-            Top = workArea.Bottom - Height - margin;
 
-            await ViewModel.InitializeAsync();
-
-            // 첫 페이지 로드
-            NavigateToPage(typeof(MailSettingsPage));
+            var x = work.X + work.Width - size.Width - margin;
+            var y = work.Y + work.Height - size.Height - margin;
+            AppWindow.Move(new PointInt32(x, y));
         }
 
-        private void NavMenu_Click(object sender, RoutedEventArgs e)
+        private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
         {
-            if (sender == MenuMail)
+            if (args.SelectedItem is NavigationViewItem { Tag: string tag } &&
+                PageMap.TryGetValue(tag, out var pageType))
             {
-                NavigateToPage(typeof(MailSettingsPage));
-            }
-            else if (sender == MenuSettings)
-            {
-                NavigateToPage(typeof(GeneralSettingsPage));
-            }
-            else if (sender == MenuAbout)
-            {
-                NavigateToPage(typeof(AboutPage));
+                NavigateToPage(pageType);
             }
         }
 
         private void NavigateToPage(Type pageType)
         {
-            // 캐시에서 페이지 가져오거나 새로 생성
             if (!_pageCache.TryGetValue(pageType, out var page))
             {
                 page = (Page)Activator.CreateInstance(pageType)!;
@@ -103,37 +118,19 @@ namespace MailTrayNotifier
                 _pageCache[pageType] = page;
             }
 
-            _currentPageType = pageType;
-            ContentFrame.Navigate(page);
-
-            // 저널 기록 제거 (메모리 누적 방지)
-            while (ContentFrame.CanGoBack)
-            {
-                ContentFrame.RemoveBackEntry();
-            }
+            ContentFrame.Content = page;
         }
 
         /// <summary>
-        /// 언어 변경 시 UI 갱신
+        /// ViewModel 속성 변경 시 정보 항목 업데이트 아이콘 갱신
         /// </summary>
-        private void OnLanguageChanged()
+        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            // MainWindow의 정적 텍스트 갱신
-            Title = Strings.AppTitle;
-            TitleText.Text = Strings.AppTitle;
-            NavMailText.Text = Strings.NavMail;
-            NavSettingsText.Text = Strings.NavSettings;
-            NavAboutText.Text = Strings.About;
-
-            // 페이지 캐시 클리어 후 현재 페이지 재로드
-            _pageCache.Clear();
-            if (_currentPageType is not null)
+            if (e.PropertyName == nameof(SettingsViewModel.IsUpdateAvailable))
             {
-                NavigateToPage(_currentPageType);
+                // 업데이트 가능: 다운로드(E896), 아니면 정보(E946)
+                AboutItem.Icon = new FontIcon { Glyph = ViewModel.IsUpdateAvailable ? "\uE896" : "\uE946" };
             }
-
-            // 트레이 메뉴 텍스트 갱신
-            App.Instance?.RefreshTrayMenuLanguage();
         }
 
         /// <summary>
@@ -143,10 +140,10 @@ namespace MailTrayNotifier
         {
             _forceClose = true;
             ViewModel.CloseRequested -= OnCloseRequested;
-            ViewModel.LanguageChanged -= OnLanguageChanged;
             ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             ViewModel.Dispose();
-            Closing -= OnClosing;
+            AppWindow.Closing -= OnClosing;
+            Activated -= OnActivated;
             _pageCache.Clear();
             Close();
         }
@@ -154,19 +151,19 @@ namespace MailTrayNotifier
         /// <summary>
         /// 창 닫기 시 숨기기 (트레이 상주 유지)
         /// </summary>
-        private void OnClosing(object? sender, CancelEventArgs e)
+        private void OnClosing(AppWindow sender, AppWindowClosingEventArgs args)
         {
             if (_forceClose)
             {
                 return;
             }
 
-            e.Cancel = true;
+            args.Cancel = true;
 
             // 미저장 신규 계정 제거
             ViewModel.RemoveUnsavedAccounts();
 
-            Hide();
+            this.Hide();
         }
     }
 }

@@ -14,10 +14,220 @@
 - 파일은 반드시 UTF-8로 저장할 것
 - 비동기 태스크가 보유 중인 리소스(SemaphoreSlim 등)를 동기 메서드에서 즉시 dispose하지 말 것
 - fire-and-forget 태스크의 오류 핸들러에서 공유 딕셔너리 항목 제거 시 자신의 항목인지 확인할 것
+- publish 프로필의 `PublishTrimmed`를 켜지 말 것 (WinUI 3 클래식 `{Binding}`이 깨져 ComboBox 목록/TwoWay 바인딩이 동작 안 함)
 
 ---
 
 ## 최근 변경 요약
+
+### MessageBox 줄바꿈 표시 수정 (2026-05-30)
+- **증상**: 다이얼로그에 `\n`이 리터럴 문자로 표시됨(한글 폰트에서 `₩n`). **원인**: `.resx` 값의 `\n`이 리터럴 2글자로 저장돼 Win32 `MessageBoxW`에 그대로 전달
+- **수정**: `Dialogs/MessageBox.cs`의 `Show`에서 표시 직전 `text.Replace("\\n", "\n")`로 변환. 신규/기존(`ResetConfirmMessage`/`ConnectionErrorMessage` 등) 모든 메시지 일괄 해결
+
+### 설정 화면 초기화 기능 추가 — 계정 초기화 / 알림 메일 초기화 (2026-05-30)
+- **계정 초기화**(`ResetAccountsCommand`): 경고 팝업 → 폴링 중지 → `SettingsService.Clear()`(계정) + `MailStateStore.Clear()`(알림메일) → 계정 목록 비움. 테마/언어는 유지(기존 미노출 `Reset()` 재사용·조정, 테마/언어 리셋 코드 제거)
+- **알림 메일 초기화**(`ClearAllMailStatesCommand`): 경고 팝업 → 폴링 중지 → `MailStateStore.Clear()` → 폴링 재시작(내부 조건 충족 시). 읽음(클릭) 기록만 저장되므로 초기화 후 서버 잔존 메일이 재알림될 수 있음
+- **동시성**: `MailStateStore.Clear()`가 락 dispose, 동시 접근자(`App.OnSaveUidsRequested` 알림클릭 저장, 잔여 폴링 워커)는 모두 예외 catch → 크래시 없음. Stop→Clear는 기존 `Reset()`과 동일 패턴(신규 회귀 아님) → 현행 수용
+- **UI**: GeneralSettingsPage 하단 SettingsCard 2개. 계정 초기화 버튼은 `SystemFillColorCriticalBrush`로 위험 강조
+- **리소스**: x:Uid(.resw 5개 언어) 카드/버튼 + 코드 메시지(.resx 5개 + Designer.cs) 경고/완료. 기존 `ResetConfirm*` 문구를 계정 초기화 의미로 조정
+
+### Release 트리밍 충돌 수정 — 언어/테마 목록 미표시·자동실행 미저장 (2026-05-30)
+- **근본 원인**: publish 프로필의 `PublishTrimmed=true`. WinUI 3 클래식 `{Binding}`(리플렉션 기반)이 트리밍으로 깨져, ComboBox `DisplayMemberPath`/`SelectedValuePath` 항목 표시와 ToggleSwitch TwoWay setter가 동작하지 않음. `runFullTrust` 앱이라 MSIX 레지스트리 가상화 문제는 아님
+- **수정**: 세 publish 프로필(`win-x64`/`win-x86`/`win-arm64`)에서 `PublishTrimmed=false`. `PublishReadyToRun`은 유지. Release publish 산출물이 풀사이즈(CoreLib 15.3MB)로 트리밍 해제 확인
+- **주의**: WinUI 3는 트리밍을 공식 지원하지 않으므로 `PublishTrimmed`를 다시 켜지 말 것
+
+### 자동 실행 기본값 on (최초 1회 등록) (2026-05-30)
+- **최초 실행 시 자동 실행 기본 등록** — `SettingsViewModel.EnsureFirstRunAutoStartRegistration()` 추가. 마커 키(`HKCU\Software\MailTrayNotifier\AutoStartInitialized`)가 없을 때만 `HKCU\...\Run`에 자동 실행 등록 + 마커 기록. 마커가 이미 있으면(이후 사용자가 끈 상태 포함) 건너뜀. 실행 경로 미확인 시 등록/마커 모두 건너뛰어 다음 실행 재시도. `App.OnLaunched`의 `ApplyStartupSettings()` 직후 1회 호출
+
+### 작업 표시줄 미리보기 아이콘 + 정보 화면 아이콘 확대 (2026-05-30)
+- **창 아이콘 설정** — 작업 표시줄 미리보기(썸네일)에 앱 아이콘이 비어 있던 문제. `MainWindow` 생성자에서 `AppWindow.SetIcon("Assets/appicon.ico")` 호출로 창 아이콘 지정
+- **`appicon.ico` 생성** — 기존 `Assets/appicon.png`를 다중 해상도(16/24/32/48/64/128/256px, PNG 임베드) `Assets/appicon.ico`로 변환. csproj에 `CopyToOutputDirectory=PreserveNewest` Content로 추가
+- **정보 화면 아이콘 확대** — `AboutPage.xaml` 앱 정보 카드 `ImageIcon` 32→64px. 단, `SettingsCard`의 `HeaderIcon`은 `Viewbox`로 감싸여 `SettingsCardHeaderIconMaxSize`(기본 20px)로 캡되므로, 카드 `Resources`에 해당 키를 64로 오버라이드해야 실제 크기가 적용됨
+
+### 코드 리뷰 지적 10건 수정 (2026-05-30)
+WPF→WinUI 3 마이그레이션 회귀/버그 일괄 수정.
+- **(#1) 데이터 위치 마이그레이션** — `SettingsService`에 static 생성자 `MigrateLegacyDataFolder` 추가. 레거시(WPF) `AppContext.BaseDirectory`의 `settings.json`/`mail` 폴더를 신규 데이터 폴더(LocalState)로 1회 복사. 동일 경로/신규 파일 존재/레거시 부재 시 건너뜀
+- **(#2) 트레이 오류 판정 소스 변경** — 창 활성화 전 `ViewModel.Accounts`가 비어 오류 상태를 오판하던 문제. `MailPollingService.HasAnyAccountError`(`!_accountErrorStates.IsEmpty`) 추가, `App.CheckAnyAccountHasError`가 이를 사용
+- **(#3) `MainWindow.OnActivated` 안정화** — async void에 try/catch, 비활성(Deactivated) 전이 무시, 실패 시 `_initialized` 복구해 재시도 허용
+- **(#4) 계정 오류/동기화 아이콘 복원** — `MailAccountViewModel`에 `IsRefreshEnabled` 미러 + `ShowErrorIcon`(오류&새로고침)·`ShowSyncIcon`(활성&무오류&새로고침) 파생 속성. `SettingsViewModel`이 전파. `MailSettingsPage.xaml` 오류 아이콘 조건 복원 + `Sync` 아이콘 재추가
+- **(#5) 알림 활성화 처리 통합/분리** — 초기화 실패(IsFaulted)여도 알림 디스패치 수행. 콜드/리디렉션 경로 중복 분기를 `DispatchNotificationActivation`/`IsNotificationActivation` 헬퍼로 통합
+- **(#6) `_resumeCts` 락 보호** — `CleanupResources`의 `_resumeCts` 접근을 `_resumeLock`으로 감싸 종료 중 경합 방지
+- **(#7) 복구 재시작 디바운스 재설계** — 예약 진행 중이면 신규 이벤트 무시(`_resumeCts != null`). 반복 복구 이벤트가 재시작을 무한 연기하던 문제 해소. 완료 시 finally에서 정리. `_lastResumeTime` 필드 제거
+- **(#8) 비정상 종료 정리** — `AppDomain.ProcessExit`에서 트레이 아이콘/알림 최소 정리(작업 관리자·시스템 종료 대비). 정상 종료 시 `CleanupResources`가 구독 해제
+- **(#9) 트레이 아이콘 캐시** — `TrayIcon.SetIcon`이 경로별 HICON을 캐시해 상태 변경마다 디스크 재로딩/핸들 churn 제거. `Dispose`에서 일괄 해제
+- **(#10) 타이틀바 테마 색상** — `ThemeHelper`가 캡션 버튼 전경색을 `ActualTheme` 기준으로 설정(`App.MainAppWindow` 접근자 추가)
+- 검증: `dotnet build`(x64) 경고 0/오류 0
+
+### 언어 변경을 재시작 후 적용 방식으로 전환 (2026-05-30)
+- **문제**: 언어 변경 시 (1) 좌측 네비/타이틀 메뉴 문구가 갱신되지 않음, (2) 페이지를 재생성해 화면이 깜빡임
+- **방향(사용자 확정)**: 언어 변경 = 재시작 후 적용. 변경 즉시 화면을 다시 그리지 않고 settings.json에 저장만 하며, 다음 앱 시작 시 `ApplyStartupSettings`가 적용
+- **SettingsViewModel**: `ChangeLanguageAsync`에서 즉시 적용 호출(`ApplyLanguage`/`LanguageChanged.Invoke`) 제거(저장만 유지), `Reset`에서도 동일 제거. `LanguageChanged` 이벤트 삭제. `ApplyLanguage`(static)는 시작 적용용으로 유지
+- **MainWindow**: 런타임 갱신(`OnLanguageChanged`·페이지 캐시 클리어/재생성·트레이 갱신) 제거 → 깜빡임 소멸. 생성자에서 `Strings.AppTitle/NavMail/NavSettings/About`로 네비·타이틀 설정. 데드 필드 `_currentPageType` 제거
+- **MainWindow.xaml**: 하드코딩 문구 5곳(Title `메일 알림`, TextBlock, 네비 `메일`/`설정`/`정보`) 제거 → 코드비하인드(`.resx`)에서 주입(요청4 하드코딩 다국어화)
+- **App.xaml.cs**: 데드코드 `RefreshTrayMenuLanguage` 제거(트레이 메뉴는 `InitializeTray`에서 `Strings` 기반 생성 → 재시작 시 올바른 언어)
+- **리소스**: `Strings/<lang>/Resources.resw` 5종 `GsLanguage.Description`에 "재시작 후 적용" 안내 추가(요청3). 언어 선택기 모국어 표기(English/한국어/日本語/简体中文/繁體中文)는 관례상 유지
+- **문서**: README 일반 설정 — 언어는 재시작 후 적용으로 정정
+- 검증: `dotnet build`(x64) 경고 0/오류 0, 잔존 참조(LanguageChanged/OnLanguageChanged/RefreshTrayMenuLanguage/_currentPageType) 0
+- **후속 버그 수정(재시작 1회로 .resw 미반영)**: 언어 변경 후 1차 재시작 시 `.resx`(네비/타이틀)는 새 언어인데 `.resw`(설정 카드 x:Uid)는 이전 언어로 남고, 2차 재시작에야 반영되던 문제. 원인은 `.resw` ResourceContext가 `App.InitializeComponent()`(XAML 첫 로드)에 고정되는데 `PrimaryLanguageOverride` 설정이 그보다 늦은 `OnLaunched`에서 일어난 것. `Program.Main`에서 `Application.Start` 전에 `PrimaryLanguageOverride`를 설정(`ApplyStartupLanguageOverride`)하도록 이동하고, `SettingsViewModel.ApplyLanguage`는 `.resx`(Strings.Culture)만 담당하도록 분리 → 1회 재시작으로 전체 반영
+
+### WPF 프로젝트 제거 + WinUI 루트로 flatten (2026-05-30)
+- **WPF 프로젝트 삭제**: 루트의 WPF 소스/프로젝트 일괄 제거(App/MainWindow/Imports, `MailTrayNotifier.csproj`(+user/vspscc), `Package.appxmanifest`, `icon2.ico`/`start.ico`, Constants/Models/Services/ViewModels/Views/Resources/Properties/Assets, bin/obj)
+- **WinUI 루트로 이동(flatten)**: `MailTrayNotifier.WinUI/` 하위 소스 전체를 git 루트로 이동하고 빈 폴더 제거(빌드 산출물 `.vs`/`obj`는 gitignore 대상)
+- **솔루션 정리**: `MailTrayNotifier.sln`을 WinUI 단독·루트 경로(`MailTrayNotifier.WinUI.csproj`)로 갱신, WPF만 참조하던 스테일 `MailTrayNotifier.slnx` 삭제
+- **README 정정**: WPF 잔재 제거 — 헤더 아이콘(`Assets/appicon.png`→`Assets/icon.png`, WPF Assets 삭제로 누락), 스택 한 줄(WPF·WPF-UI→WinUI 3/Windows App SDK), 빌드 명령/출력 경로(`-p:Platform=x64`, TFM `net10.0-windows10.0.19041.0`), 의존성 목록(WPF-UI/Hardcodet/Toolkit.Uwp → Windows App SDK/WinUIEx/CommunityToolkit.WinUI Controls)
+- 검증: `dotnet build`(루트 csproj 및 `.sln`, x64) 경고 0/오류 0
+- 참고: WinUI 프로젝트가 WPF를 참조하지 않아(파일 복사 방식) 삭제·이동이 빌드에 영향 없음. 공용 문서(README/notes/plan/CLAUDE/LICENSE/docs)·`.github`는 보존
+
+### 미사용 멤버 정리 (내보내기·가져오기·데이터 폴더 열기) (2026-05-30)
+- UI 버튼 삭제로 바인딩이 끊긴 `SettingsViewModel` 멤버 제거: `DataFolderDisplay`, `DataFolderFullPath`, `OpenDataFolderCommand`(`OpenDataFolder`), `ExportAccountsCommand`(`ExportAccountsAsync`), `ImportAccountsCommand`(`ImportAccountsAsync`)
+- 제거로 미사용이 된 `s_jsonWriteOptions`(SettingsViewModel 전용 필드, CS0169 회피)와 using `System.IO`/`System.Text.Json` 정리. `MailTrayNotifier.WinUI.Dialogs` using은 `MessageBox` 헬퍼와 공유라 유지
+- Export/Import 외 참조가 없어진 `Dialogs/FilePickerHelper.cs` 파일 삭제
+- `Strings`의 Export/Import 리소스 키 제거: `ExportAccounts`/`ImportAccounts`/`ExportTitle`/`ImportTitle`/`ExportSuccess`/`ImportInvalidFile`/`ExportNoItems`/`ImportNoItems`/`ImportMaxAccountsExceeded`/`ImportConfirmReplace` + 같은 블록의 미사용 `JsonFileFilter`. WinUI 프로젝트 resx 5종(en/ko/ja/zh-CN/zh-TW) + `Strings.Designer.cs` 프로퍼티 일괄 삭제(루트 WPF용 resx는 범위 밖이라 미수정)
+- 검증: `dotnet build`(x64) 경고 0/오류 0
+
+### 데이터 저장 위치를 패키지 로컬 데이터 폴더로 변경 (2026-05-30)
+- **요구**: 저장 위치를 패키지 로컬 데이터 폴더(`%LocalAppData%\Packages\{PFN}\LocalState`)로 변경. 마이그레이션 없이 새 위치에서 깨끗하게 시작
+- **SettingsService.cs**: `ResolveDataFolder()` 추가 — 패키지 앱은 `Windows.Storage.ApplicationData.Current.LocalFolder.Path`(LocalState) 사용, 패키지 ID가 없는 비패키지(개발) 실행은 `ApplicationData.Current`가 예외를 던지므로 기존 `%LocalAppData%\MailTrayNotifier`로 폴백. `SettingsFolder`/`DataFolder`가 이를 사용
+- **MailStateStore.cs**: `StateFolder`를 `Path.Combine(SettingsService.DataFolder, "mail")`로 변경(단일 베이스 소스 일원화)
+- **마이그레이션 없음**: 새 위치는 비어 있는 상태로 시작(기존 `%LocalAppData%\MailTrayNotifier` 데이터는 읽지 않음)
+- 참고: README "설정 파일 위치"는 비패키지 릴리스(폴백 경로) 기준이라 그대로 유지. `SettingsViewModel.DataFolderDisplay`(하드코딩 문자열)는 바인딩 제거된 미사용 멤버라 미수정
+- 검증: `dotnet build`(x64) 경고 0/오류 0
+
+### 정보 화면 데이터 저장 경로 표시 / 메일 화면 내보내기·가져오기 버튼 삭제 (2026-05-30)
+- **AboutPage.xaml**: "데이터 저장" 카드에서 폴더 경로 표시(`AbDataLocation` 레이블 + `DataFolderFullPath` HyperlinkButton)를 삭제. 카드는 제목·설명만 유지. (데이터 저장 위치 자체는 `%LocalAppData%\MailTrayNotifier` 그대로 유지)
+- **MailSettingsPage.xaml**: 상단 헤더의 내보내기/가져오기 버튼(Save 아이콘 + MenuFlyout)을 삭제. 계정 추가 버튼만 유지
+- ViewModel의 `DataFolderFullPath`/`OpenDataFolderCommand`/`ExportAccountsCommand`/`ImportAccountsCommand`는 바인딩만 제거(코드는 유지)
+- **README.md**: 삭제된 기능 반영 — "주요 기능"의 "계정 설정 내보내기 / 가져오기" 항목, "사용 방법"의 "계정 내보내기 / 가져오기" 항목 제거
+- 검증: `dotnet build`(x64) 경고 0/오류 0
+
+### 영구 오류 시 3회 재시도 폴링 구현 (2026-05-30)
+- **요구**: 영구 오류는 폴링 주기마다 최대 3회 재시도 후 계정 중지(즉시 재시도 X, 설정된 폴링 시간에 재확인). 네트워크(일시적) 오류는 기존대로 제한 없이 재시도. 계정 off→on, 트레이 중지→시작 시 3회 카운터 초기화
+- **구현**:
+  - `MailConstants.MaxPermanentErrorAttempts = 3` 추가
+  - `MailPollingService.RunAccountPollingAsync`: 메일 확인을 지역 함수 `TryCheckOnceAsync`로 통합. 성공 시 카운터 0 초기화, 일시적 오류는 카운터 미변경(무제한 재시도), 영구 오류는 카운터++ 후 `>= 3`이면 `StopAccountDueToPermanentError`로 중지, 미만이면 다음 폴링 주기에 재확인(즉시 재시도 안 함)
+  - 카운터를 워커 지역 변수로 설계 → 재시작/계정 토글로 새 워커 생성 시 자동 0 초기화(off→on, 트레이 중지→시작, 복구 재시작 모두 충족). 별도 공유 상태 불필요
+  - 기존 영구 오류 중지 로직(알림/리소스 정리/전체 실패 시 전체 중지)을 `StopAccountDueToPermanentError`로 추출
+- **참고**: 3회 = 초기 1회 + 폴링 주기 재시도 2회 = 총 3회 시도 후 중지. 횟수는 상수로 조정 가능
+- 검증: `dotnet build`(x64) 경고 0/오류 0
+
+### 인터넷 재연결 후 트레이 오류 아이콘이 안 풀리는 문제 수정 (2026-05-30)
+- **증상**: 인터넷 장기 단절 중 폴링이 일시적 연결 오류로 트레이 오류 아이콘 표시 → 재연결되어 몇 시간이 지나도 오류 아이콘이 계속 남음
+- **원인**: 일시적 네트워크 오류는 폴링 루프를 멈추지 않아 `IsRunning`이 true로 유지됨. 재연결 60초 후 `RestartAfterResume` → `RestartAllAccountPollingLocked`가 (1) `_accountErrorStates`를 초기화해 복구 성공 시 `AccountErrorCleared`가 발동되지 못하고, (2) `IsRunning`이 true→true라 `RunningStateChanged`도 발동되지 않음 → App의 `_hasError` 플래그가 초기화될 경로가 모두 끊겨 오류 아이콘 고착
+- **해결**: 재시작 후 실행 중이면 상태 변화 여부와 무관하게 `RunningStateChanged`를 발동해 App이 잔여 오류 표시를 초기화하고 이후 폴링 결과로 다시 판정하도록 함. 동일 패턴이 있는 두 경로 모두 수정:
+  - `RestartAfterResume`(절전/잠금/네트워크 복구): `fireRunning = newIsRunning || (wasRunning != newIsRunning)`
+  - `ApplySettings`(설정 저장 시 재시작): 재시작 분기에서만 적용 `fireRunning = (didRestart && newIsRunning) || (wasRunning != newIsRunning)`
+- 검증: `dotnet build`(x64) 경고 0/오류 0. 폴링 루프는 일시적 오류 시 제한 없이 설정 주기마다 재시도 유지 확인
+
+### 트레이 "시작" 첫 클릭 무동작 수정 (2026-05-30)
+- **원인**: 전 계정이 영구 오류로 전체 중지되면 `IsRunning=false`지만 저장된 `IsRefreshEnabled`는 `true`로 남음. 트레이 토글 메뉴 텍스트는 `IsRunning` 기준이라 "시작"으로 표시되는데, `App.TogglePolling`이 `IsRefreshEnabled`를 단순 반전(`true→false`)해서 첫 "시작" 클릭이 폴링을 시작하지 못하고 플래그만 꺼버림(두 번째 클릭에야 시작)
+- **해결**: `TogglePolling`이 단순 반전 대신 트레이 표시 의도(`shouldStart = !IsRunning`)에 맞춰 `IsRefreshEnabled`를 명시적으로 설정. catch 폴백도 동일 의도로 정리. 정상 시작/중지 케이스 동작은 동일, 전 계정 오류 중지 케이스에서 첫 클릭으로 즉시 재시작됨
+- 검증: `dotnet build`(x64) 경고 0/오류 0
+
+### 알림 버튼(메일로 이동) 동작 안 함 수정 (2026-05-30)
+- **원인**: AppInstance 단일 인스턴스 리디렉션 적용 후, 알림 클릭 활성화가 (1) `AppNotification`이 아닌 **`ToastNotification` kind**로 오고 (2) `args.Data`가 App SDK `AppNotificationActivatedEventArgs`(딕셔너리)가 아니라 **UWP `ToastNotificationActivatedEventArgs`**(query string `.Argument`)로 전달됨 → 기존 `AppNotification`/딕셔너리 전제 코드가 무시함. 또한 `Process.Start` URL 열기가 패키지 앱에서 불안정
+- **해결**:
+  - `NotificationService`: 처리 로직을 `HandleArguments(IDictionary)`로 분리, `HandleActivation(AppNotificationActivatedEventArgs)` + `HandleActivation(string)`(query string `ParseQueryString` 파싱) 오버로드. URL 열기를 `Windows.System.Launcher.LaunchUriAsync`로 교체
+  - `App`: `Launch`/`ToastNotification`/`AppNotification` kind 처리, `args.Data`가 `AppNotificationActivatedEventArgs`면 그대로, `IToastNotificationActivatedEventArgs`면 `.Argument` 파싱. 리디렉션·콜드 스타트 경로 모두 연결
+  - **최종 핵심 원인**: AppNotification 인자 구분자가 `&`가 아니라 **`;`(세미콜론)** → `ParseQueryString`을 `;` 분리로 수정하여 action/mailWebUrl/uids 정상 파싱
+- 검증: **패키지 디버그에서 메일 이동 동작 정상 확인 완료**. 진단 로그는 정리(URL 열기 실패 예외 로그만 유지)
+
+### 알림 클릭 시 "이미 실행 중" 중복 표시 수정 (2026-05-30)
+- **원인**: 패키지 앱에서 알림(AppNotification) 클릭 시 OS가 새 프로세스를 COM 활성화 → 그 프로세스가 Mutex 단일 인스턴스 검사에 걸려 "메일 알림이 이미 실행 중입니다" MessageBox 표시
+- **해결**: Mutex → `AppInstance.FindOrRegisterForKey` + 활성화 리디렉션으로 전환
+  - `Program.cs`(커스텀 진입점, csproj `DISABLE_XAML_GENERATED_MAIN`): 첫 인스턴스는 `Activated` 구독, 두 번째 인스턴스는 `RedirectActivationToAsync`로 활성화를 첫 인스턴스에 넘기고 종료
+  - `App.OnRedirectedActivation`: `ExtendedActivationKind.Launch`(일반 중복 실행)는 기존 메인 창 표시(`ShowSettings`), 알림 활성화는 `NotificationInvoked`가 처리 → **알림 클릭 시 MessageBox 안 뜸, 중복 실행 시 기존 창 표시**
+  - `App.xaml.cs`에서 Mutex 필드/검사/해제 제거
+- 검증: 빌드 성공 (경고 0, 오류 0). 알림 클릭 동작은 패키지 디버그에서 확인 필요
+
+### 정보 화면 데이터 저장 경로 표시/열기 (2026-05-30)
+- "데이터 저장" 카드 우측에 경로(`%LocalAppData%\MailTrayNotifier`) `HyperlinkButton` 추가 → 클릭 시 탐색기로 폴더 열기(없으면 생성)
+- `SettingsService.DataFolder`(public static) 노출, ViewModel `DataFolderDisplay` + `OpenDataFolderCommand`
+- 실제 저장 위치 확인: MSIX 패키지여도 `ApplicationData.Current`가 아닌 `Environment.GetFolderPath(LocalApplicationData)`를 쓰므로 패키지 컨테이너가 아닌 공용 `%LocalAppData%\MailTrayNotifier`에 저장됨
+- 검증: 빌드 성공 (경고 0, 오류 0)
+
+### 정보 화면 재디자인 + 네비 메뉴 텍스트 (2026-05-30)
+- **네비게이션 메뉴**: `PaneDisplayMode` LeftCompact→Left + `OpenPaneLength=150` → 아이콘 옆에 메일/설정/정보 텍스트 표시
+- **정보 화면 재디자인**(SettingsCard 기반): 제목+부제, 앱 정보 카드(아이콘 `ImageIcon`/이름/버전 + 공식 홈페이지 `HyperlinkButton`), 데이터 저장 안내 카드, 오픈소스 라이선스 목록(`SettingsCard` `IsClickEnabled`로 카드 전체 클릭→홈페이지)
+- ViewModel 추가: `AppVersionText`(버전 표시), `OfficialWebsiteUrl`, `AppDisplayName`(기존 const `AppName`과 충돌 회피). 라이선스 License 표기 "MIT"→"MIT License"
+- `.resw` 신규 키: AbSubtitle / AbOfficialSite.Content / AbDataStorage.Header·Description (5언어)
+- 검증: 빌드 성공 (경고 0, 오류 0)
+
+### 정보 화면 수정 3건 (2026-05-30)
+- **정보 메뉴 아이콘**: 물음표로 보이던 `SymbolIcon Symbol="Help"` → 정보 아이콘 `FontIcon Glyph E946`. 업데이트 가능 시 아이콘도 `FontIcon`(다운로드 E896 / 정보 E946)으로 교체(MainWindow.xaml / .xaml.cs)
+- **버전 표시**: `AppVersion`이 레지스트리(`HKCU\SOFTWARE\PJC`)에서 읽어 패키지 앱에서 빈 값이던 문제 → `Windows.ApplicationModel.Package.Current.Id.Version`(매니페스트 버전)에서 읽도록 변경, 비패키지 실행 시 어셈블리 버전 fallback
+- **오픈소스 라이선스**: WPF 기준 목록(Hardcodet.NotifyIcon.Wpf / Microsoft.Toolkit.Uwp.Notifications / WPF-UI)을 WinUI 의존성으로 갱신 → Windows App SDK / WinUIEx / CommunityToolkit.Mvvm / CommunityToolkit.WinUI Controls / MailKit (모두 MIT)
+- 검증: 빌드 성공 (경고 0, 오류 0)
+
+### WinUI 3 마이그레이션 Phase 8 부분 (2026-05-30)
+- `Package.appxmanifest` 앱 정보 정비(DisplayName=메일 알림/PublisherDisplayName=JongCheol Pak/Description), csproj 메타데이터(AssemblyTitle/Product=메일 알림, Version 1.6.0)
+- **MSIX 패키지 앱 전환**: VS 디버그 오류("Please enable Deploy in the Configuration Manager") 해결 — `WindowsPackageType=None` 제거(패키지 앱), `MailTrayNotifier.sln`의 WinUI 프로젝트 구성에 `Deploy.0` 추가(+ Any CPU를 x64로 매핑). dotnet build 정상. VS는 솔루션/프로젝트 리로드 + 플랫폼 x64 + 시작 프로젝트 WinUI로 설정 후 F5
+- 남은 환경 의존 항목: 자동시작 StartupTask 전환(RunAtStartup async 분기 — 공개 API 변경), 스토어 타일 로고 교체, README 갱신(Phase 9 후)
+- 자동시작은 현재 레지스트리 Run 키 유지(비패키지 개발에서 정상 동작)
+- 검증: 빌드 성공(경고 0/오류 0)
+
+### WinUI 3 마이그레이션 Phase 7 (2026-05-30)
+- **App.xaml.cs 수명주기 통합**: 기존 WPF App 로직 이식
+- 단일 인스턴스: `Mutex`(중복 시 Win32 MessageBox 후 Exit). Phase 0의 AppInstance+Redirect는 알림 미실행 활성화 통합 필요 시 Phase 8/9에서 강화
+- 복구 이벤트: `SystemEvents.PowerModeChanged/SessionSwitch` + `NetworkChange.NetworkAvailabilityChanged` → `SchedulePollingRestart`(10초 디바운스 + 60초 지연, lock 내 토큰 캡처). `Microsoft.Win32.SystemEvents 10.0.8` 패키지 추가
+- 미처리 예외: `AppDomain.UnhandledException`(System) + WinUI `Application.UnhandledException`(Handled=true). 모호성 회피 위해 `System.UnhandledExceptionEventArgs` 명시
+- 폴링 상태 이벤트 → 트레이(`DispatcherQueue.TryEnqueue` 마샬): 토글 메뉴(시작/중지, 표시/숨김 + 구분선), 아이콘 3종(start/stop/warning.ico), 툴팁. `TogglePolling`/`UpdateTrayUI`/`GetToolTipText`/`CheckAnyAccountHasError`
+- 업데이트: 시작 10분 후 1회 확인 + 설정 창 열 때 확인
+- 자동시작(레지스트리 Run 키 → MSIX StartupTask)은 패키징과 함께 Phase 8로
+- 검증: 빌드 성공(경고 0/오류 0), 시작 크래시 없음
+
+### WinUI 3 마이그레이션 Phase 6 (2026-05-30)
+- **헬퍼 3종**: `Dialogs/MessageBox`(Win32 MessageBoxW, WPF System.Windows.MessageBox 시그니처 호환 동기 호출 + enum), `Dialogs/FilePickerHelper`(FileSavePicker/FileOpenPicker + InitializeWithWindow HWND), `Theming/ThemeHelper`(메인 창 루트 RequestedTheme)
+- **SettingsViewModel 이관/교체**: MessageBox→Win32 헬퍼, Save/OpenFileDialog→FilePicker, `Application.Current.Dispatcher`→`DispatcherQueue.TryEnqueue`, WPF-UI 테마→ThemeHelper, `[ObservableProperty]` 필드(LatestVersion/IsUpdateAvailable)→수동 프로퍼티(WinRT AOT MVVMTK0045 회피)
+- **App 확장**: `SystemDefaultCulture`, `MainWindowHandle`(WindowNative), `MainWindowContent`, `UpdateCheckService`(internal), 시작 시 언어/테마 적용(ApplyStartupSettings), 트레이 메뉴 다국어(Strings)+`RefreshTrayMenuLanguage`
+- **MainWindow ViewModel 통합**: SettingsViewModel 생성/구독, 페이지 캐시+DataContext 주입, OnActivated에서 InitializeAsync, 언어 전환 시 네비/타이틀 갱신, About 항목 업데이트 아이콘
+- **다국어**: `.resx` 강타입은 코드 문자열용으로 유지, XAML 정적 텍스트는 `.resw`+`x:Uid`(사용자 확정). `Strings/<lang>/Resources.resw` 5종(en-US 기본/ko/ja/zh-CN/zh-TW) 생성, `ApplyLanguage`에 `ApplicationLanguages.PrimaryLanguageOverride`
+- **GeneralSettingsPage**: `SettingsCard`+`x:Uid`+바인딩(RunAtStartup/IsRefreshEnabled/언어·테마 ComboBox)으로 재작성
+- **AboutPage**: 정보 카드(앱명/버전/업데이트 영역) + 오픈소스 `ItemsControl`+`HyperlinkButton`(Tag=URL, Click→OpenLicenseUrlCommand) 재작성. `.resw`에 Ab* 키 9종 추가. `Converters/BoolToVisibilityConverter` 신규(WinUI 미제공)
+- **MailSettingsPage**: 계정 목록 `ItemsControl`+`Expander`(DataTemplate `x:DataType`/`x:Bind`)로 재작성. WinUI 제약 대응 — `Style.Triggers`→컨버터(Bool/InverseBoolToVisibility), `x:Static`→`x:Bind` static, 숫자 입력→`TextBox.BeforeTextChanging`, `ContextMenu`→`MenuFlyout`, `PasswordBox.Password`/`ToggleSwitch.IsOn` 매핑, Edit/Delete/Cancel/Save는 Click 핸들러(Tag=account). DataTemplate 내부 레이블은 `MailAccountViewModel` static 프로퍼티로 노출. `.resw`에 Ms* 4키 추가. `Converters/InverseBoolToVisibilityConverter` 신규
+- **Phase 6 완료**: 빌드(경고 0/오류 0) + 런타임 시작 크래시 없음(6초 생존). GUI 동작 상세 검증은 사용자 환경
+- SettingsControls 런타임 리소스 자동 로드(크래시 없음). 대화상자는 Win32 MessageBox 채택(ContentDialog 미사용)
+- 패키지: `System.Security.Cryptography.ProtectedData`(DPAPI). Registry는 net10-windows 내장이라 패키지 불요(제거)
+- 검증: 빌드 성공 (경고 0, 오류 0, win-x64)
+
+### WinUI 3 마이그레이션 Phase 5 (2026-05-30)
+- **MainWindow**: WinUIEx `WindowEx` 기반(`MicaBackdrop`, 커스텀 타이틀바 `SetTitleBar`, 크기 고정 500x600, 우하단 배치 `AppWindow.Move`) + `NavigationView` 셸(메일/설정=MenuItems, 정보=FooterMenuItems) + `Frame` 전환. 닫기=숨김(`AppWindow.Closing` 취소), `ForceClose()` 강제 종료
+- **App.xaml.cs 재작성**: 트레이(`Tray.TrayIcon`) 생성/연결(좌클릭→설정 창, 메뉴 설정/종료), `MainWindow` 숨김 시작, 서비스 초기화(알림 try/catch, 폴링 `ApplySettings`), `SaveUidsRequested`→UID 저장. App.xaml 커스텀 스타일 제거(XamlControlsResources만)
+- **placeholder Pages 3종** 생성(Phase 6에서 SettingsCard로 본 구현), 트레이 `.ico`/`icon.png` 자산 복사 + csproj Content(`CopyToOutputDirectory`)
+- **경고 처리**: `WinUIEx.Icon`(라이브러리 내부 deprecated 타입)이 자동생성 `XamlTypeInfo.g.cs`에 포함되어 발생하는 CS0612만 csproj `NoWarn`으로 억제(우리 소스엔 deprecated 사용 없음)
+- `TrayIcon` 이름이 `WinUIEx.TrayIcon`과 모호 → `using TrayIcon = ...Tray.TrayIcon` alias로 직접 구현 트레이로 고정
+- 언어 전환/트레이 토글·상태 아이콘/시스템 이벤트는 Phase 6/7(ViewModel·폴링 상태 연동)로
+- 검증: 빌드 성공(경고 0, 오류 0), 앱 시작 크래시 없음(런타임 5초 생존 — 트레이 상주 정상)
+
+### WinUI 3 마이그레이션 Phase 4 (2026-05-30)
+- **트레이 직접 구현**: `Tray/TrayIcon.cs` 신규. Win32 `Shell_NotifyIcon` + 숨은 메시지 전용 창(HWND_MESSAGE) + `WndProc`로 트레이 콜백/메뉴 명령 처리 (외부 라이브러리 미사용)
+- 기능: `Create`/`SetIcon`(LoadImage→NIM_MODIFY, 이전 HICON DestroyIcon)/`SetToolTip`, 좌클릭 `LeftClicked`, 우클릭 `TrackPopupMenu`(+`SetForegroundWindow` 관용), 메뉴 `AddMenuItem`/`UpdateMenuItem`(텍스트/활성/표시 동적), `WM_COMMAND`→`MenuItemClicked`
+- 핸들 수명: `WndProcDelegate` 필드 유지(GC 방지), `Dispose`에서 NIM_DELETE/DestroyIcon/DestroyWindow
+- App 통합(좌클릭→설정 창, 메뉴 토글/설정/종료)과 실제 트레이 표시·`.ico` 자산 복사는 Phase 5/7 (UI 스레드 메시지 펌프에 `Create()` 호출)
+- 검증: 빌드 성공 (경고 0, 오류 0, win-x64)
+
+### WinUI 3 마이그레이션 Phase 3 (2026-05-30)
+- **NotificationService 재작성**: `Microsoft.Toolkit.Uwp.Notifications`(ToastContentBuilder) → Windows App SDK `AppNotificationManager`/`AppNotificationBuilder`
+- `Initialize()`에서 `NotificationInvoked` 구독 + `Register()`, `Shutdown()`에서 해제 + `UnregisterAll()`
+- 새 메일(단일/다수)·업데이트·오류 알림의 텍스트/버튼/인자 키(action/accountKey/uids/mailWebUrl/updateUrl) 동등 재현, `SetDuration(AppNotificationDuration.Long)`
+- 클릭/버튼 활성화(`OnNotificationInvoked`)에서 `args.Arguments` 딕셔너리로 분기 → `SaveUidsRequested` 호출 및 메일/업데이트 URL 열기(`Process.Start`)
+- 앱 미실행 상태 COM 활성화 + 단일 인스턴스 redirect 연동은 Phase 7(App 레벨)로, 실제 알림 표시 검증은 MSIX 패키지 구성(Phase 8) 후
+- 검증: 빌드 성공 (경고 0, 오류 0, win-x64)
+
+### WinUI 3 마이그레이션 Phase 2 (2026-05-30)
+- **라이브러리 이관**: Models(8) / Constants / Services(5) / `MailAccountViewModel` / Resources(.resx 5종)를 `MailTrayNotifier.WinUI`로 복사(네임스페이스 `MailTrayNotifier.*` 유지)
+- **저장 경로 변경**: `SettingsService`/`MailStateStore`의 저장 위치를 `AppContext.BaseDirectory` → `%LocalAppData%\MailTrayNotifier`(`Environment.GetFolderPath(LocalApplicationData)`)로. 비패키지/MSIX 모두 쓰기 가능. `ApplicationData.Current`는 비패키지에서 예외라 미사용. `WriteJsonAtomicAsync`에 `Directory.CreateDirectory` 추가
+- **NotificationService 스텁화**: `Microsoft.Toolkit.Uwp.Notifications` 의존 제거, public 시그니처만 유지(Phase 3에서 `AppNotificationManager`로 구현)
+- **Resources**: `.resx` 강타입 접근 유지(코드 `Strings.XXX`). Designer `ResourceManager` baseName을 `MailTrayNotifier.WinUI.Resources.Strings`로 정렬. `.resw`+`x:Uid` 전환은 Phase 6(XAML)로 이연
+- **패키지 추가**: `System.Security.Cryptography.ProtectedData 10.0.8`(DPAPI — WinUI 미내장)
+- `SettingsViewModel`은 WPF 의존(MessageBox/Dispatcher/파일다이얼로그/테마/레지스트리) 다수라 Phase 6로 이관 보류
+- 검증: 빌드 성공 (경고 0, 오류 0, win-x64)
+
+### WinUI 3 마이그레이션 Phase 0~1 (2026-05-30)
+- **계획 수립**: `plan.md`에 WPF → WinUI 3 마이그레이션 계획 작성(plan-reviewer 검토 반영). 확정 전제 — MSIX 패키지 / 새 WinUI 3 프로젝트 점진 이관 / 트레이는 Win32 `Shell_NotifyIcon` 직접 구현 / 창·백드롭은 WinUIEx `WindowEx` / 디자인은 NavigationView + SettingsCard(Gallery 스타일)
+- **Phase 0 결정**: 데이터·비밀번호는 마이그레이션 없이 "깨끗하게 시작"(`ApplicationData.LocalFolder`), 다국어는 `.resw`+`x:Uid`+`ResourceLoader`, 단일 인스턴스는 `AppInstance`, 창 없는 알림은 Win32 MessageBox, 빌드는 `dotnet build`
+- **Phase 1**: 새 프로젝트 `MailTrayNotifier.WinUI/` 생성(`dotnet new winui`), WebView2 참조 제거, 의존성 추가(CommunityToolkit.Mvvm 8.4.2 / MailKit 4.17.0 / WinUIEx 2.9.0 / CommunityToolkit.WinUI.Controls.SettingsControls 8.2.251219), `App.xaml.cs` 골격 정리(`Window.Current` 경고 제거), 기존 `MailTrayNotifier.sln`에 추가
+- 개발 중에는 비패키지(`WindowsPackageType=None`)로 빌드, MSIX 패키지화는 Phase 8로 이연
+- 검증: 빌드 성공 (경고 0, 오류 0, win-x64)
 
 ### 복구 시 폴링 자동 재시작 + 1분 지연 (2026-05-30)
 - **App.xaml.cs**: 절전 복귀(기존)에 더해 **잠금 해제**(`SystemEvents.SessionSwitch`/`SessionUnlock`)와 **네트워크 연결 복구**(`NetworkChange.NetworkAvailabilityChanged`/`IsAvailable`) 시에도 폴링을 자동 재시작

@@ -12,7 +12,8 @@ namespace MailTrayNotifier.Services
     {
         private const int MaxUidsPerAccount = 500;
 
-        private static readonly string StateFolder = Path.Combine(AppContext.BaseDirectory, "mail");
+        // 저장 위치: SettingsService와 동일 베이스 폴더 하위의 mail 폴더
+        private static readonly string StateFolder = Path.Combine(SettingsService.DataFolder, "mail");
         private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
         // 파일 동시 접근 방지 (계정별 락)

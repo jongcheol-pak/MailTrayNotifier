@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="GsAutoStart.Header" xml:space="preserve">
+    <value>自動啟動</value>
+  </data>
+  <data name="GsAutoStart.Description" xml:space="preserve">
+    <value>登入Windows時自動啟動。</value>
+  </data>
+  <data name="GsNotification.Header" xml:space="preserve">
+    <value>通知</value>
+  </data>
+  <data name="GsNotification.Description" xml:space="preserve">
+    <value>啟用郵件通知。設定為關閉後將不會收到任何郵件通知。</value>
+  </data>
+  <data name="GsLanguage.Header" xml:space="preserve">
+    <value>語言</value>
+  </data>
+  <data name="GsLanguage.Description" xml:space="preserve">
+    <value>選擇應用程式的顯示語言。變更將在重新啟動應用程式後生效。</value>
+  </data>
+  <data name="GsTheme.Header" xml:space="preserve">
+    <value>主題</value>
+  </data>
+  <data name="GsTheme.Description" xml:space="preserve">
+    <value>選擇應用程式的顯示主題。</value>
+  </data>
+  <data name="AbTitle.Text" xml:space="preserve">
+    <value>關於</value>
+  </data>
+  <data name="AbAppName.Text" xml:space="preserve">
+    <value>郵件通知</value>
+  </data>
+  <data name="AbVersionLabel.Text" xml:space="preserve">
+    <value>版本: </value>
+  </data>
+  <data name="AbLatestLabel.Text" xml:space="preserve">
+    <value>最新版本: </value>
+  </data>
+  <data name="AbUpdateButton.Content" xml:space="preserve">
+    <value>更新</value>
+  </data>
+  <data name="AbWebPrefix.Text" xml:space="preserve">
+    <value>了解更多資訊，請造訪</value>
+  </data>
+  <data name="AbWebLink.Content" xml:space="preserve">
+    <value>官方網站</value>
+  </data>
+  <data name="AbWebSuffix.Text" xml:space="preserve">
+    <value>。</value>
+  </data>
+  <data name="AbOpenSourceTitle.Text" xml:space="preserve">
+    <value>開源授權</value>
+  </data>
+  <data name="MsAddAccount.Content" xml:space="preserve">
+    <value>新增帳戶</value>
+  </data>
+  <data name="MsExport.Text" xml:space="preserve">
+    <value>匯出</value>
+  </data>
+  <data name="MsImport.Text" xml:space="preserve">
+    <value>匯入</value>
+  </data>
+  <data name="MsNotifyWarn.Text" xml:space="preserve">
+    <value>設定中通知已關閉，無法接收通知。請在設定中開啟通知。</value>
+  </data>
+  <data name="AbSubtitle.Text" xml:space="preserve">
+    <value>查看應用程式版本和正在使用的開源授權。</value>
+  </data>
+  <data name="AbOfficialSite.Content" xml:space="preserve">
+    <value>官方網站</value>
+  </data>
+  <data name="AbDataTitle.Text" xml:space="preserve">
+    <value>資料儲存</value>
+  </data>
+  <data name="AbDataDesc.Text" xml:space="preserve">
+    <value>設定、帳戶和郵件狀態僅儲存在您的電腦上，不會傳送到外部伺服器。</value>
+  </data>
+  <data name="AbDataLocation.Text" xml:space="preserve">
+    <value>儲存位置: </value>
+  </data>
+  <data name="GsResetAccounts.Header" xml:space="preserve">
+    <value>重置帳戶</value>
+  </data>
+  <data name="GsResetAccounts.Description" xml:space="preserve">
+    <value>刪除所有已註冊的帳戶和通知郵件資訊。</value>
+  </data>
+  <data name="GsResetAccountsButton.Content" xml:space="preserve">
+    <value>重置</value>
+  </data>
+  <data name="GsClearMailStates.Header" xml:space="preserve">
+    <value>重置通知郵件</value>
+  </data>
+  <data name="GsClearMailStates.Description" xml:space="preserve">
+    <value>保留帳戶，但刪除所有通知郵件資訊。之後伺服器上保留的郵件可能會再次通知。</value>
+  </data>
+  <data name="GsClearMailStatesButton.Content" xml:space="preserve">
+    <value>重置</value>
+  </data>
+</root>

@@ -101,9 +101,12 @@
   <data name="InvalidMailWebUrl" xml:space="preserve"><value>メールサイトのURLが正しくありません。\n例: https://mail.example.com</value></data>
   <data name="ConnectionErrorMessage" xml:space="preserve"><value>以下のアカウントのメールサーバーへの接続に失敗しました:\n\n{0}\n\n続行しますか？</value></data>
   <data name="ConnectionErrorTitle" xml:space="preserve"><value>接続エラー</value></data>
-  <data name="ResetConfirmMessage" xml:space="preserve"><value>すべての設定とメール状態をリセットしますか？\n\n・すべての設定が削除されます。\n・既読メール情報が削除されます。</value></data>
-  <data name="ResetConfirmTitle" xml:space="preserve"><value>リセット確認</value></data>
+  <data name="ResetConfirmMessage" xml:space="preserve"><value>すべてのアカウントと通知メール情報を削除しますか？\n\n・登録されたすべてのアカウントが削除されます。\n・通知メール情報が削除されます。</value></data>
+  <data name="ResetConfirmTitle" xml:space="preserve"><value>アカウント初期化</value></data>
   <data name="ResetCompleted" xml:space="preserve"><value>リセット完了</value></data>
+  <data name="ClearMailStatesConfirmMessage" xml:space="preserve"><value>すべてのアカウントの通知メール情報を削除しますか？\n\n・アカウント情報は保持されます。\n・その後、サーバーに残っているメールが再度通知される場合があります。</value></data>
+  <data name="ClearMailStatesConfirmTitle" xml:space="preserve"><value>通知メール初期化</value></data>
+  <data name="ClearMailStatesCompleted" xml:space="preserve"><value>通知メール初期化完了</value></data>
   <data name="EnterAccountName" xml:space="preserve"><value>アカウント名を入力してください。</value></data>
   <data name="AccountNameTrimmed" xml:space="preserve"><value>アカウント名の前後の空白が削除されます。</value></data>
   <data name="AccountNameDuplicate" xml:space="preserve"><value>このアカウント名は既に使用されています。</value></data>
@@ -156,17 +159,4 @@
   <data name="UpdateButton" xml:space="preserve"><value>アップデート</value></data>
   <data name="UpdateAvailableTitle" xml:space="preserve"><value>アップデートあり</value></data>
   <data name="UpdateAvailableMessage" xml:space="preserve"><value>新しいバージョン {0} があります。(現在: {1})</value></data>
-
-  <!-- Export/Import -->
-  <data name="ExportAccounts" xml:space="preserve"><value>エクスポート</value></data>
-  <data name="ImportAccounts" xml:space="preserve"><value>インポート</value></data>
-  <data name="ExportTitle" xml:space="preserve"><value>アカウントのエクスポート</value></data>
-  <data name="ImportTitle" xml:space="preserve"><value>アカウントのインポート</value></data>
-  <data name="JsonFileFilter" xml:space="preserve"><value>JSONファイル (*.json)|*.json</value></data>
-  <data name="ExportSuccess" xml:space="preserve"><value>アカウントをエクスポートしました。</value></data>
-  <data name="ImportInvalidFile" xml:space="preserve"><value>選択したファイルが無効または破損しています。</value></data>
-  <data name="ExportNoItems" xml:space="preserve"><value>エクスポートするアカウントがありません。</value></data>
-  <data name="ImportNoItems" xml:space="preserve"><value>インポートするアカウントがありません。</value></data>
-  <data name="ImportMaxAccountsExceeded" xml:space="preserve"><value>ファイルに{0}個のアカウントがありますが、最大{1}個までです。最初の{1}個のみインポートされます。</value></data>
-  <data name="ImportConfirmReplace" xml:space="preserve"><value>既存のアカウントは削除され、インポートしたアカウントに置き換えられます。続行しますか？</value></data>
 </root>

@@ -1,6 +1,9 @@
 {
   "profiles": {
-    "MailTrayNotifier": {
+    "MailTrayNotifier.WinUI (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "MailTrayNotifier.WinUI (Unpackaged)": {
       "commandName": "Project"
     }
   }
