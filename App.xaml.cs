@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading;
 using System.Windows.Controls;
@@ -21,6 +22,12 @@ namespace MailTrayNotifier
     {
         private const string MutexName = "MailTrayNotifier_SingleInstance_Mutex";
         private static Mutex? _mutex;
+
+        /// <summary>
+        /// 복구 이벤트(절전 복귀/잠금 해제/네트워크 연결) 후 폴링 재시작까지의 지연 시간(초).
+        /// 복구 직후 불안정 구간을 피하기 위해 1분 대기한다.
+        /// </summary>
+        private const int PollingRestartDelaySeconds = 60;
 
         /// <summary>
         /// 시스템 기본 문화 (앱 시작 시 캡처)
@@ -93,6 +100,12 @@ namespace MailTrayNotifier
             // 절전 모드 복귀 감지
             SystemEvents.PowerModeChanged += OnPowerModeChanged;
 
+            // 잠금 화면 해제 감지
+            SystemEvents.SessionSwitch += OnSessionSwitch;
+
+            // 네트워크 연결 복구 감지
+            NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
+
             InitializeTray();
             _window = new MainWindow();
             _window.Hide();
@@ -140,7 +153,47 @@ namespace MailTrayNotifier
                 return;
             }
 
-            // 중복 Resume 이벤트 무시 (10초 이내, 스레드 안전)
+            // 절전 모드 복귀: 안정화 대기 후 폴링 재시작
+            SchedulePollingRestart(PollingRestartDelaySeconds);
+        }
+
+        /// <summary>
+        /// 잠금 화면 해제 시 폴링 재시작
+        /// </summary>
+        private void OnSessionSwitch(object sender, SessionSwitchEventArgs e)
+        {
+            if (e.Reason != SessionSwitchReason.SessionUnlock)
+            {
+                return;
+            }
+
+            // 잠금 해제: 안정화 대기 후 폴링 재시작
+            SchedulePollingRestart(PollingRestartDelaySeconds);
+        }
+
+        /// <summary>
+        /// 네트워크 연결 복구 시 폴링 재시작
+        /// </summary>
+        private void OnNetworkAvailabilityChanged(object? sender, NetworkAvailabilityEventArgs e)
+        {
+            if (!e.IsAvailable)
+            {
+                return;
+            }
+
+            // 네트워크 사용 가능: 안정화 대기 후 폴링 재시작
+            SchedulePollingRestart(PollingRestartDelaySeconds);
+        }
+
+        /// <summary>
+        /// 복구 이벤트(절전 복귀/잠금 해제/네트워크 연결) 발생 시 폴링 재시작을 예약한다.
+        /// 10초 디바운스로 짧은 시간에 겹친 이벤트를 1회로 합치고, 지정한 지연 후 재시작한다.
+        /// </summary>
+        private void SchedulePollingRestart(int delaySeconds)
+        {
+            CancellationToken ct;
+
+            // 중복 복구 이벤트 무시 (10초 이내) + 이전 예약 취소 (스레드 안전)
             lock (_resumeLock)
             {
                 var now = DateTime.UtcNow;
@@ -150,25 +203,25 @@ namespace MailTrayNotifier
                 }
                 _lastResumeTime = now;
 
-                // 이전 Resume 작업이 있으면 취소
                 _resumeCts?.Cancel();
                 _resumeCts?.Dispose();
                 _resumeCts = new CancellationTokenSource();
+
+                // 토큰은 교체/Dispose 경합을 피하기 위해 lock 내부에서 캡처
+                ct = _resumeCts.Token;
             }
 
-            var ct = _resumeCts!.Token;
-
-            // 네트워크 안정화 대기 후 폴링 재시작
+            // 복구 직후 불안정 구간을 피하기 위해 지연 후 폴링 재시작
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(5), ct);
+                    await Task.Delay(TimeSpan.FromSeconds(delaySeconds), ct);
                     _mailPollingService?.RestartAfterResume();
                 }
                 catch (OperationCanceledException)
                 {
-                    // 앱 종료 또는 새 Resume 이벤트로 취소
+                    // 앱 종료 또는 새 복구 이벤트로 취소
                 }
                 catch (ObjectDisposedException)
                 {
@@ -176,7 +229,7 @@ namespace MailTrayNotifier
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"절전 모드 복귀 후 폴링 재시작 실패: {ex.Message}");
+                    Debug.WriteLine($"복구 후 폴링 재시작 실패: {ex.Message}");
                 }
             }, ct);
         }
@@ -617,6 +670,8 @@ namespace MailTrayNotifier
         private void CleanupResources()
         {
             SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+            SystemEvents.SessionSwitch -= OnSessionSwitch;
+            NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged;
 
             _resumeCts?.Cancel();
             _resumeCts?.Dispose();

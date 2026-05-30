@@ -19,6 +19,14 @@
 
 ## 최근 변경 요약
 
+### 복구 시 폴링 자동 재시작 + 1분 지연 (2026-05-30)
+- **App.xaml.cs**: 절전 복귀(기존)에 더해 **잠금 해제**(`SystemEvents.SessionSwitch`/`SessionUnlock`)와 **네트워크 연결 복구**(`NetworkChange.NetworkAvailabilityChanged`/`IsAvailable`) 시에도 폴링을 자동 재시작
+- 기존 `OnPowerModeChanged`의 디바운스/지연 재시작 로직을 `SchedulePollingRestart(int delaySeconds)`로 공통 추출 → 세 트리거(Resume/Unlock/NetworkRestored)가 10초 디바운스 + 단일 `_resumeCts` 공유 (겹친 이벤트는 1회로 합쳐짐)
+- 복구 직후 불안정 구간 회피를 위해 재시작 지연을 5초 → **60초(1분)** 로 변경 (`PollingRestartDelaySeconds` 상수)
+- `_resumeCts` 토큰을 `lock(_resumeLock)` 내부에서 캡처하도록 이동 (트리거 3종 동시 호출 시 교체/Dispose 경합 방지)
+- `OnStartup` 구독 / `CleanupResources` 해제 짝 추가
+- 검증: 빌드 성공 (경고 0, 오류 0)
+
 ### 메모리 누수/정합성 후속 수정 (2026-04-14)
 - **MailPollingService.StartAllAccountPolling**: `ContainsKey` 선조회 제거 + `TryAdd` 실패 시 새 CTS 즉시 Dispose (leak 방지 + 경쟁 조건 축소)
 - **MailPollingService.StopAllAccountPolling**: 중지 시 `_accountErrorStates.Clear()` 추가 — Stop→Start 사이클에서 이전 오류 상태가 남아 새 워커의 `AccountErrorCleared` 이벤트가 잘못 디듀프되는 문제 방지
