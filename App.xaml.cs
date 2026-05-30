@@ -88,9 +88,6 @@ namespace MailTrayNotifier.WinUI
             // 저장된 언어/테마 적용 (테마는 창 생성 후 적용)
             ApplyStartupSettings();
 
-            // 최초 실행 시 자동 실행 기본 등록 (이후 사용자가 끈 상태는 존중)
-            SettingsViewModel.EnsureFirstRunAutoStartRegistration();
-
             // 단일 인스턴스는 Program.Main의 AppInstance로 보장 (중복 실행/알림 클릭은 리디렉션됨)
             _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
