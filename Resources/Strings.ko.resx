@@ -33,7 +33,7 @@
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
 
   <!-- MainWindow -->
-  <data name="AppTitle" xml:space="preserve"><value>메일 알림 설정</value></data>
+  <data name="AppTitle" xml:space="preserve"><value>메일 알리미 설정</value></data>
   <data name="NavMail" xml:space="preserve"><value>메일</value></data>
   <data name="NavSettings" xml:space="preserve"><value>설정</value></data>
 
@@ -70,7 +70,7 @@
   <data name="ErrorLabel" xml:space="preserve"><value>오류 : </value></data>
 
   <!-- AboutPage -->
-  <data name="AppName" xml:space="preserve"><value>메일 알림</value></data>
+  <data name="AppName" xml:space="preserve"><value>메일 알리미</value></data>
   <data name="About" xml:space="preserve"><value>정보</value></data>
   <data name="VersionLabel" xml:space="preserve"><value>버전: </value></data>
   <data name="OpenSourceLicenses" xml:space="preserve"><value>오픈 소스 라이선스</value></data>
@@ -80,14 +80,14 @@
   <data name="TrayStopPolling" xml:space="preserve"><value>메일 알림 중지</value></data>
   <data name="TraySettings" xml:space="preserve"><value>설정</value></data>
   <data name="TrayExit" xml:space="preserve"><value>종료</value></data>
-  <data name="TrayTooltip" xml:space="preserve"><value>메일 알림</value></data>
-  <data name="TrayTooltipDisabled" xml:space="preserve"><value>메일 알림 - 비활성화됨</value></data>
-  <data name="TrayTooltipRunning" xml:space="preserve"><value>메일 알림 - 실행 중</value></data>
-  <data name="TrayTooltipAccountError" xml:space="preserve"><value>메일 알림 - 일부 계정 오류</value></data>
-  <data name="TrayTooltipStopped" xml:space="preserve"><value>메일 알림 - 중지됨</value></data>
-  <data name="TrayTooltipNeedSetup" xml:space="preserve"><value>메일 알림 - 설정 필요</value></data>
-  <data name="TrayTooltipError" xml:space="preserve"><value>메일 알림 - 오류 발생</value></data>
-  <data name="AlreadyRunning" xml:space="preserve"><value>메일 알림이 이미 실행 중입니다.</value></data>
+  <data name="TrayTooltip" xml:space="preserve"><value>메일 알리미</value></data>
+  <data name="TrayTooltipDisabled" xml:space="preserve"><value>메일 알리미 - 비활성화됨</value></data>
+  <data name="TrayTooltipRunning" xml:space="preserve"><value>메일 알리미 - 실행 중</value></data>
+  <data name="TrayTooltipAccountError" xml:space="preserve"><value>메일 알리미 - 일부 계정 오류</value></data>
+  <data name="TrayTooltipStopped" xml:space="preserve"><value>메일 알리미 - 중지됨</value></data>
+  <data name="TrayTooltipNeedSetup" xml:space="preserve"><value>메일 알리미 - 설정 필요</value></data>
+  <data name="TrayTooltipError" xml:space="preserve"><value>메일 알리미 - 오류 발생</value></data>
+  <data name="AlreadyRunning" xml:space="preserve"><value>메일 알리미가 이미 실행 중입니다.</value></data>
   <data name="AlertTitle" xml:space="preserve"><value>알림</value></data>
 
   <!-- SettingsViewModel -->

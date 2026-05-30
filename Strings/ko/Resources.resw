@@ -40,7 +40,7 @@
     <value>정보</value>
   </data>
   <data name="AbAppName.Text" xml:space="preserve">
-    <value>메일 알림</value>
+    <value>메일 알리미</value>
   </data>
   <data name="AbVersionLabel.Text" xml:space="preserve">
     <value>버전: </value>

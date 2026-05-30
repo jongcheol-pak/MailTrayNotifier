@@ -35,7 +35,7 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="메일 알림"
+        DisplayName="메일 알리미"
         Description="POP3 메일 수신을 트레이에서 알려주는 알림 앱"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
@@ -51,7 +51,7 @@
           <uap5:StartupTask
             TaskId="MailTrayNotifierStartup"
             Enabled="true"
-            DisplayName="메일 알림" />
+            DisplayName="메일 알리미" />
         </uap5:Extension>
       </Extensions>
     </Application>
