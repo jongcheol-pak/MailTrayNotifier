@@ -7,7 +7,6 @@ using MailTrayNotifier.Constants;
 using MailTrayNotifier.Models;
 using MailTrayNotifier.Services;
 using MailTrayNotifier.Resources;
-using Microsoft.Win32;
 using Microsoft.UI.Dispatching;
 using MailTrayNotifier.WinUI;
 using MailTrayNotifier.WinUI.Dialogs;
@@ -27,12 +26,8 @@ namespace MailTrayNotifier.ViewModels
         private readonly UpdateCheckService _updateCheckService;
         // UI 스레드 마샬링 (생성자가 UI 스레드에서 호출됨)
         private readonly DispatcherQueue _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
-        private const string RegistryKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        private const string AppName = "MailTrayNotifier";
-
-        // 자동 실행 최초 1회 기본 등록 여부 마커 (앱 전용 레지스트리 키)
-        private const string AppSettingsKeyPath = @"Software\MailTrayNotifier";
-        private const string AutoStartInitializedValue = "AutoStartInitialized";
+        // MSIX StartupTask 식별자 (Package.appxmanifest의 TaskId와 일치해야 함)
+        private const string StartupTaskId = "MailTrayNotifierStartup";
 
         /// <summary>
         /// 저장 성공 시 창 닫기 요청 이벤트
@@ -183,60 +178,98 @@ namespace MailTrayNotifier.ViewModels
             _mailPollingService.ApplySettings(collection);
         }
 
+        // 자동 실행 백킹 필드 및 재진입 가드 (StartupTask 상태와 동기화)
+        private bool _runAtStartup;
+        private bool _isChangingRunAtStartup;
+
+        /// <summary>
+        /// Windows 시작 시 자동 실행 여부.
+        /// MSIX StartupTask(작업 관리자 "시작 프로그램")와 연동된다. (레지스트리 미사용)
+        /// </summary>
         public bool RunAtStartup
         {
-            get
-            {
-                using var key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath);
-                return key?.GetValue(AppName) != null;
-            }
+            get => _runAtStartup;
             set
             {
-                using var key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true);
-                if (value)
+                // 차단/예외로 토글을 되돌릴 때 발생하는 바인딩 write-back 재진입 차단
+                if (_isChangingRunAtStartup)
                 {
-                    var exePath = Environment.ProcessPath;
-                    if (exePath != null)
-                    {
-                        key?.SetValue(AppName, exePath);
-                    }
+                    return;
                 }
-                else
+
+                if (SetProperty(ref _runAtStartup, value) && _isInitialized)
                 {
-                    key?.DeleteValue(AppName, false);
+                    _ = ApplyRunAtStartupAsync(value);
                 }
-                OnPropertyChanged();
             }
         }
 
         /// <summary>
-        /// 최초 실행 시 1회 자동 실행을 기본 등록한다.
-        /// 초기화 마커가 이미 있으면(이후 사용자가 끈 상태 포함) 아무 동작도 하지 않는다.
+        /// 저장된 StartupTask 상태를 읽어 토글에 반영한다 (초기화 시 1회).
+        /// 비패키지(개발) 실행 등 StartupTask 미지원 시 OFF로 처리한다.
         /// </summary>
-        public static void EnsureFirstRunAutoStartRegistration()
+        private async Task LoadRunAtStartupStateAsync()
         {
-            using var appKey = Registry.CurrentUser.CreateSubKey(AppSettingsKeyPath);
-            // 마커가 이미 있으면 사용자의 현재 설정을 존중하여 건너뛴다.
-            if (appKey is null || appKey.GetValue(AutoStartInitializedValue) != null)
+            try
             {
-                return;
+                var task = await Windows.ApplicationModel.StartupTask.GetAsync(StartupTaskId);
+                var enabled = task.State is Windows.ApplicationModel.StartupTaskState.Enabled
+                    or Windows.ApplicationModel.StartupTaskState.EnabledByPolicy;
+                SetRunAtStartupSilently(enabled);
             }
-
-            // 실행 경로 미확인 시 등록/마커 모두 건너뛰어 다음 실행에서 재시도한다.
-            var exePath = Environment.ProcessPath;
-            if (exePath is null)
+            catch (Exception ex)
             {
-                return;
+                Debug.WriteLine($"자동 실행 상태 로드 실패: {ex.Message}");
+                SetRunAtStartupSilently(false);
             }
+        }
 
-            // 최초 1회: 자동 실행 등록
-            using (var runKey = Registry.CurrentUser.OpenSubKey(RegistryKeyPath, true))
+        /// <summary>
+        /// 토글 변경을 StartupTask에 적용한다.
+        /// 사용자가 작업 관리자에서 끈 경우(DisabledByUser)나 정책 차단 시에는 켤 수 없으므로 토글을 OFF로 되돌린다.
+        /// </summary>
+        private async Task ApplyRunAtStartupAsync(bool enable)
+        {
+            try
             {
-                runKey?.SetValue(AppName, exePath);
+                var task = await Windows.ApplicationModel.StartupTask.GetAsync(StartupTaskId);
+                if (enable)
+                {
+                    // 패키지 데스크톱 앱은 동의 대화상자 없이 즉시 적용됨
+                    var newState = await task.RequestEnableAsync();
+                    if (newState is not (Windows.ApplicationModel.StartupTaskState.Enabled
+                        or Windows.ApplicationModel.StartupTaskState.EnabledByPolicy))
+                    {
+                        // 사용자/정책에 의해 차단됨: 토글을 조용히 OFF로 복원
+                        SetRunAtStartupSilently(false);
+                    }
+                }
+                else
+                {
+                    task.Disable();
+                }
             }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"자동 실행 상태 변경 실패: {ex.Message}");
+                SetRunAtStartupSilently(false);
+            }
+        }
 
-            // 초기화 완료 마커 기록 (이후 사용자가 끈 상태를 존중)
-            appKey.SetValue(AutoStartInitializedValue, 1, RegistryValueKind.DWord);
+        /// <summary>
+        /// 이벤트(저장 트리거) 없이 토글 상태만 갱신한다 (재진입 가드 적용).
+        /// </summary>
+        private void SetRunAtStartupSilently(bool value)
+        {
+            _isChangingRunAtStartup = true;
+            try
+            {
+                SetProperty(ref _runAtStartup, value, nameof(RunAtStartup));
+            }
+            finally
+            {
+                _isChangingRunAtStartup = false;
+            }
         }
 
         public string AppVersion
@@ -368,8 +401,8 @@ namespace MailTrayNotifier.ViewModels
 
             OnPropertyChanged(nameof(AccountCountText));
 
-            // Notify startup property might have changed externally or just to be sure UI syncs
-            OnPropertyChanged(nameof(RunAtStartup));
+            // 저장된 StartupTask 상태를 토글에 반영
+            await LoadRunAtStartupStateAsync();
         }
 
         /// <summary>

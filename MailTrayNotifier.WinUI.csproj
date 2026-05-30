@@ -5,6 +5,9 @@
         <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
         <OutputType>WinExe</OutputType>
 
+        <!-- 출력 실행 파일 이름 (RootNamespace와 독립). 패키지/StartupTask Executable에 반영됨 -->
+        <AssemblyName>MailTrayNotifier</AssemblyName>
+
         <!-- WinUI 3 (MSIX 패키지 앱) -->
         <UseWinUI>true</UseWinUI>
         <EnableMsixTooling>true</EnableMsixTooling>
