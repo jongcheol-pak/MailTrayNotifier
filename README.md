@@ -31,7 +31,7 @@ WinUI 3 (Windows App SDK) · .NET 10 · MVVM(CommunityToolkit.Mvvm) 기반으로
 
 ### Microsoft Store에서 설치
 
-1. [Microsoft Store 다운로드 페이지](https://apps.microsoft.com/detail/MailTrayNotifier)에서 설치합니다. (※ 임시 링크 — 스토어 등록 후 실제 주소로 교체 예정)
+1. [Microsoft Store 다운로드 페이지](https://apps.microsoft.com/detail/9P18C8T9Q3RD)에서 설치합니다.
 2. 설치가 끝나면 시작 메뉴에서 "메일 알리미"를 실행합니다.
 
 ### 소스에서 빌드
