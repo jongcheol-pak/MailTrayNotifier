@@ -16,7 +16,7 @@
   <mp:PhoneIdentity PhoneProductId="efd13704-993a-4267-a418-8c7fed68947f" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>메일 알리미</DisplayName>
+    <DisplayName>ms-resource:///Resources/AppDisplayName</DisplayName>
     <PublisherDisplayName>JongCheol Pak</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -35,7 +35,7 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="메일 알리미"
+        DisplayName="ms-resource:///Resources/AppDisplayName"
         Description="POP3 메일 수신을 트레이에서 알려주는 알림 앱"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
@@ -51,7 +51,7 @@
           <uap5:StartupTask
             TaskId="MailTrayNotifierStartup"
             Enabled="true"
-            DisplayName="메일 알리미" />
+            DisplayName="ms-resource:///Resources/AppDisplayName" />
         </uap5:Extension>
       </Extensions>
     </Application>
