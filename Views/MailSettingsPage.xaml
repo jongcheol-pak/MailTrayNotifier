@@ -66,6 +66,7 @@
                                                FontWeight="SemiBold" VerticalAlignment="Center" />
 
                                     <ToggleSwitch Grid.Column="2" IsOn="{x:Bind IsEnabled, Mode=TwoWay}"
+                                                  IsEnabled="{x:Bind CanToggleEnabled, Mode=OneWay}"
                                                   OnContent="" OffContent="" MinWidth="0"
                                                   VerticalAlignment="Center" Margin="8,0,8,0" />
                                 </Grid>

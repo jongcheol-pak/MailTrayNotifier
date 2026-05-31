@@ -380,6 +380,11 @@ namespace MailTrayNotifier.ViewModels
         public bool IsNewAccount => _isNewAccount;
 
         /// <summary>
+        /// 활성화 토글 사용 가능 여부 (저장된 계정만 토글 가능, 미저장 새 계정은 비활성화)
+        /// </summary>
+        public bool CanToggleEnabled => !_isNewAccount;
+
+        /// <summary>
         /// 편집 모드 시작 (현재 값 백업)
         /// </summary>
         public void BeginEdit()
@@ -425,6 +430,10 @@ namespace MailTrayNotifier.ViewModels
             IsEditMode = false;
             _isNewAccount = false;
             _backup = null; // 백업 정리
+
+            // 저장 완료로 새 계정 상태가 해제되면 활성화 토글 사용 가능
+            OnPropertyChanged(nameof(IsNewAccount));
+            OnPropertyChanged(nameof(CanToggleEnabled));
         }
 
         /// <summary>

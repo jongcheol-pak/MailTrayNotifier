@@ -106,6 +106,8 @@ namespace MailTrayNotifier.Resources {
         public static string AlertTitle => ResourceManager.GetString("AlertTitle", resourceCulture)!;
         public static string MaxAccountsReached => ResourceManager.GetString("MaxAccountsReached", resourceCulture)!;
         public static string MaxAccountsTitle => ResourceManager.GetString("MaxAccountsTitle", resourceCulture)!;
+        public static string UnsavedAccountMessage => ResourceManager.GetString("UnsavedAccountMessage", resourceCulture)!;
+        public static string UnsavedAccountTitle => ResourceManager.GetString("UnsavedAccountTitle", resourceCulture)!;
         public static string DeleteAccountConfirm => ResourceManager.GetString("DeleteAccountConfirm", resourceCulture)!;
         public static string DeleteAccountTitle => ResourceManager.GetString("DeleteAccountTitle", resourceCulture)!;
         public static string AccountNameError => ResourceManager.GetString("AccountNameError", resourceCulture)!;
@@ -149,9 +151,5 @@ namespace MailTrayNotifier.Resources {
         public static string MailAccountAuthFailed => ResourceManager.GetString("MailAccountAuthFailed", resourceCulture)!;
         public static string MailAuthError => ResourceManager.GetString("MailAuthError", resourceCulture)!;
         public static string AccountMailCheckError => ResourceManager.GetString("AccountMailCheckError", resourceCulture)!;
-        public static string LatestVersionLabel => ResourceManager.GetString("LatestVersionLabel", resourceCulture)!;
-        public static string UpdateButton => ResourceManager.GetString("UpdateButton", resourceCulture)!;
-        public static string UpdateAvailableTitle => ResourceManager.GetString("UpdateAvailableTitle", resourceCulture)!;
-        public static string UpdateAvailableMessage => ResourceManager.GetString("UpdateAvailableMessage", resourceCulture)!;
     }
 }

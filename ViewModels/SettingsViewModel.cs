@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MailTrayNotifier.Constants;
@@ -23,7 +24,6 @@ namespace MailTrayNotifier.ViewModels
         private readonly MailPollingService _mailPollingService;
         private readonly MailClientService _mailClientService;
         private readonly MailStateStore _mailStateStore;
-        private readonly UpdateCheckService _updateCheckService;
         // UI 스레드 마샬링 (생성자가 UI 스레드에서 호출됨)
         private readonly DispatcherQueue _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
         // MSIX StartupTask 식별자 (Package.appxmanifest의 TaskId와 일치해야 함)
@@ -117,14 +117,12 @@ namespace MailTrayNotifier.ViewModels
             SettingsService settingsService,
             MailPollingService mailPollingService,
             MailClientService mailClientService,
-            MailStateStore mailStateStore,
-            UpdateCheckService updateCheckService)
+            MailStateStore mailStateStore)
         {
             _settingsService = settingsService;
             _mailPollingService = mailPollingService;
             _mailClientService = mailClientService;
             _mailStateStore = mailStateStore;
-            _updateCheckService = updateCheckService;
 
             // 메일 폴링 서비스의 계정별 오류 이벤트 구독
             _mailPollingService.AccountErrorOccurred += OnAccountErrorOccurred;
@@ -300,60 +298,6 @@ namespace MailTrayNotifier.ViewModels
         /// <summary>앱 이름 (정보 화면 표시용)</summary>
         public string AppDisplayName => Strings.AppName;
 
-        // WinUI 3(WinRT)에서는 [ObservableProperty] 필드가 AOT 비호환(MVVMTK0045)이라 수동 프로퍼티 사용
-        private string _latestVersion = string.Empty;
-        public string LatestVersion
-        {
-            get => _latestVersion;
-            set => SetProperty(ref _latestVersion, value);
-        }
-
-        private bool _isUpdateAvailable;
-        public bool IsUpdateAvailable
-        {
-            get => _isUpdateAvailable;
-            set => SetProperty(ref _isUpdateAvailable, value);
-        }
-
-        private string _latestDownloadUrl = string.Empty;
-
-        /// <summary>
-        /// GitHub Releases에서 최신 버전을 확인한다.
-        /// </summary>
-        public async Task CheckForUpdateAsync()
-        {
-            var release = await _updateCheckService.GetLatestReleaseAsync();
-            if (release is null)
-            {
-                return;
-            }
-
-            var currentVersionString = AppVersion;
-            if (!Version.TryParse(currentVersionString, out var currentVersion))
-            {
-                return;
-            }
-
-            if (release.Version > currentVersion)
-            {
-                LatestVersion = $"{release.Version.Major}.{release.Version.Minor}.{release.Version.Build}";
-                _latestDownloadUrl = release.Url;
-                IsUpdateAvailable = true;
-            }
-        }
-
-        /// <summary>
-        /// GitHub 릴리스 페이지를 브라우저에서 연다.
-        /// </summary>
-        [RelayCommand]
-        private void OpenUpdatePage()
-        {
-            if (!string.IsNullOrEmpty(_latestDownloadUrl))
-            {
-                Process.Start(new ProcessStartInfo(_latestDownloadUrl) { UseShellExecute = true });
-            }
-        }
-
         /// <summary>
         /// 사용 중인 오픈 소스 라이브러리 목록
         /// </summary>
@@ -411,6 +355,17 @@ namespace MailTrayNotifier.ViewModels
         [RelayCommand]
         private void AddAccount()
         {
+            // 저장하지 않은 새 계정이 이미 있으면 추가하지 않음
+            if (Accounts.Any(a => a.IsNewAccount))
+            {
+                MessageBox.Show(
+                    Strings.UnsavedAccountMessage,
+                    Strings.UnsavedAccountTitle,
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
             if (Accounts.Count >= MailConstants.MaxAccounts)
             {
                 MessageBox.Show(

@@ -1,4 +1,4 @@
-using System.ComponentModel;
+using System.Runtime.InteropServices;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -50,9 +50,8 @@ namespace MailTrayNotifier.WinUI
             var app = App.Instance!;
             ViewModel = new SettingsViewModel(
                 app.SettingsService, app.MailPollingService, app.MailClientService,
-                app.MailStateStore, app.UpdateCheckService);
+                app.MailStateStore);
             ViewModel.CloseRequested += OnCloseRequested;
-            ViewModel.PropertyChanged += OnViewModelPropertyChanged;
 
             // 첫 페이지 선택 (SelectionChanged에서 네비게이션 수행)
             NavView.SelectedItem = MailItem;
@@ -62,6 +61,32 @@ namespace MailTrayNotifier.WinUI
         }
 
         private void OnCloseRequested() => this.Hide();
+
+        /// <summary>
+        /// 창을 화면 맨 앞(포그라운드)으로 가져온다. 이미 표시된 상태에서도 최상단으로 올린다.
+        /// 최소화 상태면 먼저 복원한다.
+        /// </summary>
+        public void BringToForeground()
+        {
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            if (IsIconic(hwnd))
+            {
+                ShowWindow(hwnd, SW_RESTORE);
+            }
+            SetForegroundWindow(hwnd);
+        }
+
+        // 창을 이전 크기로 복원하는 ShowWindow 명령
+        private const int SW_RESTORE = 9;
+
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(nint hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(nint hWnd, int nCmdShow);
+
+        [DllImport("user32.dll")]
+        private static extern bool IsIconic(nint hWnd);
 
         /// <summary>
         /// 최초 활성화 시 우하단 배치 + ViewModel 초기화 (1회)
@@ -122,25 +147,12 @@ namespace MailTrayNotifier.WinUI
         }
 
         /// <summary>
-        /// ViewModel 속성 변경 시 정보 항목 업데이트 아이콘 갱신
-        /// </summary>
-        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(SettingsViewModel.IsUpdateAvailable))
-            {
-                // 업데이트 가능: 다운로드(E896), 아니면 정보(E946)
-                AboutItem.Icon = new FontIcon { Glyph = ViewModel.IsUpdateAvailable ? "\uE896" : "\uE946" };
-            }
-        }
-
-        /// <summary>
         /// 앱 종료 시 강제 닫기
         /// </summary>
         public void ForceClose()
         {
             _forceClose = true;
             ViewModel.CloseRequested -= OnCloseRequested;
-            ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             ViewModel.Dispose();
             AppWindow.Closing -= OnClosing;
             Activated -= OnActivated;

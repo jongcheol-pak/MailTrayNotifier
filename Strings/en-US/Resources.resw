@@ -45,12 +45,6 @@
   <data name="AbVersionLabel.Text" xml:space="preserve">
     <value>Version: </value>
   </data>
-  <data name="AbLatestLabel.Text" xml:space="preserve">
-    <value>Latest Version: </value>
-  </data>
-  <data name="AbUpdateButton.Content" xml:space="preserve">
-    <value>Update</value>
-  </data>
   <data name="AbWebPrefix.Text" xml:space="preserve">
     <value>For more details, visit </value>
   </data>

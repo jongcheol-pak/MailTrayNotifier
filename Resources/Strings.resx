@@ -93,6 +93,8 @@
   <!-- SettingsViewModel -->
   <data name="MaxAccountsReached" xml:space="preserve"><value>You can add up to {0} accounts.</value></data>
   <data name="MaxAccountsTitle" xml:space="preserve"><value>Account Limit</value></data>
+  <data name="UnsavedAccountMessage" xml:space="preserve"><value>There is an unsaved new account. Please save it before adding another.</value></data>
+  <data name="UnsavedAccountTitle" xml:space="preserve"><value>Unsaved Account</value></data>
   <data name="DeleteAccountConfirm" xml:space="preserve"><value>Are you sure you want to delete the '{0}' account?</value></data>
   <data name="DeleteAccountTitle" xml:space="preserve"><value>Delete Account</value></data>
   <data name="AccountNameError" xml:space="preserve"><value>Account Name Error</value></data>
@@ -153,10 +155,4 @@
   <data name="AboutWebsitePrefix" xml:space="preserve"><value>For more details, visit </value></data>
   <data name="AboutWebsiteLink" xml:space="preserve"><value>official website</value></data>
   <data name="AboutWebsiteSuffix" xml:space="preserve"><value>.</value></data>
-
-  <!-- UpdateCheck -->
-  <data name="LatestVersionLabel" xml:space="preserve"><value>Latest Version: </value></data>
-  <data name="UpdateButton" xml:space="preserve"><value>Update</value></data>
-  <data name="UpdateAvailableTitle" xml:space="preserve"><value>Update Available</value></data>
-  <data name="UpdateAvailableMessage" xml:space="preserve"><value>A new version {0} is available. (Current: {1})</value></data>
 </root>

@@ -45,12 +45,6 @@
   <data name="AbVersionLabel.Text" xml:space="preserve">
     <value>버전: </value>
   </data>
-  <data name="AbLatestLabel.Text" xml:space="preserve">
-    <value>최신 버전: </value>
-  </data>
-  <data name="AbUpdateButton.Content" xml:space="preserve">
-    <value>업데이트</value>
-  </data>
   <data name="AbWebPrefix.Text" xml:space="preserve">
     <value>자세한 내용은 </value>
   </data>

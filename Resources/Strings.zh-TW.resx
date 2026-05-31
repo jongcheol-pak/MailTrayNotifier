@@ -93,6 +93,8 @@
   <!-- SettingsViewModel -->
   <data name="MaxAccountsReached" xml:space="preserve"><value>最多可以新增{0}個帳戶。</value></data>
   <data name="MaxAccountsTitle" xml:space="preserve"><value>帳戶上限</value></data>
+  <data name="UnsavedAccountMessage" xml:space="preserve"><value>有尚未儲存的新帳戶。請先儲存後再新增。</value></data>
+  <data name="UnsavedAccountTitle" xml:space="preserve"><value>未儲存的帳戶</value></data>
   <data name="DeleteAccountConfirm" xml:space="preserve"><value>確定要刪除'{0}'帳戶嗎？</value></data>
   <data name="DeleteAccountTitle" xml:space="preserve"><value>刪除帳戶</value></data>
   <data name="AccountNameError" xml:space="preserve"><value>帳戶名稱錯誤</value></data>
@@ -153,10 +155,4 @@
   <data name="AboutWebsitePrefix" xml:space="preserve"><value>了解更多資訊，請造訪</value></data>
   <data name="AboutWebsiteLink" xml:space="preserve"><value>官方網站</value></data>
   <data name="AboutWebsiteSuffix" xml:space="preserve"><value>。</value></data>
-
-  <!-- UpdateCheck -->
-  <data name="LatestVersionLabel" xml:space="preserve"><value>最新版本: </value></data>
-  <data name="UpdateButton" xml:space="preserve"><value>更新</value></data>
-  <data name="UpdateAvailableTitle" xml:space="preserve"><value>有可用更新</value></data>
-  <data name="UpdateAvailableMessage" xml:space="preserve"><value>新版本 {0} 已發佈。(目前: {1})</value></data>
 </root>

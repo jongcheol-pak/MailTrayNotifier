@@ -5,7 +5,7 @@ using MailTrayNotifier.ViewModels;
 namespace MailTrayNotifier.WinUI.Views
 {
     /// <summary>
-    /// 정보 페이지 (앱 정보/업데이트/오픈소스 라이선스)
+    /// 정보 페이지 (앱 정보/오픈소스 라이선스)
     /// </summary>
     public sealed partial class AboutPage : Page
     {

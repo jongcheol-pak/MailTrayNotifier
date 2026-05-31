@@ -6,7 +6,8 @@
 
 <p align="center">
 POP3 메일 서버를 주기적으로 확인하고 새 메일이 도착하면 Windows 토스트 알림으로 알려주는 트레이 상주 앱입니다.<br/>
-WinUI 3 (Windows App SDK) · .NET 10 · MVVM(CommunityToolkit.Mvvm) 기반으로 만들어졌습니다.
+WinUI 3 (Windows App SDK) · .NET 10 · MVVM(CommunityToolkit.Mvvm) 기반으로 만들어졌습니다.<br/>
+1.7.0 버전부터 기존 WPF에서 WinUI 3 기반으로 새롭게 개편되었습니다.
 </p>
 
 ## 주요 기능
@@ -19,7 +20,6 @@ WinUI 3 (Windows App SDK) · .NET 10 · MVVM(CommunityToolkit.Mvvm) 기반으로
 - 다국어 UI: English / 한국어 / 日本語 / 简体中文 / 繁體中文 (시스템 기본 자동 선택 가능)
 - 테마 변경: 시스템 기본 / 다크 / 라이트 (즉시 적용)
 - 계정 초기화 / 알림 메일 초기화 (확인 팝업 후 삭제)
-- GitHub Releases 기반 자동 업데이트 확인 및 알림
 - 비밀번호는 Windows DPAPI로 암호화 저장
 
 ## 시스템 요구 사항
@@ -29,10 +29,10 @@ WinUI 3 (Windows App SDK) · .NET 10 · MVVM(CommunityToolkit.Mvvm) 기반으로
 
 ## 설치
 
-### 릴리스에서 설치
+### Microsoft Store에서 설치
 
-1. [Releases](https://github.com/jongcheol-pak/MailTrayNotifier/releases) 페이지에서 최신 버전을 내려받습니다.
-2. 압축을 해제한 뒤 `MailTrayNotifier.exe`를 실행합니다.
+1. [Microsoft Store 다운로드 페이지](https://apps.microsoft.com/detail/MailTrayNotifier)에서 설치합니다. (※ 임시 링크 — 스토어 등록 후 실제 주소로 교체 예정)
+2. 설치가 끝나면 시작 메뉴에서 "메일 알리미"를 실행합니다.
 
 ### 소스에서 빌드
 
@@ -58,6 +58,7 @@ dotnet build -c Release -p:Platform=x64
    - **SSL/TLS 사용**: 일반적으로 활성화 권장 (SSL: 995, 비SSL: 110)
    - **아이디 / 비밀번호**: 메일 계정 자격 증명 (Gmail 등은 앱 비밀번호 사용)
    - **동기화 시간(분)**: 1~60분 사이의 폴링 주기 (기본 5분)
+   - **이메일 웹사이트 주소**: 알림을 클릭했을 때 열 웹메일 주소 (선택, 예: `https://mail.google.com`)
 
    <img src="docs/screenshots/account-settings.png" alt="메일 계정 설정 화면" width="500" />
 
@@ -81,12 +82,20 @@ dotnet build -c Release -p:Platform=x64
 - **계정 초기화**: 등록된 모든 계정과 알림 메일 정보를 삭제합니다 (테마/언어 설정은 유지).
 - **알림 메일 초기화**: 계정은 유지하고 모든 알림 메일 정보를 삭제합니다. 이후 서버에 남은 메일이 다시 알림될 수 있습니다.
 
+### 정보 화면
+
+좌측 메뉴 `정보`에서 앱 버전, 공식 홈페이지 링크, 데이터 저장 위치 안내, 사용된 오픈소스 라이선스 목록을 확인할 수 있습니다.
+
+<img src="docs/screenshots/about-page.png" alt="정보 화면" width="500" />
+
 ## 설정 파일 위치
+
+설치된 앱(MSIX 패키지)은 패키지 로컬 데이터 폴더에 설정과 상태를 저장합니다.
 
 | 항목 | 경로 |
 |---|---|
-| 설정 파일 | `%LocalAppData%\MailTrayNotifier\settings.json` |
-| 메일 UID 상태 | `%LocalAppData%\MailTrayNotifier\mail_state.json` |
+| 설정 파일 | `%LocalAppData%\Packages\<패키지>\LocalState\settings.json` |
+| 메일 UID 상태 | `%LocalAppData%\Packages\<패키지>\LocalState\mail\` (계정별 파일) |
 
 ## 주요 의존성
 

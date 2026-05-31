@@ -48,7 +48,6 @@ namespace MailTrayNotifier.WinUI
         private readonly NotificationService _notificationService = new();
         private readonly MailClientService _mailClientService = new();
         private readonly MailStateStore _mailStateStore = new();
-        private readonly UpdateCheckService _updateCheckService = new();
         private readonly MailPollingService _mailPollingService;
 
         private DispatcherQueue? _dispatcherQueue;
@@ -57,7 +56,6 @@ namespace MailTrayNotifier.WinUI
         private bool _isExiting;
         private bool _hasError;
 
-        private CancellationTokenSource? _updateCheckCts;
         private readonly object _resumeLock = new();
         private CancellationTokenSource? _resumeCts;
 
@@ -71,7 +69,6 @@ namespace MailTrayNotifier.WinUI
         public MailPollingService MailPollingService => _mailPollingService;
         public MailClientService MailClientService => _mailClientService;
         public MailStateStore MailStateStore => _mailStateStore;
-        internal UpdateCheckService UpdateCheckService => _updateCheckService;
 
         public App()
         {
@@ -120,15 +117,12 @@ namespace MailTrayNotifier.WinUI
                     Debug.WriteLine($"서비스 초기화 실패: {t.Exception?.GetBaseException().Message}");
                 }
 
-                // 초기화 실패 여부와 무관하게 알림 활성화는 가능한 처리(메일/업데이트 URL 열기 등)를 수행한다.
+                // 초기화 실패 여부와 무관하게 알림 활성화는 가능한 처리(메일 URL 열기 등)를 수행한다.
                 if (IsNotificationActivation(activatedArgs.Kind))
                 {
                     DispatchNotificationActivation(activatedArgs.Data);
                 }
             }, TaskScheduler.Default);
-
-            // 앱 시작 10분 후 업데이트 확인 (1회)
-            ScheduleUpdateCheck();
         }
 
         /// <summary>
@@ -431,54 +425,6 @@ namespace MailTrayNotifier.WinUI
 
         #endregion
 
-        #region 업데이트 확인
-
-        /// <summary>
-        /// 앱 시작 10분 후 업데이트 확인 예약 (1회)
-        /// </summary>
-        private void ScheduleUpdateCheck()
-        {
-            _updateCheckCts = new CancellationTokenSource();
-            var ct = _updateCheckCts.Token;
-
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await Task.Delay(TimeSpan.FromMinutes(10), ct);
-                    await CheckAndNotifyUpdateAsync(ct);
-                }
-                catch (OperationCanceledException) { }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"업데이트 확인 실패: {ex.Message}");
-                }
-            }, ct);
-        }
-
-        private async Task CheckAndNotifyUpdateAsync(CancellationToken cancellationToken)
-        {
-            var release = await _updateCheckService.GetLatestReleaseAsync(cancellationToken);
-            if (release is null)
-            {
-                return;
-            }
-
-            var currentVersionString = _window?.ViewModel.AppVersion ?? "0.0.0";
-            if (!Version.TryParse(currentVersionString, out var currentVersion))
-            {
-                return;
-            }
-
-            if (release.Version > currentVersion)
-            {
-                var latestVersionText = $"{release.Version.Major}.{release.Version.Minor}.{release.Version.Build}";
-                _notificationService.ShowUpdateAvailable(latestVersionText, currentVersionString, release.Url);
-            }
-        }
-
-        #endregion
-
         /// <summary>
         /// 설정 창 표시
         /// </summary>
@@ -491,15 +437,8 @@ namespace MailTrayNotifier.WinUI
 
             _window.Show();
             _window.Activate();
-
-            // 설정 창 열 때마다 업데이트 확인 (실패해도 무시)
-            _ = _window.ViewModel.CheckForUpdateAsync().ContinueWith(t =>
-            {
-                if (t.IsFaulted)
-                {
-                    Debug.WriteLine($"업데이트 확인 실패: {t.Exception?.GetBaseException().Message}");
-                }
-            }, TaskScheduler.Default);
+            // 이미 표시된 상태에서도 다른 창에 가려지지 않도록 맨 앞으로 올린다
+            _window.BringToForeground();
         }
 
         /// <summary>
@@ -614,10 +553,6 @@ namespace MailTrayNotifier.WinUI
                 _resumeCts = null;
             }
 
-            _updateCheckCts?.Cancel();
-            _updateCheckCts?.Dispose();
-            _updateCheckCts = null;
-
             _mailPollingService.RunningStateChanged -= OnPollingStateChanged;
             _mailPollingService.SettingsValidityChanged -= OnSettingsValidityChanged;
             _mailPollingService.RefreshEnabledChanged -= OnRefreshEnabledChanged;
@@ -632,9 +567,6 @@ namespace MailTrayNotifier.WinUI
             _trayIcon = null;
             _window?.ForceClose();
             _window = null;
-
-            // UpdateCheckService는 창 종료 후 해제 (ViewModel이 참조 중일 수 있으므로)
-            _updateCheckService.Dispose();
 
             Instance = null;
         }

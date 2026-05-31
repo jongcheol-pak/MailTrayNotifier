@@ -16,7 +16,7 @@
   <mp:PhoneIdentity PhoneProductId="efd13704-993a-4267-a418-8c7fed68947f" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>MailTrayNotifier</DisplayName>
+    <DisplayName>메일 알리미</DisplayName>
     <PublisherDisplayName>JongCheol Pak</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
