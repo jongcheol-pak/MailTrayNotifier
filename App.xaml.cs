@@ -140,8 +140,6 @@ namespace MailTrayNotifier.WinUI
 
             _trayIcon.LeftClicked += ShowSettings;
             _trayIcon.MenuItemClicked += OnTrayMenuClicked;
-            // 트레이 메뉴 색을 앱의 실제 적용 테마(다크/라이트)에 맞춰 그리도록 콜백 주입 (우클릭 시점마다 조회)
-            _trayIcon.IsDarkTheme = () => MainWindowContent?.ActualTheme == Microsoft.UI.Xaml.ElementTheme.Dark;
 
             _trayIcon.Create(Strings.TrayTooltip);
             _trayIcon.SetIcon(GetIconPath("stop.ico"));
