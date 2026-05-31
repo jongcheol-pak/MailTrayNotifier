@@ -75,7 +75,7 @@
                             <StackPanel Spacing="4" Padding="4,8,4,4">
                                 <TextBlock Text="{x:Bind vm:MailAccountViewModel.AccountNameLabel}" />
                                 <TextBox Text="{x:Bind AccountName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         IsEnabled="{x:Bind IsEditMode, Mode=OneWay}" Margin="0,0,0,8" />
+                                         IsEnabled="{x:Bind IsEditMode, Mode=OneWay}" MaxLength="30" Margin="0,0,0,8" />
 
                                 <TextBlock Text="{x:Bind vm:MailAccountViewModel.Pop3ServerLabel}" Margin="0,4,0,0"/>
                                 <Grid Margin="0,0,0,8" ColumnSpacing="8">
@@ -84,7 +84,7 @@
                                         <ColumnDefinition Width="100" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox Grid.Column="0" Text="{x:Bind Pop3Server, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             IsEnabled="{x:Bind IsEditMode, Mode=OneWay}" />
+                                             IsEnabled="{x:Bind IsEditMode, Mode=OneWay}" MaxLength="100" />
                                     <TextBox Grid.Column="1" Text="{x:Bind Pop3PortText, Mode=TwoWay}"
                                              IsEnabled="{x:Bind IsEditMode, Mode=OneWay}"
                                              PlaceholderText="{x:Bind vm:MailAccountViewModel.PortPlaceholderText}"
@@ -98,7 +98,7 @@
                                         <ColumnDefinition Width="100" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox Grid.Column="0" Text="{x:Bind SmtpServer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             IsEnabled="{x:Bind IsEditMode, Mode=OneWay}" />
+                                             IsEnabled="{x:Bind IsEditMode, Mode=OneWay}" MaxLength="100" />
                                     <TextBox Grid.Column="1" Text="{x:Bind SmtpPortText, Mode=TwoWay}"
                                              IsEnabled="{x:Bind IsEditMode, Mode=OneWay}"
                                              PlaceholderText="{x:Bind vm:MailAccountViewModel.PortPlaceholderText}"
@@ -111,11 +111,11 @@
 
                                 <TextBlock Text="{x:Bind vm:MailAccountViewModel.UserIdLabel}" Margin="0,4,0,0"/>
                                 <TextBox Text="{x:Bind UserId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         IsEnabled="{x:Bind IsEditMode, Mode=OneWay}" Margin="0,0,0,8" />
+                                         IsEnabled="{x:Bind IsEditMode, Mode=OneWay}" MaxLength="100" Margin="0,0,0,8" />
 
                                 <TextBlock Text="{x:Bind vm:MailAccountViewModel.PasswordLabel}" Margin="0,4,0,0"/>
                                 <PasswordBox Password="{x:Bind Password, Mode=TwoWay}"
-                                             IsEnabled="{x:Bind IsEditMode, Mode=OneWay}" Margin="0,0,0,8" />
+                                             IsEnabled="{x:Bind IsEditMode, Mode=OneWay}" MaxLength="100" Margin="0,0,0,8" />
 
                                 <TextBlock Text="{x:Bind vm:MailAccountViewModel.SyncIntervalLabel}" Margin="0,4,0,0"/>
                                 <ComboBox ItemsSource="{x:Bind vm:MailAccountViewModel.AvailableRefreshMinutes}"
@@ -125,7 +125,7 @@
                                 <TextBlock Text="{x:Bind vm:MailAccountViewModel.MailWebsiteLabel}" Margin="0,4,0,0"/>
                                 <TextBox Text="{x:Bind MailWebUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          IsEnabled="{x:Bind IsEditMode, Mode=OneWay}"
-                                         PlaceholderText="https://mail.example.com" Margin="0,0,0,8" />
+                                         PlaceholderText="https://mail.example.com" MaxLength="200" Margin="0,0,0,8" />
 
                                 <!-- 버튼 그룹 -->
                                 <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
