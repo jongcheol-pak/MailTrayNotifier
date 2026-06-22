@@ -44,7 +44,9 @@ namespace MailTrayNotifier.WinUI.Tray
         private const uint MF_GRAYED = 0x1;
         private const uint TPM_RIGHTBUTTON = 0x2;
 
-        private static readonly nint HWND_MESSAGE = new(-3);
+        // WS_EX_TOOLWINDOW: 작업 표시줄/Alt-Tab 비표시 (ShowWindow 미호출이라 화면에도 안 보임)
+        private const uint WS_EX_TOOLWINDOW = 0x80;
+
         private const uint TrayUid = 1;
 
         private readonly WndProcDelegate _wndProcDelegate;
@@ -55,6 +57,11 @@ namespace MailTrayNotifier.WinUI.Tray
         private nint _hwnd;
         private bool _added;
         private bool _disposed;
+        // 작업 표시줄(Explorer) 재시작 시 시스템이 broadcast하는 메시지 ID (Create에서 등록)
+        private uint _taskbarCreatedMsg;
+        // 재등록 시 복원할 마지막 아이콘 경로/툴팁
+        private string _lastIconPath = string.Empty;
+        private string _lastToolTip = string.Empty;
 
         /// <summary>좌클릭 시 발생</summary>
         public event Action? LeftClicked;
@@ -83,10 +90,17 @@ namespace MailTrayNotifier.WinUI.Tray
             };
             RegisterClass(ref wc);
 
-            _hwnd = CreateWindowEx(0, _className, string.Empty, 0, 0, 0, 0, 0,
-                HWND_MESSAGE, nint.Zero, hInstance, nint.Zero);
+            // 작업 표시줄 재생성 메시지 등록.
+            // message-only 창(HWND_MESSAGE)은 broadcast를 받지 못하므로, 일반 top-level 창으로 만든다.
+            // (WS_EX_TOOLWINDOW + ShowWindow 미호출로 화면에는 보이지 않는다)
+            _taskbarCreatedMsg = RegisterWindowMessage("TaskbarCreated");
 
-            var data = CreateData(NIF_MESSAGE | NIF_TIP, toolTip);
+            _hwnd = CreateWindowEx(WS_EX_TOOLWINDOW, _className, string.Empty, 0, 0, 0, 0, 0,
+                nint.Zero, nint.Zero, hInstance, nint.Zero);
+
+            _lastToolTip = toolTip ?? string.Empty;
+
+            var data = CreateData(NIF_MESSAGE | NIF_TIP, _lastToolTip);
             Shell_NotifyIcon(NIM_ADD, ref data);
             _added = true;
         }
@@ -112,6 +126,8 @@ namespace MailTrayNotifier.WinUI.Tray
                 _iconCache[icoPath] = hIcon;
             }
 
+            _lastIconPath = icoPath;
+
             var data = CreateData(NIF_ICON, string.Empty);
             data.hIcon = hIcon;
             Shell_NotifyIcon(NIM_MODIFY, ref data);
@@ -127,7 +143,9 @@ namespace MailTrayNotifier.WinUI.Tray
                 return;
             }
 
-            var data = CreateData(NIF_TIP, toolTip);
+            _lastToolTip = toolTip ?? string.Empty;
+
+            var data = CreateData(NIF_TIP, _lastToolTip);
             Shell_NotifyIcon(NIM_MODIFY, ref data);
         }
 
@@ -154,6 +172,13 @@ namespace MailTrayNotifier.WinUI.Tray
 
         private nint WndProc(nint hWnd, uint msg, nint wParam, nint lParam)
         {
+            // 작업 표시줄(Explorer) 재시작 → 트레이 아이콘을 다시 등록한다
+            if (_taskbarCreatedMsg != 0 && msg == _taskbarCreatedMsg)
+            {
+                ReAddIcon();
+                return nint.Zero;
+            }
+
             if (msg == WM_TRAYICON)
             {
                 var mouseMsg = (uint)((long)lParam & 0xFFFF);
@@ -217,6 +242,31 @@ namespace MailTrayNotifier.WinUI.Tray
             {
                 DestroyMenu(menu);
             }
+        }
+
+        /// <summary>
+        /// 작업 표시줄(Explorer) 재시작 후 트레이 아이콘을 다시 등록하고
+        /// 마지막 아이콘/툴팁 상태를 복원한다.
+        /// </summary>
+        private void ReAddIcon()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            var flags = NIF_MESSAGE | NIF_TIP;
+            var hIcon = nint.Zero;
+            if (!string.IsNullOrEmpty(_lastIconPath) && _iconCache.TryGetValue(_lastIconPath, out var cached))
+            {
+                hIcon = cached;
+                flags |= NIF_ICON;
+            }
+
+            var data = CreateData(flags, _lastToolTip);
+            data.hIcon = hIcon;
+            Shell_NotifyIcon(NIM_ADD, ref data);
+            _added = true;
         }
 
         private NOTIFYICONDATA CreateData(uint flags, string tip)
@@ -354,6 +404,9 @@ namespace MailTrayNotifier.WinUI.Tray
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern bool PostMessage(nint hWnd, uint msg, nint wParam, nint lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern uint RegisterWindowMessage(string lpString);
 
         #endregion
     }
