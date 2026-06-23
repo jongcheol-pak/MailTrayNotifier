@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
 using System.Text;
 using MailTrayNotifier.Resources;
 using MailTrayNotifier.Services;
@@ -82,6 +83,9 @@ namespace MailTrayNotifier.WinUI
             // 한국어 레거시 인코딩 지원 (EUC-KR, ISO-2022-KR 등)
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
+            // 스토어 자동 업데이트로 OS가 앱을 종료한 뒤 자동 재시작하도록 Restart Manager에 등록
+            RegisterForUpdateRestart();
+
             // 저장된 언어/테마 적용 (테마는 창 생성 후 적용)
             ApplyStartupSettings();
 
@@ -124,6 +128,30 @@ namespace MailTrayNotifier.WinUI
                 }
             }, TaskScheduler.Default);
         }
+
+        /// <summary>
+        /// 스토어 자동 업데이트로 OS가 실행 중인 앱을 종료한 뒤, 업데이트 완료 시 앱이
+        /// 자동으로 다시 시작되도록 Windows Restart Manager에 등록한다.
+        /// 패키지 풀트러스트 데스크톱 앱은 이 등록이 없으면 업데이트 후 재시작되지 않는다.
+        /// (manifest의 startupTask는 로그인 시점 자동 시작이라 업데이트 직후 재시작은 트리거하지 못함)
+        /// </summary>
+        private static void RegisterForUpdateRestart()
+        {
+            try
+            {
+                // 인자 없이 재시작(null). dwFlags=0 → 업데이트/행/리부트 종료 시 모두 재시작
+                // (RESTART_NO_PATCH를 지정하면 업데이트 종료 시 재시작을 막으므로 지정하지 않는다)
+                RegisterApplicationRestart(null, 0);
+            }
+            catch
+            {
+                // 등록 실패는 앱 시작을 막지 않는다 (자동 재시작만 비활성, 수동 실행/로그인 시작은 정상)
+            }
+        }
+
+        // 업데이트/행/리부트로 OS가 앱을 종료한 뒤 자동 재시작하도록 등록 (kernel32 Restart Manager)
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+        private static extern int RegisterApplicationRestart(string? pwzCommandline, uint dwFlags);
 
         /// <summary>
         /// 트레이 아이콘 초기화

@@ -11,7 +11,7 @@
   <Identity
     Name="JongCheol.5468CEA75CF0"
     Publisher="CN=C4E87E75-D777-4282-B3A5-57BFD2309B52"
-    Version="1.7.0.0" />
+    Version="1.7.1.0" />
 
   <mp:PhoneIdentity PhoneProductId="244c48c1-f209-4f4e-a20f-9982abfb06c6" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
